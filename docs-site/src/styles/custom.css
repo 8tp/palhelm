@@ -1,0 +1,272 @@
+/* ============================================================
+   Palhelm docs: field-guide skin over Starlight.
+   tokens.css defines the design tokens for both themes
+   ([data-theme='light'] and [data-theme='dark'] plus OS
+   preference fallbacks). This file maps Starlight's --sl-*
+   system onto those tokens and restyles the header (olive
+   spine), sidebar, asides, tables, and code surfaces.
+   These rules are unlayered on purpose: they win over
+   Starlight's @layer styles at any specificity.
+   ============================================================ */
+
+/* ---- 1. Starlight variable mapping ----
+   Every mapping routes through a token, so the values resolve
+   per theme wherever tokens.css switches them. The light/dark
+   blocks below only carry values that cannot derive from a
+   token (backdrop overlay ink). */
+:root,
+:root[data-theme='light'],
+:root[data-theme='dark'] {
+	/* type */
+	--sl-font: var(--font-ui);
+	--sl-font-mono: var(--font-mono);
+
+	/* grayscale onto paper and ink */
+	--sl-color-white: var(--ink);
+	--sl-color-gray-1: var(--ink);
+	--sl-color-gray-2: var(--ink-2);
+	--sl-color-gray-3: var(--ink-3);
+	--sl-color-gray-4: var(--line-strong);
+	--sl-color-gray-5: var(--line);
+	--sl-color-gray-6: var(--surface-2);
+	--sl-color-gray-7: var(--surface);
+	--sl-color-black: var(--bg);
+
+	/* accent family = olive scale */
+	--sl-color-accent-low: color-mix(in srgb, var(--accent) 16%, var(--bg));
+	--sl-color-accent: var(--accent);
+	--sl-color-accent-high: var(--accent-ink);
+
+	/* status families onto ok/warn/danger; blue and purple both
+	   map to olive so nothing ever renders blue-slate */
+	--sl-color-blue-low: color-mix(in srgb, var(--accent) 16%, var(--bg));
+	--sl-color-blue: var(--accent);
+	--sl-color-blue-high: var(--accent-ink);
+	--sl-color-purple-low: color-mix(in srgb, var(--accent) 16%, var(--bg));
+	--sl-color-purple: var(--accent);
+	--sl-color-purple-high: var(--accent-ink);
+	--sl-color-green-low: color-mix(in srgb, var(--ok) 16%, var(--bg));
+	--sl-color-green: var(--ok);
+	--sl-color-green-high: var(--ok-ink);
+	--sl-color-orange-low: color-mix(in srgb, var(--warn) 16%, var(--bg));
+	--sl-color-orange: var(--warn);
+	--sl-color-orange-high: var(--warn-ink);
+	--sl-color-red-low: color-mix(in srgb, var(--danger) 16%, var(--bg));
+	--sl-color-red: var(--danger);
+	--sl-color-red-high: var(--danger-ink);
+
+	/* semantic surfaces and text */
+	--sl-color-text: var(--ink);
+	--sl-color-text-accent: var(--accent-ink);
+	--sl-color-text-invert: var(--on-accent);
+	--sl-color-bg: var(--bg);
+	/* bg-nav feeds the mobile TOC bar and select dropdowns; the
+	   header band itself is painted in section 3 below */
+	--sl-color-bg-nav: color-mix(in srgb, var(--surface) 55%, var(--bg));
+	--sl-color-bg-sidebar: color-mix(in srgb, var(--surface) 55%, var(--bg));
+	--sl-color-bg-inline-code: var(--surface-2);
+	--sl-color-bg-accent: var(--accent);
+	--sl-color-hairline-light: var(--line);
+	--sl-color-hairline: var(--line);
+	--sl-color-hairline-shade: var(--line);
+
+	/* shadows */
+	--sl-shadow-sm: var(--shadow-card);
+	--sl-shadow-md: var(--shadow-card);
+	--sl-shadow-lg: var(--shadow-pop);
+}
+
+:root,
+:root[data-theme='light'] {
+	--sl-color-backdrop-overlay: rgba(42, 36, 20, 0.35);
+}
+@media (prefers-color-scheme: dark) {
+	:root {
+		--sl-color-backdrop-overlay: rgba(0, 0, 0, 0.55);
+	}
+}
+:root[data-theme='dark'] {
+	--sl-color-backdrop-overlay: rgba(0, 0, 0, 0.55);
+}
+
+/* ---- 2. Paper grain ----
+   Fixed layer at negative z-index: it sits above the page
+   background but below every surface that paints its own
+   background, so the grain shows on the desk only. */
+body::before {
+	content: '';
+	position: fixed;
+	inset: 0;
+	z-index: -1;
+	background: url('/grain.png');
+	mix-blend-mode: multiply;
+	opacity: var(--paper-grain-opacity);
+	pointer-events: none;
+}
+
+/* ---- 3. Header: the olive spine ----
+   Theme-constant band. Children remap the Starlight text vars
+   to the band tokens; the search dialog restores page values
+   because it is mounted inside the header DOM (see the
+   --page-* mirror rationale in tokens.css). */
+header.header {
+	background-color: var(--band-bg);
+	border-bottom: 1px solid var(--band-edge);
+	color: var(--band-ink);
+	--sl-color-text-accent: var(--band-ink);
+	--sl-color-white: var(--band-ink);
+	--sl-color-gray-1: var(--band-ink);
+	--sl-color-gray-2: var(--band-ink-2);
+	--sl-color-gray-3: var(--band-ink-2);
+	--sl-color-bg-nav: var(--band-bg);
+}
+
+/* search trigger as a band well */
+header.header site-search button[data-open-modal] {
+	background-color: var(--band-well);
+	border: 1px solid var(--band-line);
+	border-radius: var(--radius-ctl);
+	color: var(--band-ink-2);
+}
+header.header site-search button[data-open-modal]:hover {
+	border-color: var(--band-line-strong);
+	color: var(--band-ink);
+}
+header.header site-search button[data-open-modal] > kbd {
+	background-color: var(--band-well-2);
+	color: var(--band-ink);
+	font-family: var(--font-mono);
+}
+
+/* the search modal escapes the band remap back to page tokens */
+header.header site-search dialog {
+	background-color: var(--page-surface);
+	border: var(--border-card) solid var(--page-line);
+	color: var(--page-ink);
+	--sl-color-text: var(--page-ink);
+	--sl-color-text-accent: var(--page-accent-ink);
+	--sl-color-white: var(--page-ink);
+	--sl-color-gray-1: var(--page-ink);
+	--sl-color-gray-2: var(--page-ink-2);
+	--sl-color-gray-3: var(--page-ink-3);
+	--sl-color-bg-nav: var(--page-surface);
+}
+@media (min-width: 50rem) {
+	header.header site-search dialog {
+		border-radius: var(--radius-card);
+	}
+}
+
+/* ---- 4. Type: the guide's voice ----
+   h1 to h3 in Charter serif; h4 down stays Plex Sans. */
+.sl-markdown-content :is(h1, h2, h3),
+main h1 {
+	font-family: var(--font-display);
+	font-weight: 700;
+	letter-spacing: 0;
+}
+
+/* ---- 5. Sidebar: specimen labels ---- */
+.sidebar-content .group-label > .large {
+	font-family: var(--font-mono);
+	font-size: var(--text-xs);
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: var(--track-caps);
+	color: var(--ink-3);
+}
+.sidebar-pane {
+	border-inline-end: 1px solid var(--line);
+}
+
+/* ---- 6. Asides: stamps on cards ----
+   2px status border (status color at 55% mix), 10px radius,
+   soft status wash, mono caps label. Standard labels. */
+.starlight-aside {
+	border: var(--border-card) solid;
+	border-radius: var(--radius-card);
+	padding: var(--space-4);
+	color: var(--ink);
+}
+.starlight-aside__title {
+	font-family: var(--font-mono);
+	font-size: var(--text-xs);
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: var(--track-caps);
+}
+.starlight-aside--note {
+	border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+	background-color: var(--accent-soft);
+}
+.starlight-aside--note .starlight-aside__title {
+	color: var(--accent-ink);
+}
+.starlight-aside--tip {
+	border-color: color-mix(in srgb, var(--ok) 55%, transparent);
+	background-color: var(--ok-soft);
+}
+.starlight-aside--tip .starlight-aside__title {
+	color: var(--ok-ink);
+}
+.starlight-aside--caution {
+	border-color: color-mix(in srgb, var(--warn) 55%, transparent);
+	background-color: var(--warn-soft);
+}
+.starlight-aside--caution .starlight-aside__title {
+	color: var(--warn-ink);
+}
+.starlight-aside--danger {
+	border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+	background-color: var(--danger-soft);
+}
+.starlight-aside--danger .starlight-aside__title {
+	color: var(--danger-ink);
+}
+
+/* ---- 7. Tables: values set in mono ---- */
+.sl-markdown-content table {
+	font-family: var(--font-mono);
+	font-size: var(--text-sm);
+}
+.sl-markdown-content th {
+	font-family: var(--font-mono);
+	font-size: var(--text-xs);
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: var(--track-caps);
+	color: var(--ink-2);
+}
+
+/* ---- 8. Cards and pagination: index cards on the desk ---- */
+.sl-link-card,
+.card {
+	background-color: var(--surface);
+	border: var(--border-card) solid var(--line);
+	border-radius: var(--radius-card);
+	box-shadow: var(--shadow-card);
+}
+.sl-link-card:hover {
+	background-color: var(--surface-2);
+	border-color: var(--line-strong);
+}
+.pagination-links > a {
+	background-color: var(--surface);
+	border: var(--border-card) solid var(--line);
+	border-radius: var(--radius-card);
+	box-shadow: var(--shadow-card);
+}
+.pagination-links > a:hover {
+	border-color: var(--line-strong);
+}
+
+/* ---- 9. Focus rings ---- */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+	outline: none;
+	box-shadow: var(--focus-ring);
+}

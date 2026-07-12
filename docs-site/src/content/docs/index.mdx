@@ -1,0 +1,30 @@
+---
+title: Palhelm documentation
+description: Palhelm is a self-hosted control panel and Discord bot for dedicated Palworld servers. Start here.
+---
+
+import { CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+Palhelm is a self-hosted control panel and Discord bot for dedicated Palworld servers. It reads server state through RCON, the REST API, and save files, shows you what is happening, and keeps risky actions behind explicit admin controls.
+
+<CardGrid>
+	<LinkCard
+		title="Get started"
+		href="/getting-started/what-is-palhelm/"
+		description="Install Palhelm next to your Palworld container and log in for the first time."
+	/>
+	<LinkCard
+		title="The panel"
+		href="/panel/dashboard/"
+		description="Dashboard, players, live map, console, backups, configuration, and events."
+	/>
+	<LinkCard
+		title="The Discord bot"
+		href="/bot/setup/"
+		description="Server status, commands, notifications, and an assistant in your Discord."
+	/>
+</CardGrid>
+
+:::note
+Palhelm is an unaffiliated fan project built for Palworld 1.0. It is not made by, endorsed by, or associated with Pocketpair, Inc. Palworld and all related names and assets belong to their respective owners.
+:::

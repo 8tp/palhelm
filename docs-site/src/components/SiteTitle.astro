@@ -1,0 +1,48 @@
+---
+/**
+ * Site title on the olive spine header: the orb-hybrid mark (src/assets/mark.svg,
+ * wired here as the Starlight logo) plus the two-tone "palhelm docs" wordmark.
+ * "pal" is band ink, "helm" is #ccd79b, "docs" is the quieter band ink. Mono.
+ */
+import Mark from '../assets/mark.svg';
+
+const { siteTitleHref } = Astro.locals.starlightRoute;
+---
+
+<a href={siteTitleHref} class="site-title sl-flex">
+	<Mark width={26} height={26} class="mark" />
+	<span class="wordmark" translate="no">
+		<span class="pal">pal</span><span class="helm">helm</span><span class="docs">docs</span>
+	</span>
+</a>
+
+<style>
+	.site-title {
+		align-items: center;
+		gap: 0.625rem;
+		text-decoration: none;
+		white-space: nowrap;
+		min-width: 0;
+	}
+	.mark {
+		flex-shrink: 0;
+	}
+	.wordmark {
+		font-family: var(--font-mono);
+		font-size: var(--text-xl);
+		font-weight: 600;
+		letter-spacing: 0;
+		overflow: hidden;
+	}
+	.pal {
+		color: var(--band-ink);
+	}
+	.helm {
+		color: #ccd79b;
+	}
+	.docs {
+		color: var(--band-ink-2);
+		font-weight: 400;
+		margin-inline-start: 0.45em;
+	}
+</style>

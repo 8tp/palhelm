@@ -1,0 +1,15 @@
+# build output
+dist/
+
+# generated types
+.astro/
+
+# dependencies
+node_modules/
+
+# environment
+.env
+.env.*
+
+# system
+.DS_Store
