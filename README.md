@@ -6,9 +6,7 @@
   <img src="https://img.shields.io/badge/Node-24-339933" alt="Node 24">
   <a href="https://palhelm.com"><img src="https://img.shields.io/badge/site-palhelm.com-6b7f3f" alt="palhelm.com"></a>
   <a href="https://docs.palhelm.com"><img src="https://img.shields.io/badge/docs-docs.palhelm.com-6b7f3f" alt="docs.palhelm.com"></a>
-  <!-- Enable once the repo is public:
   <a href="https://github.com/8tp/palhelm/actions/workflows/ci.yml"><img src="https://github.com/8tp/palhelm/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  -->
 </p>
 
 Palhelm is a self-hosted web admin panel for Palworld dedicated servers. It is one Docker image and one process with no external database. It talks to your server three ways: the official REST API, RCON, and the world save file itself, which it parses directly (the 1.0 Oodle-compressed format) with a pure-Go parser. You get a live dashboard, player and pal data, a map, safe backups and restores, and a config editor that edits the thing your server actually reads.
