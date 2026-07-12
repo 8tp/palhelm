@@ -1,0 +1,65 @@
+---
+/**
+ * Example message shell: a dark card that stays dark in BOTH themes.
+ * This is our rendering of a Discord exchange, not a Discord clone, so it
+ * remaps the theme tokens to fixed dark values locally (same trick as the
+ * header band's remap) instead of using Discord's blurple/greys. Children
+ * (stamps, the mark, message rows) restyle themselves through the tokens
+ * and never know they're on the card.
+ */
+interface Props {
+  /** mono caption under the card, e.g. "EXAMPLE · #palworld" */
+  caption?: string;
+  class?: string;
+}
+const { caption, class: className } = Astro.props;
+---
+<figure class:list={["transcript-wrap", className]}>
+  <div class="transcript" role="log">
+    <slot />
+  </div>
+  {caption && <figcaption class="transcript-caption">{caption}</figcaption>}
+</figure>
+
+<style>
+  .transcript {
+    /* fixed dark values (tokens.css dark block), theme-constant on purpose */
+    --bg: #181206;
+    --surface: #221a0b;
+    --surface-2: #2d2412;
+    --surface-3: #3a2f19;
+    --line: #3b311c;
+    --line-strong: #5a4c2b;
+    --ink: #efe6cd;
+    --ink-2: #bfb28a;
+    --ink-3: #9e9166;
+    --accent: #93a653;
+    --accent-ink: #b4c878;
+    --accent-soft: rgba(147, 166, 83, 0.16);
+    --on-accent: #1c1608;
+    --ok: #6fb35b; --ok-ink: #93c77e; --ok-soft: rgba(111, 179, 91, 0.16);
+    --warn: #d59a52; --warn-ink: #e0ab6b; --warn-soft: rgba(213, 154, 82, 0.16);
+    --danger: #e0705c; --danger-ink: #ef9382; --danger-soft: rgba(224, 112, 92, 0.18);
+    --on-danger: #1c1608;
+
+    background: var(--surface);
+    border: var(--border-card) solid var(--line-strong);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    color: var(--ink);
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    min-width: 0;
+  }
+  .transcript-caption {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--track-caps);
+    color: var(--ink-3);
+    margin-top: var(--space-3);
+  }
+</style>

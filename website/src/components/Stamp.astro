@@ -1,0 +1,48 @@
+---
+/**
+ * Rubber stamp: mono caps, 1.5px inked border in the status color at 55% mix,
+ * soft wash fill over a --surface underlay, radius 5px. Optional -1.5° tilt.
+ */
+interface Props {
+  tone?: "ok" | "warn" | "danger" | "idle";
+  tilt?: boolean;
+  class?: string;
+}
+const { tone = "idle", tilt = false, class: className } = Astro.props;
+---
+<span class:list={["stamp", `stamp-${tone}`, { "stamp-tilt": tilt }, className]}>
+  <slot />
+</span>
+
+<style>
+  .stamp {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: 600 11px/1 var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 6px 10px;
+    border-radius: 5px;
+    white-space: nowrap;
+    border: var(--border-ctl) solid color-mix(in srgb, var(--ink-3) 45%, transparent);
+    background: var(--surface);
+    color: var(--ink-2);
+  }
+  .stamp-ok {
+    color: var(--ok-ink);
+    border-color: color-mix(in srgb, var(--ok) 55%, transparent);
+    background: linear-gradient(var(--ok-soft), var(--ok-soft)) var(--surface);
+  }
+  .stamp-warn {
+    color: var(--warn-ink);
+    border-color: color-mix(in srgb, var(--warn) 55%, transparent);
+    background: linear-gradient(var(--warn-soft), var(--warn-soft)) var(--surface);
+  }
+  .stamp-danger {
+    color: var(--danger-ink);
+    border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+    background: linear-gradient(var(--danger-soft), var(--danger-soft)) var(--surface);
+  }
+  .stamp-tilt { rotate: -1.5deg; } /* pressed a degree off-true */
+</style>

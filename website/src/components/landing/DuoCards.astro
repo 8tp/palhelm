@@ -1,0 +1,225 @@
+---
+/**
+ * The two parts: the panel card (a real screenshot thumb) and the Discord bot
+ * card (a small composed example, not an image, so the bot's medium is shown
+ * in its own medium). Landing-only.
+ */
+import { Image } from "astro:assets";
+import Transcript from "../Transcript.astro";
+import TranscriptMsg from "../TranscriptMsg.astro";
+import panelThumb from "../../assets/shots/panel-players-detail-light.png";
+import panelThumbDark from "../../assets/shots/panel-players-detail-dark.png";
+
+const panelBullets = [
+  "charts with history, not just numbers",
+  "world map with live players",
+  "backups with a safe restore",
+  "config edits that actually stick",
+];
+const botBullets = [
+  "/ask, an AI guide that cites its sources",
+  "breeding plans from what you already own",
+  "leaderboards, trends, milestones",
+  "a live join and leave feed",
+];
+---
+<div class="duo">
+  <!-- THE PANEL -->
+  <article class="duo-card" data-reveal>
+    <div class="duo-thumb">
+      <Image
+        class="duo-thumb-light"
+        src={panelThumb}
+        alt="Palhelm players screen: an online player's profile with their pal party, guild, and level pulled from the live server and the parsed save."
+        widths={[420, 640, 840]}
+        sizes="(max-width: 900px) 100vw, 540px"
+        loading="lazy"
+      />
+      <Image
+        class="duo-thumb-dark"
+        src={panelThumbDark}
+        alt=""
+        widths={[420, 640, 840]}
+        sizes="(max-width: 900px) 100vw, 540px"
+        loading="lazy"
+      />
+    </div>
+    <div class="duo-body">
+      <p class="duo-eyebrow">THE PANEL</p>
+      <h3 class="duo-title">The panel</h3>
+      <p class="duo-lead">
+        Dashboard, live map, players, console, backups and config.
+      </p>
+      <ul class="duo-list">
+        {panelBullets.map((b) => <li>{b}</li>)}
+      </ul>
+      <a class="duo-link" href="/panel">See the panel →</a>
+    </div>
+  </article>
+
+  <!-- THE DISCORD BOT -->
+  <article class="duo-card" data-reveal>
+    <div class="duo-thumb duo-thumb-radio">
+      <Transcript class="duo-transcript">
+        <TranscriptMsg author="Palhelm" time="09:14">
+          <span slot="embed">
+            <span class="tx-embed-title">My Palworld Server · online</span>
+            <span class="tx-embed-grid">
+              <span>v1.0.0.100427</span><span>2/16 players</span>
+              <span>day 143</span><span>59 FPS · up 6d 4h</span>
+            </span>
+          </span>
+        </TranscriptMsg>
+        <TranscriptMsg author="Palhelm" time="09:22">
+          <span class="tx-ok">🟢 Kestrel came online</span>
+        </TranscriptMsg>
+      </Transcript>
+    </div>
+    <div class="duo-body">
+      <p class="duo-eyebrow">THE DISCORD BOT</p>
+      <h3 class="duo-title">The Discord bot</h3>
+      <p class="duo-lead">
+        Thirty-two slash commands that bring your server into Discord.
+        Everyday commands only read; admin actions take two approvals.
+      </p>
+      <ul class="duo-list">
+        {botBullets.map((b) => <li>{b}</li>)}
+      </ul>
+      <a class="duo-link" href="/bot">See the bot →</a>
+    </div>
+  </article>
+</div>
+
+<style>
+  .duo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-6);
+  }
+  .duo-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: var(--border-card) solid var(--line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: var(--space-2);
+    min-width: 0;
+  }
+  .duo-thumb {
+    border-radius: 6px;
+    overflow: hidden;
+    line-height: 0;
+  }
+  .duo-thumb :global(img) {
+    width: 100%;
+    height: 208px;
+    object-fit: cover;
+    object-position: top left;
+    display: block;
+  }
+  /* light / dark swap, same mechanism as Plate */
+  .duo-thumb :global(.duo-thumb-dark) { display: none; }
+  :global(:root[data-theme="dark"]) .duo-thumb :global(.duo-thumb-light) { display: none; }
+  :global(:root[data-theme="dark"]) .duo-thumb :global(.duo-thumb-dark) { display: block; }
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme="light"])) .duo-thumb :global(.duo-thumb-light) { display: none; }
+    :global(:root:not([data-theme="light"])) .duo-thumb :global(.duo-thumb-dark) { display: block; }
+  }
+  /* the bot card's example is its own dark card; center it in the well */
+  .duo-thumb-radio {
+    line-height: normal;
+    background: var(--surface-2);
+    border: var(--border-ctl) solid var(--line);
+    padding: var(--space-3);
+    min-height: 208px;
+    display: flex;
+    align-items: center;
+  }
+  .duo-thumb-radio :global(.duo-transcript) { width: 100%; }
+  .duo-thumb-radio :global(.duo-transcript .transcript) {
+    padding: var(--space-3);
+    gap: var(--space-3);
+  }
+
+  .tx-embed-title {
+    display: block;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
+  .tx-embed-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px var(--space-3);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--ink-2);
+  }
+  .tx-ok { color: var(--ok-ink); font-size: var(--text-sm); }
+
+  .duo-body {
+    padding: var(--space-4) var(--space-3) var(--space-3);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+  .duo-eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--track-caps);
+    color: var(--accent-ink);
+    margin-bottom: var(--space-2);
+  }
+  .duo-title {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    line-height: var(--leading-tight);
+    color: var(--ink);
+    margin-bottom: var(--space-2);
+  }
+  .duo-lead {
+    color: var(--ink-2);
+    margin-bottom: var(--space-4);
+    max-width: 46ch;
+  }
+  .duo-list {
+    list-style: none;
+    margin: 0 0 var(--space-5);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .duo-list li {
+    position: relative;
+    padding-left: var(--space-5);
+    color: var(--ink-2);
+    font-size: var(--text-md);
+  }
+  .duo-list li::before {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 0.6em;
+    width: 6px;
+    height: 6px;
+    border-radius: 1px;
+    background: var(--accent);
+  }
+  .duo-link {
+    margin-top: auto;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--accent-ink);
+    letter-spacing: 0.02em;
+  }
+
+  @media (max-width: 900px) {
+    .duo { grid-template-columns: 1fr; }
+  }
+</style>

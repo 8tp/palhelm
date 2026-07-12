@@ -1,0 +1,86 @@
+@import "./tokens.css";
+@import "tailwindcss";
+
+/* Utilities exist but resolve to the vars, so theme switching keeps
+   working through :root[data-theme] (DESIGN.md §4). */
+@theme inline {
+  --color-bg: var(--bg); --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2); --color-surface-3: var(--surface-3);
+  --color-line: var(--line); --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink); --color-ink-2: var(--ink-2); --color-ink-3: var(--ink-3);
+  --color-accent: var(--accent); --color-accent-ink: var(--accent-ink);
+  --color-on-accent: var(--on-accent);
+  --color-ok: var(--ok); --color-warn: var(--warn); --color-danger: var(--danger);
+  --color-brass: var(--brass);
+  --color-band: var(--band-bg); --color-band-ink: var(--band-ink);
+  --font-display: var(--font-display); --font-ui: var(--font-ui); --font-mono: var(--font-mono);
+  --radius-ctl: 8px; --radius-card: 10px;
+}
+
+@layer base {
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font-ui);
+    font-size: var(--text-md);
+    line-height: var(--leading-body);
+    color: var(--ink);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* paper grain: sub-perceptual canvas texture over the whole desk */
+  body::before {
+    content: "";
+    position: fixed; inset: 0; z-index: 2000;
+    pointer-events: none;
+    background: url("/grain.png") repeat;
+    background-size: 512px 512px;
+    mix-blend-mode: multiply;
+    opacity: var(--paper-grain-opacity);
+  }
+  :root[data-theme="dark"] body::before { mix-blend-mode: overlay; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) body::before { mix-blend-mode: overlay; }
+  }
+
+  h1, h2, h3, h4 { font-family: var(--font-display); }
+
+  a { color: var(--accent-ink); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  ::selection { background: var(--accent); color: var(--on-accent); }
+
+  :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: var(--radius-ctl);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+
+  /* forced-colors: the box-shadow focus ring is author-drawn color, which this mode
+     suppresses , a transparent outline still paints in the system Highlight color,
+     restoring a visible ring (see design/mockups/ui.css for the full rationale). */
+  @media (forced-colors: active) {
+    :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+      outline: 2px solid transparent;
+      outline-offset: 2px;
+      box-shadow: none;
+    }
+  }
+}
+
+/* skip-to-content: visually hidden until focused, then stamped on the band */
+.skip-link {
+  position: absolute; left: var(--space-3); top: -100px;
+  z-index: 2001;
+  font: 600 var(--text-sm)/1 var(--font-mono);
+  text-transform: uppercase; letter-spacing: var(--track-caps);
+  background: var(--surface); color: var(--accent-ink);
+  border: var(--border-ctl) solid var(--accent);
+  border-radius: var(--radius-ctl);
+  padding: 10px 14px;
+}
+.skip-link:focus-visible { top: var(--space-3); }

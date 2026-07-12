@@ -1,0 +1,266 @@
+---
+import "../styles/global.css";
+import Mark from "../components/Mark.astro";
+import ThemeToggle from "../components/ThemeToggle.svelte";
+
+interface Props {
+  title: string;
+  description: string;
+  /** absolute or site-relative URL for og:image */
+  ogImage?: string;
+}
+const { title, description, ogImage = "/og-dashboard.png" } = Astro.props;
+const path = Astro.url.pathname;
+// Social embeds require absolute URLs; Astro.site comes from astro.config.mjs.
+const canonicalUrl = new URL(path, Astro.site).href;
+const ogImageUrl = new URL(ogImage, Astro.site).href;
+const isCurrent = (href: string) =>
+  path === href || path === `${href}/` ? "page" : undefined;
+
+const GITHUB_URL = "https://github.com/8tp/palhelm";
+---
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    <meta property="og:site_name" content="Palhelm" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <script is:inline>
+      /* no-flash: resolve the theme before first paint.
+         Stored choice wins; otherwise follow the OS. Always sets an explicit
+         data-theme so the [data-theme] token blocks are the single source of
+         truth once the page is up. */
+      (() => {
+        let t = null;
+        try { t = localStorage.getItem("palhelm-site.theme"); } catch {}
+        if (t !== "light" && t !== "dark") {
+          t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="spine">
+      <div class="spine-inner">
+        <a class="brand" href="/">
+          <Mark size={26} />
+          <span class="word">pal<b>helm</b></span>
+        </a>
+        <nav class="spine-nav" aria-label="Site">
+          <a href="/panel" aria-current={isCurrent("/panel")}>Panel</a>
+          <a href="/bot" aria-current={isCurrent("/bot")}>Discord bot</a>
+          <a href="https://docs.palhelm.com/">Docs</a>
+          <a class="gh" href={GITHUB_URL} rel="noopener">
+            GitHub
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M3 9 9 3" /><path d="M4.5 3H9v4.5" />
+            </svg>
+            <span class="sr-only">(external)</span>
+          </a>
+        </nav>
+        <div class="spine-toggle">
+          <ThemeToggle client:load />
+        </div>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="footer-col footer-brand">
+          <Mark size={20} />
+          <p>
+            Palhelm is an unaffiliated fan tool. Palworld is a trademark of
+            Pocketpair, Inc.
+          </p>
+        </div>
+        <nav class="footer-col" aria-label="Footer">
+          <a href={GITHUB_URL} rel="noopener">GitHub ↗</a>
+          <a href="/panel">Panel</a>
+          <a href="/bot">Discord bot</a>
+          <a href="https://docs.palhelm.com/">Docs ↗</a>
+          <a href="https://github.com/8tp/palhelm/blob/main/backend/internal/server/openapi.json" rel="noopener">OpenAPI spec ↗</a>
+        </nav>
+        <div class="footer-col">
+          <p>Apache-2.0 · built for Palworld 1.0</p>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style>
+  /* ---- the olive header band: theme-constant band (mockups' .helmstrip) ---- */
+  .spine {
+    height: var(--helmstrip-h);
+    background: var(--band-bg);
+    border-bottom: 3px solid var(--band-edge);
+    padding: 0 var(--space-5);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    color: var(--band-ink);
+
+    /* token remap: band-local values for everything drawn on the header band
+       (the mark, the toggle chip), verbatim from design/mockups/ui.css */
+    --ink: var(--band-ink);
+    --ink-2: var(--band-ink-2);
+    --ink-3: var(--band-ink-2);
+    --surface: var(--band-bg);
+    --surface-2: var(--band-well);
+    --surface-3: var(--band-well-2);
+    --line: var(--band-line);
+    --line-strong: var(--band-line-strong);
+    --bg: var(--band-bg);
+    --accent: var(--band-chart);
+    --ok: var(--band-ok); --ok-ink: var(--band-ok-ink); --ok-soft: var(--band-ok-soft);
+    --warn: var(--band-warn); --warn-ink: var(--band-warn-ink); --warn-soft: var(--band-warn-soft);
+    --danger: var(--band-danger); --danger-ink: var(--band-danger-ink); --danger-soft: var(--band-danger-soft);
+    --chart-line: var(--band-chart);
+    --on-accent: var(--band-edge);
+    --on-danger: var(--band-edge);
+    --accent-ink: var(--band-chart);
+    --accent-soft: rgba(204, 215, 155, 0.14);
+  }
+  .spine-inner {
+    max-width: var(--site-max);
+    margin-inline: auto;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--band-ink);
+    text-decoration: none;
+    flex: none;
+  }
+  .brand:hover { text-decoration: none; }
+  .brand .word {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.04em;
+    color: var(--band-ink);
+  }
+  .brand .word b {
+    color: var(--band-chart); /* #ccd79b, olive stamp on the band, not gold */
+    font-weight: 600;
+  }
+  .spine-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    min-width: 0;
+  }
+  .spine-nav a {
+    font: 500 var(--text-md) / 1 var(--font-ui);
+    color: var(--band-ink-2);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .spine-nav a:hover { color: var(--band-ink); text-decoration: underline; }
+  .spine-nav a[aria-current="page"] {
+    color: var(--band-ink);
+    text-decoration: underline;
+    text-underline-offset: 6px;
+    text-decoration-thickness: 2px;
+    text-decoration-color: var(--band-chart);
+  }
+  .spine-nav .gh {
+    font: 600 var(--text-sm) / 1 var(--font-mono);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .spine-nav .gh svg { flex: none; }
+  .spine-toggle { margin-left: auto; flex: none; }
+
+  .sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  main { display: block; }
+
+  /* ---- footer: on the desk, quiet and ruled ---- */
+  .footer {
+    border-top: var(--border-card) solid var(--line);
+    margin-top: var(--space-10);
+    padding: var(--space-8) var(--space-5) var(--space-10);
+  }
+  .footer-inner {
+    max-width: var(--site-max);
+    margin-inline: auto;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: var(--space-6);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--ink-3);
+    line-height: var(--leading-body);
+  }
+  .footer-brand {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3);
+    max-width: 44ch;
+  }
+  .footer-brand svg { flex: none; margin-top: 2px; }
+  nav.footer-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+  .footer-col a { color: var(--accent-ink); }
+
+  @media (max-width: 900px) {
+    .spine { padding: 0 var(--space-3); }
+    .spine-inner { gap: var(--space-4); overflow-x: auto; }
+    .spine-nav { gap: var(--space-4); }
+    .footer-inner { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 560px) {
+    /* keep every nav link reachable on small phones: drop the wordmark text
+       (the mark still brands the corner) and let the nav itself scroll
+       inside the band instead of clipping under the theme toggle */
+    .brand .word { display: none; }
+    .spine-nav {
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .spine-nav::-webkit-scrollbar { display: none; }
+    .spine-nav a { white-space: nowrap; }
+    .spine-toggle { flex: none; }
+  }
+</style>

@@ -1,0 +1,464 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Plate from "../components/Plate.astro";
+import Entry from "../components/Entry.astro";
+import Stamp from "../components/Stamp.astro";
+import Mark from "../components/Mark.astro";
+import NightCampPair from "../components/panel/NightCampPair.astro";
+import CodeWell from "../components/panel/CodeWell.astro";
+
+import dashLight from "../assets/shots/panel-dashboard-light.png";
+import dashDark from "../assets/shots/panel-dashboard-dark.png";
+import playersLight from "../assets/shots/panel-players-detail-light.png";
+import playersDark from "../assets/shots/panel-players-detail-dark.png";
+import palboxLight from "../assets/shots/panel-palbox-dialog-light.png";
+import palboxDark from "../assets/shots/panel-palbox-dialog-dark.png";
+import mapLight from "../assets/shots/panel-map-light.png";
+import mapDark from "../assets/shots/panel-map-dark.png";
+import consoleLight from "../assets/shots/panel-console-light.png";
+import consoleDark from "../assets/shots/panel-console-dark.png";
+import backupsLight from "../assets/shots/panel-backups-light.png";
+import backupsDark from "../assets/shots/panel-backups-dark.png";
+import configLight from "../assets/shots/panel-config-light.png";
+import configDark from "../assets/shots/panel-config-dark.png";
+import eventsLight from "../assets/shots/panel-events-light.png";
+import eventsDark from "../assets/shots/panel-events-dark.png";
+import settingsLight from "../assets/shots/panel-settings-light.png";
+import settingsDark from "../assets/shots/panel-settings-dark.png";
+import loginLight from "../assets/shots/panel-login-light.png";
+import loginDark from "../assets/shots/panel-login-dark.png";
+
+const DOCS_URL = "https://docs.palhelm.com/";
+---
+<Layout
+  title="The panel · Palhelm"
+  description="Palhelm watches your Palworld server from the live player list, the remote console and the world save. Nine screens, one login, and nothing it shows can change your world."
+  ogImage="/og-panel.png"
+>
+  <article class="page">
+    <!-- ── page header ───────────────────────────────────────────── -->
+    <header class="head">
+      <p class="eyebrow">THE PANEL</p>
+      <h1 class="title">Your whole server, in one panel.</h1>
+      <p class="lead">
+        Palhelm watches your server three ways: the live player list, the
+        remote console, and the world save. Nine screens, one login. Nothing it
+        shows can change your world.
+      </p>
+      <div class="stamp-row">
+        <Stamp tone="ok" tilt>9 screens</Stamp>
+        <Stamp tone="idle" tilt>one login</Stamp>
+      </div>
+    </header>
+
+    <!-- ── FIG. 02 · dashboard (light / dark pair) ──────────── -->
+    <section class="block block-full">
+      <NightCampPair
+        n={2}
+        title="The dashboard"
+        imgLight={dashLight}
+        imgDark={dashDark}
+        altLight="The Palhelm dashboard in the light theme: charts for FPS, frame time and players online over time, health for each connection, base-camp count, in-game day and uptime."
+        altDark="The same dashboard in the dark theme: the identical layout rendered in warm near-black with olive charts."
+        caption="the same screen, light and dark"
+      />
+      <div class="block-aside">
+        <Entry as="h2" large>
+          <span slot="eyebrow">SCREEN 01 · DASHBOARD</span>
+          <span slot="title">Charts with history, not just numbers.</span>
+          <p>
+            FPS and players online are drawn over time, so you can spot the dip
+            that happened overnight, not just the number right now. Connection
+            health sits on the same screen.
+          </p>
+          <p>
+            Switch the toggle in the top bar and the panel switches to a warm
+            dark theme. Every screen has both themes.
+          </p>
+        </Entry>
+      </div>
+    </section>
+
+    <!-- ── FIG. 03 · players ─────────────────── -->
+    <section class="block block-two">
+      <Plate
+        n={3}
+        title="Players"
+        img={playersLight}
+        imgDark={playersDark}
+        alt="The players screen: a merged table of online and offline players with levels, guilds and status, and a detail panel showing one player's pal party, with placeholder chips standing in for pal art."
+        caption="online and offline, merged from the live server and the save"
+      />
+      <div class="block-aside">
+        <Entry as="h2">
+          <span slot="eyebrow">SCREEN 02 · PLAYERS</span>
+          <span slot="title">Everyone who ever logged in.</span>
+          <p>
+            Online players come from the live server, everyone else from the
+            save file. See each player's level, playtime, guild and pal party,
+            with their Steam avatar. Kick, ban or whitelist from the same
+            screen.
+          </p>
+          <p>
+            Shown with demo data; pal art appears once icons are fetched.
+          </p>
+        </Entry>
+      </div>
+    </section>
+
+    <!-- ── FIG. 04 · pal box dialog ──────────────────────────────── -->
+    <section class="block block-two block-flip">
+      <Plate
+        n={4}
+        title="The pal box"
+        img={palboxLight}
+        imgDark={palboxDark}
+        alt="The pal box dialog: a five-slot party page and numbered thirty-slot storage pages laid out as a grid of cells, with empty cells drawn in and placeholder chips standing in for pal art, shown with demo data."
+        caption="party page, numbered box pages, a catch-all for pals away"
+      />
+      <div class="block-aside">
+        <Entry as="h2">
+          <span slot="eyebrow">SCREEN 03 · PAL BOX</span>
+          <span slot="title">The pal box, page by page.</span>
+          <p>
+            Open any player's storage and see their party and boxes laid out
+            like in the game: the five-slot party, numbered box pages with the
+            empty cells drawn in, and a catch-all for pals out at a base or
+            otherwise away.
+          </p>
+          <p>
+            Shown with demo data; species art appears once icons are fetched.
+          </p>
+        </Entry>
+      </div>
+    </section>
+
+    <!-- ── FIG. 05 · live map ────────────────────────────────────── -->
+    <section class="block block-full">
+      <Plate
+        n={5}
+        title="Live map"
+        img={mapLight}
+        imgDark={mapDark}
+        stamps={["MAP DATA: PRE-1.0"]}
+        alt="The live map screen showing the Palpagos Islands with player and base markers overlaid, and a layer control for the World Tree."
+        caption="Palpagos + World Tree layers · tiles fetched, never shipped"
+      />
+      <div class="block-aside">
+        <Entry as="h2" large>
+          <span slot="eyebrow">SCREEN 04 · MAP</span>
+          <span slot="title">The world map, live.</span>
+          <p>
+            Palpagos and the World Tree, with players and bases marked where
+            they really are. Map tiles aren't bundled; you fetch them once with
+            an included script, and until they are refreshed the map wears a MAP
+            DATA: PRE-1.0 stamp so you know what you're seeing.
+          </p>
+        </Entry>
+      </div>
+    </section>
+
+    <!-- ── FIG. 06 · console ─────────────────────────────────────── -->
+    <section class="block block-two">
+      <Plate
+        n={6}
+        title="Console"
+        img={consoleLight}
+        imgDark={consoleDark}
+        alt="The remote console screen: a scrolling command log, an input line, saved commands, and inline notes about the limits of the game's console."
+        caption="a real remote console, honest about its limits"
+      />
+      <div class="block-aside">
+        <Entry as="h2">
+          <span slot="eyebrow">SCREEN 05 · CONSOLE</span>
+          <span slot="title">A built-in server console.</span>
+          <p>
+            A real remote console with history and saved commands. Where the
+            game's console has quirks, Palhelm says so right next to the input
+            instead of letting you find out the hard way.
+          </p>
+        </Entry>
+      </div>
+    </section>
+
+    <!-- ── FIG. 07 · backups ─────────────────────────────────────── -->
+    <section class="block block-full">
+      <Plate
+        n={7}
+        title="Backups"
+        img={backupsLight}
+        imgDark={backupsDark}
+        stamps={["DRY-RUN FIRST"]}
+        alt="The backups screen: a list of snapshots with sizes and timestamps, retention settings, and a restore action guarded by a dry-run diff and a typed confirmation."
+        caption="scheduled + manual snapshots · restore behind a dry-run diff"
+      />
+      <div class="block-aside">
+        <Entry as="h2" large>
+          <span slot="eyebrow">SCREEN 06 · BACKUPS</span>
+          <span slot="title">Restores with a safety net.</span>
+          <p>
+            Scheduled and manual snapshots, with browsing. A restore shows you
+            the exact changes first, asks you to type RESTORE, and takes a
+            safety backup before it starts.
+          </p>
+          <p>
+            A full restore is: stop the server, restore, start it again.
+            Palhelm handles the middle step and refuses to run while the server
+            is up. Snapshots live in Palhelm's own data folder, not inside your
+            world.
+          </p>
+        </Entry>
+      </div>
+    </section>
+
+    <!-- ── FIG. 08 · config ──────────────────────────────────────── -->
+    <section class="block block-two block-flip">
+      <Plate
+        n={8}
+        title="Config editor"
+        img={configLight}
+        imgDark={configDark}
+        alt="The config editor: server settings each showing a pending value next to the live value, and the exact command to apply the change printed below."
+        caption="edits the real settings source, shows pending vs. live"
+      />
+      <div class="block-aside">
+        <Entry as="h2">
+          <span slot="eyebrow">SCREEN 07 · CONFIG</span>
+          <span slot="title">Config edits that stick.</span>
+          <p>
+            Most editors write settings that the server quietly overwrites on
+            the next boot. Palhelm edits the place your settings actually come
+            from, with your comments and ordering kept.
+          </p>
+          <p>
+            It shows what is live next to what is pending, and prints the exact
+            command to apply. Applying is left to you, on purpose.
+          </p>
+        </Entry>
+      </div>
+    </section>
+
+    <!-- ── FIG. 09 · login ─────────────────────── -->
+    <section class="block block-full block-login">
+      <Plate
+        n={9}
+        title="Login"
+        img={loginLight}
+        imgDark={loginDark}
+        alt="The login screen: the Palhelm mark on a card, above an admin sign-in form."
+        caption="admin + optional read-only viewer"
+      />
+      <div class="block-aside">
+        <div class="gold-mark"><Mark size={40} /></div>
+        <Entry as="h2" large>
+          <span slot="eyebrow">ONE LOGIN</span>
+          <span slot="title">Sign in, admin or viewer.</span>
+          <p>
+            Sign in as an admin, or as a read-only viewer for friends. Your
+            server's admin password stays on the server. It never reaches the
+            browser.
+          </p>
+        </Entry>
+      </div>
+    </section>
+
+    <!-- ── FIG. 10 · events & audit ──────────────────────────────── -->
+    <section class="block block-two">
+      <Plate
+        n={10}
+        title="Events & audit"
+        img={eventsLight}
+        imgDark={eventsDark}
+        alt="The events and audit screen: a searchable, type-filterable table of timestamped events. Joins, leaves with session durations, backups, server starts and panel connections, each tagged JOIN, LEAVE, BACKUP, SYSTEM or PANEL."
+        caption="player activity · operations · panel changes"
+      />
+      <div class="block-aside">
+        <Entry as="h2">
+          <span slot="eyebrow">SCREEN 08 · EVENTS</span>
+          <span slot="title">One log for everything.</span>
+          <p>
+            Joins and leaves with session lengths, backups, server starts and
+            panel connections. One searchable feed.
+          </p>
+        </Entry>
+      </div>
+    </section>
+
+    <!-- ── FIG. 11 · settings ────────────────────────────────────── -->
+    <section class="block block-full">
+      <Plate
+        n={11}
+        title="Settings"
+        img={settingsLight}
+        imgDark={settingsDark}
+        alt="The settings screen: authentication values set through environment variables and shown for reference, an appearance theme switch for system, dark or light, and an Integration API panel listing active keys with created dates, status and a revoke action."
+        caption="theme · integration keys · minted once, revoked instantly"
+      />
+      <div class="block-aside">
+        <Entry as="h2" large>
+          <span slot="eyebrow">SCREEN 09 · SETTINGS</span>
+          <span slot="title">Keys and appearance.</span>
+          <p>
+            Pick your theme, and create or revoke the read-only API keys your
+            bots and dashboards use. Each key is shown once, and revoking takes
+            effect immediately.
+          </p>
+          <p>
+            The admin and viewer passwords are shown here for reference only.
+            They're set outside the panel and can't be changed from it.
+          </p>
+        </Entry>
+      </div>
+    </section>
+
+    <!-- ── for your scripts · integration API ─────────────────────── -->
+    <section class="scripts">
+      <div class="scripts-head">
+        <Entry as="h2" large>
+          <span slot="eyebrow">FOR YOUR SCRIPTS</span>
+          <span slot="title">A read-only API for your own tools.</span>
+          <p>
+            Everything the panel shows, your tools can read. Create a key in
+            Settings and point a bot, a dashboard or a script at the read-only
+            API. What comes back is safe to share, even in a public Discord
+            channel.
+          </p>
+          <p class="scripts-note">
+            Full details are in <a href={DOCS_URL}>the docs</a>.
+          </p>
+        </Entry>
+      </div>
+      <CodeWell caption="TERMINAL · a read-only key in action">
+<span class="c-cmd">$ curl</span> -s https://panel.example/api/integration/v1/players \
+    -H <span class="c-sys">"Authorization: Bearer phk_1a2b3c4d_…"</span>
+
+[
+  &#123;
+    "uid": "a1b2c3d4",
+    "name": "Kestrel",
+    "level": 42,
+    "guild": "Skyward Company",
+    "lastSeen": "2026-07-12T14:03:00Z"
+  &#125;
+]
+<span class="c-ts"># name, level, guild, last seen</span>
+      </CodeWell>
+    </section>
+
+    <!-- ── built with ─────────────────────────────────────────────── -->
+    <section class="ledger">
+      <div class="ledger-head">
+        <p class="eyebrow">BUILT WITH</p>
+        <h2 class="ledger-title">One image, no surprises.</h2>
+      </div>
+      <p class="ledger-body">
+        Under the hood: one program for the panel, one web UI, shipped as a
+        single Docker image. Your data stays in one folder on the host. No
+        separate database to install or run. Full details are in
+        <a href={DOCS_URL}>the docs</a>.
+      </p>
+    </section>
+  </article>
+</Layout>
+
+<style>
+  .page {
+    max-width: var(--site-max);
+    margin-inline: auto;
+    padding: var(--space-10) var(--space-5) var(--space-8);
+  }
+
+  /* ── header ── */
+  .head { max-width: var(--measure); margin-bottom: var(--space-10); }
+  .eyebrow {
+    font: 600 var(--text-xs)/1 var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: var(--track-caps);
+    color: var(--ink-3);
+    margin-bottom: var(--space-4);
+  }
+  .title {
+    font-family: var(--font-display);
+    font-size: var(--text-5xl);
+    font-weight: 700;
+    line-height: var(--leading-tight);
+    color: var(--ink);
+    margin-bottom: var(--space-4);
+  }
+  .lead { color: var(--ink-2); font-size: var(--text-lg); }
+  .stamp-row {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-5);
+  }
+
+  /* ── plate blocks ── */
+  .block {
+    margin-bottom: var(--space-10);
+    display: grid;
+    gap: var(--space-6);
+  }
+  /* full-width: plate spans, entry sits below in a readable column */
+  .block-full { grid-template-columns: 1fr; }
+  .block-full .block-aside { max-width: var(--measure); }
+  /* two-up: plate beside its entry */
+  .block-two {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    align-items: center;
+  }
+  .block-flip .block-aside { order: -1; }
+  .block-aside { min-width: 0; }
+
+  /* login: the gold-mark stamp sits above the entry */
+  .gold-mark { margin-bottom: var(--space-3); }
+  .gold-mark :global(svg) { display: block; }
+
+  /* ── for your scripts ── */
+  .scripts {
+    margin: var(--space-10) 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-6);
+    align-items: start;
+  }
+  .scripts-head { min-width: 0; }
+  .scripts-note { margin-top: var(--space-3); }
+  .scripts code {
+    font: 500 0.92em/1 var(--font-mono);
+    color: var(--accent-ink);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 1px 5px;
+    white-space: nowrap;
+  }
+
+  /* ── ledger ── */
+  .ledger { margin-top: var(--space-10); }
+  .ledger-head { margin-bottom: var(--space-5); }
+  .ledger-title {
+    font-family: var(--font-display);
+    font-size: var(--text-4xl);
+    font-weight: 700;
+    line-height: var(--leading-tight);
+    color: var(--ink);
+    margin-top: var(--space-2);
+  }
+  .ledger-body {
+    border-top: var(--border-card) solid var(--line-strong);
+    border-bottom: var(--border-card) solid var(--line-strong);
+    padding: var(--space-4) 0;
+    color: var(--ink-2);
+    max-width: var(--measure);
+  }
+
+  /* ── responsive ── */
+  @media (max-width: 900px) {
+    .page { padding: var(--space-8) var(--space-4); }
+    .title { font-size: var(--text-4xl); }
+    .block-two,
+    .scripts { grid-template-columns: 1fr; }
+    .block-flip .block-aside { order: 0; }
+    .block { gap: var(--space-5); margin-bottom: var(--space-8); }
+  }
+</style>

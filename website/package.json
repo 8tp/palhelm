@@ -1,0 +1,19 @@
+{
+  "name": "palhelm-website",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview"
+  },
+  "dependencies": {
+    "@astrojs/svelte": "^9.0.1",
+    "@tailwindcss/vite": "^4.3.2",
+    "astro": "^7.0.7",
+    "sharp": "^0.35.3",
+    "svelte": "^5.56.4",
+    "tailwindcss": "^4.3.2"
+  }
+}

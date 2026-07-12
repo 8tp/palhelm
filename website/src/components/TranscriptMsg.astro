@@ -1,0 +1,82 @@
+---
+/**
+ * One message row: avatar (default: the mark), author, mono timestamp,
+ * body, optional embed-style inner card behind a 2px olive left rule.
+ * Slots: avatar / default (body) / embed.
+ */
+import Mark from "./Mark.astro";
+
+interface Props {
+  author: string;
+  time: string;
+  class?: string;
+}
+const { author, time, class: className } = Astro.props;
+---
+<div class:list={["msg", className]}>
+  <div class="msg-avatar">
+    <slot name="avatar">
+      <Mark size={22} />
+    </slot>
+  </div>
+  <div class="msg-main">
+    <p class="msg-head">
+      <span class="msg-author">{author}</span>
+      <span class="msg-time">{time}</span>
+    </p>
+    <div class="msg-body"><slot /></div>
+    {Astro.slots.has("embed") && (
+      <div class="msg-embed"><slot name="embed" /></div>
+    )}
+  </div>
+</div>
+
+<style>
+  .msg {
+    display: flex;
+    gap: var(--space-3);
+    min-width: 0;
+  }
+  .msg-avatar {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-2);
+    border: var(--border-ctl) solid var(--line);
+    border-radius: 50%;
+  }
+  .msg-main { min-width: 0; flex: 1; }
+  .msg-head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+  .msg-author {
+    font-weight: 600;
+    font-size: var(--text-md);
+    color: var(--ink);
+  }
+  .msg-time {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+  .msg-body {
+    color: var(--ink-2);
+    font-size: var(--text-md);
+    margin-top: 2px;
+  }
+  .msg-embed {
+    margin-top: var(--space-2);
+    background: var(--surface-2);
+    border-left: 2px solid var(--accent);
+    border-radius: 0 6px 6px 0;
+    padding: var(--space-3) var(--space-4);
+    color: var(--ink-2);
+    font-size: var(--text-sm);
+  }
+</style>

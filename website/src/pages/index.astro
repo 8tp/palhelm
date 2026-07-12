@@ -1,0 +1,555 @@
+---
+import { Image } from "astro:assets";
+import Layout from "../layouts/Layout.astro";
+import Mark from "../components/Mark.astro";
+import Stamp from "../components/Stamp.astro";
+import Button from "../components/Button.astro";
+import Plate from "../components/Plate.astro";
+import Entry from "../components/Entry.astro";
+import DuoCards from "../components/landing/DuoCards.astro";
+import CodeWell from "../components/panel/CodeWell.astro";
+
+import dashLight from "../assets/shots/panel-dashboard-light.png";
+import dashDark from "../assets/shots/panel-dashboard-dark.png";
+
+const GITHUB_URL = "https://github.com/8tp/palhelm";
+
+const INSTALL_GUIDE_URL = "https://docs.palhelm.com/getting-started/install/";
+
+// Rendered as an expression (not inline slot text) so the newlines survive
+// Astro's JSX whitespace collapse and the block prints exactly as written.
+const composeYaml = `palhelm:
+  image: ghcr.io/8tp/palhelm:latest
+  depends_on: [palworld]
+  ports:
+    - "127.0.0.1:8080:8080"   # private interface only
+  environment:
+    PALHELM_ADMIN_PASSWORD: "choose-a-strong-password"
+    PALWORLD_REST_URL: "http://palworld:8212"
+    PALWORLD_ADMIN_PASSWORD: "same-as-the-game-server"
+    PALWORLD_RCON_ADDR: "palworld:25575"
+    PALWORLD_SAVE_DIR: "/game/Saved"
+  volumes:
+    - ./palworld/Saved:/game/Saved:ro
+    - ./palhelm-data:/data`;
+
+const fieldNotes = [
+  {
+    eyebrow: "01",
+    title: "Read-only by design",
+    body: "Palhelm never writes to your world. It reads the save file, watches the player list, and sends only the commands you tell it to. If a game update changes the save format, Palhelm says so and keeps working instead of breaking.",
+  },
+  {
+    eyebrow: "02",
+    title: "It reads the save file directly",
+    body: "Players, pals, guilds and bases come straight out of the save file, including things the game's own tools don't show. Your save is read, never touched.",
+  },
+  {
+    eyebrow: "03",
+    title: "API keys that are safe to share",
+    body: "Give your Discord bot or dashboard a read-only key. Responses leave out Steam IDs, live positions and anything private, so a leaked key exposes nothing. Revoke any key instantly.",
+  },
+  {
+    eyebrow: "04",
+    title: "A config editor that tells the truth",
+    body: "Most editors write settings that the server quietly overwrites on the next boot. Palhelm edits the place your settings actually come from, shows what is live next to what is pending, and prints the exact command to apply.",
+  },
+  {
+    eyebrow: "05",
+    title: "Backups you can trust",
+    body: "Snapshots on a schedule, plus manual ones when you want them. Before a restore you see exactly what would change, you type RESTORE to confirm, and a safety backup is taken first, automatically.",
+  },
+  {
+    eyebrow: "06",
+    title: "One container",
+    body: "The whole panel is a single Docker image with its data in one folder. No database to run, nothing extra to install. It sits beside the Palworld container you already have.",
+  },
+];
+
+const ledger = [
+  { quote: "Restarts stay in your hands. Palhelm won't pretend it can restart your server.", src: "README.md" },
+  { quote: "Vanilla RCON mangles spaces in Broadcast; the console says so inline.", src: "console" },
+  { quote: "Never expose the panel to the open internet.", src: "README · security" },
+  { quote: "Player notes are not a whitelist.", src: "README.md" },
+];
+
+const tallies = [
+  { n: "50", label: "documented endpoints" },
+  { n: "32", label: "slash commands" },
+  { n: "400+", label: "tests" },
+  { n: "9", label: "screens" },
+  { n: "2", label: "themes" },
+  { n: "1", label: "container" },
+];
+---
+<Layout
+  title="Palhelm · a self-hosted panel and Discord bot for Palworld servers"
+  description="Palhelm is a self-hosted control panel and Discord companion for your Palworld server. One Docker container, five minutes to set up."
+  ogImage="/og-dashboard.png"
+>
+  <!-- ============ HERO ============ -->
+  <section class="hero" aria-labelledby="hero-title">
+    {/* Ambient cover art: the login hero background, animated (grok
+        image_to_video from assets/v2-explorations/login/hero-paper.png,
+        ping-pong loop). Decorative only, veiled by the theme's own --bg so
+        text contrast never depends on the footage. */}
+    <div class="hero-ambient" aria-hidden="true">
+      <video
+        class="hero-video"
+        muted
+        loop
+        playsinline
+        autoplay
+        preload="metadata"
+        poster="/hero/hero-poster.jpg"
+        disablepictureinpicture
+        tabindex="-1"
+      >
+        <source src="/hero/hero-ambient.webm" type="video/webm" />
+        <source src="/hero/hero-ambient.mp4" type="video/mp4" />
+      </video>
+      <div class="hero-veil"></div>
+    </div>
+    <div class="hero-container">
+    <div class="hero-inner">
+      <div class="hero-mark"><Mark size={64} /></div>
+      <p class="hero-eyebrow">FOR PALWORLD DEDICATED SERVERS</p>
+      <h1 id="hero-title" class="hero-title">Take the helm.</h1>
+      <p class="hero-lead">
+        Palhelm is a control panel and Discord companion for your Palworld
+        server. You host it yourself, in one container. It reads your world and
+        never writes to it.
+      </p>
+      <div class="hero-cta">
+        <Button variant="primary" href={INSTALL_GUIDE_URL}>Deploy the panel</Button>
+        <Button href="/bot">Meet the bot</Button>
+      </div>
+      <div class="hero-stamps">
+        <Stamp tone="ok" tilt>APACHE-2.0</Stamp>
+        <Stamp tone="idle" tilt>READ-ONLY SAVES</Stamp>
+      </div>
+    </div>
+    </div>
+  </section>
+
+  <script>
+    // Respect reduced-motion for the ambient hero footage, live.
+    const v = document.querySelector<HTMLVideoElement>(".hero-video");
+    if (v) {
+      const rm = matchMedia("(prefers-reduced-motion: reduce)");
+      const apply = () => {
+        if (rm.matches) {
+          v.pause();
+          v.removeAttribute("autoplay");
+        } else {
+          v.play().catch(() => {});
+        }
+      };
+      rm.addEventListener("change", apply);
+      apply();
+    }
+  </script>
+
+  <!-- ============ FIG. 01 · the panel ============ -->
+  <section class="band" aria-label="The panel">
+    <Plate
+      n={1}
+      title="The panel"
+      img={dashLight}
+      imgDark={dashDark}
+      caption="use the theme toggle above to see the dark theme"
+      alt="Palhelm dashboard: FPS and players-online charts over time, connection health, base-camp count, in-game day, and uptime."
+      eager
+    />
+  </section>
+
+  <!-- ============ THE TWO PARTS ============ -->
+  <section class="band" aria-labelledby="duo-title">
+    <header class="section-head">
+      <p class="section-eyebrow">THE TWO PARTS</p>
+      <h2 id="duo-title" class="section-title">A panel and a bot</h2>
+    </header>
+    <DuoCards />
+  </section>
+
+  <!-- ============ WHY PALHELM ============ -->
+  <section class="band" aria-labelledby="notes-title">
+    <header class="section-head">
+      <p class="section-eyebrow">WHY PALHELM</p>
+      <h2 id="notes-title" class="section-title">What makes it different</h2>
+    </header>
+    <div class="notes-grid">
+      {fieldNotes.map((note) => (
+        <div class="note" data-reveal>
+          <Entry as="h3">
+            <span slot="eyebrow">{note.eyebrow}</span>
+            <span slot="title">{note.title}</span>
+            {note.body}
+          </Entry>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <!-- ============ GET STARTED ============ -->
+  <section class="band" aria-labelledby="start-title">
+    <header class="section-head">
+      <p class="section-eyebrow">GET STARTED</p>
+      <h2 id="start-title" class="section-title">Two services, one file</h2>
+      <p class="section-lead">
+        You need Docker, your existing Palworld server container, and RCON plus
+        the REST API enabled on it. Palhelm binds to a private interface and
+        never needs to be reachable from the internet; outbound access is only
+        used for optional extras like map tiles and Steam avatars.
+      </p>
+    </header>
+    <div class="start-well" data-reveal>
+      <CodeWell caption="COMPOSE · the palhelm service, next to your existing palworld one">{composeYaml}</CodeWell>
+      <p class="start-more">
+        <a class="start-link" href={INSTALL_GUIDE_URL}>Full install guide →</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ NO OVERPROMISES · quote ledger ============ -->
+  <section class="band" aria-labelledby="honest-title">
+    <header class="section-head">
+      <p class="section-eyebrow">LIMITS</p>
+      <h2 id="honest-title" class="section-title">What it won't do</h2>
+    </header>
+    <dl class="ledger" data-reveal>
+      {ledger.map((row) => (
+        <div class="ledger-row">
+          <dt class="ledger-quote">“{row.quote}”</dt>
+          <dd class="ledger-src">{row.src}</dd>
+        </div>
+      ))}
+    </dl>
+  </section>
+
+  <!-- ============ TALLIES · stamped numbers strip ============ -->
+  <section class="band" aria-label="By the numbers">
+    <ul class="tallies" data-reveal>
+      {tallies.map((t) => (
+        <li class="tally">
+          <span class="tally-n">{t.n}</span>
+          <span class="tally-label">{t.label}</span>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <!-- ============ OPEN SOURCE CTA ============ -->
+  <section class="band" aria-labelledby="cta-title">
+    <div class="cta" data-reveal>
+      <div class="cta-mark"><Mark size={40} /></div>
+      <h2 id="cta-title" class="cta-title">Open source, Apache-2.0.</h2>
+      <p class="cta-body">
+        Built for Palworld 1.0. Palhelm is an unaffiliated fan tool:
+        self-hosted, yours to run, yours to change. Open-source release is in
+        preparation.
+      </p>
+      <div class="cta-actions">
+        <Button href={GITHUB_URL}>Star on GitHub ↗</Button>
+      </div>
+    </div>
+  </section>
+
+  <script is:inline>
+    /* Scroll reveal: one subtle fade/rise, once. Reduced-motion returns before
+       adding the gate class, so nothing is ever hidden without JS or when the
+       viewer asked for less motion. */
+    (() => {
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      const els = document.querySelectorAll("[data-reveal]");
+      if (!els.length || !("IntersectionObserver" in window)) return;
+      document.documentElement.classList.add("reveal-ready");
+      const io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (e.isIntersecting) {
+              e.target.classList.add("is-revealed");
+              io.unobserve(e.target);
+            }
+          }
+        },
+        { rootMargin: "0px 0px -8% 0px", threshold: 0.08 }
+      );
+      els.forEach((el) => io.observe(el));
+    })();
+  </script>
+</Layout>
+
+<style>
+  /* ---- section rhythm: --site-max centered, generous --space-10 ---- */
+  .band {
+    max-width: var(--site-max);
+    margin-inline: auto;
+    padding: 0 var(--space-5);
+    margin-top: var(--space-10);
+  }
+  .band:first-of-type { margin-top: var(--space-8); }
+
+  .section-head { margin-bottom: var(--space-6); max-width: var(--measure); }
+  .section-eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--track-caps);
+    color: var(--accent-ink);
+    margin-bottom: var(--space-2);
+  }
+  .section-title {
+    font-family: var(--font-display);
+    font-size: var(--text-4xl);
+    font-weight: 700;
+    line-height: var(--leading-tight);
+    color: var(--ink);
+  }
+  .section-lead {
+    color: var(--ink-2);
+    margin-top: var(--space-3);
+    max-width: var(--measure);
+  }
+
+  /* ---- hero ---- */
+  .hero {
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-ambient {
+    position: absolute;
+    inset: 0;
+  }
+  .hero-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  /* The veil is the theme's own background color, heavier where the text sits,
+     so both contrast and the dark mood come from tokens, not the footage. */
+  .hero-veil {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      color-mix(in srgb, var(--bg) 85%, transparent) 0%,
+      color-mix(in srgb, var(--bg) 45%, transparent) 48%,
+      color-mix(in srgb, var(--bg) 6%, transparent) 100%
+    );
+  }
+  :global(:root[data-theme="dark"]) .hero-veil {
+    background: linear-gradient(
+      100deg,
+      color-mix(in srgb, var(--bg) 92%, transparent) 0%,
+      color-mix(in srgb, var(--bg) 72%, transparent) 48%,
+      color-mix(in srgb, var(--bg) 44%, transparent) 100%
+    );
+  }
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme="light"])) .hero-veil {
+      background: linear-gradient(
+        100deg,
+        color-mix(in srgb, var(--bg) 92%, transparent) 0%,
+        color-mix(in srgb, var(--bg) 72%, transparent) 48%,
+        color-mix(in srgb, var(--bg) 44%, transparent) 100%
+      );
+    }
+  }
+  .hero-container {
+    position: relative;
+    max-width: var(--site-max);
+    margin-inline: auto;
+    padding: calc(var(--space-10) * 2) var(--space-5) calc(var(--space-10) + var(--space-8));
+  }
+  .hero-inner { max-width: 40ch; }
+  .hero-mark {
+    margin-bottom: var(--space-5);
+    transform-origin: center;
+    display: inline-block;
+    /* stamp-press on load: scale 1.06 → settle → 1, ~400ms, like the login. */
+    animation: stamp-press 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes stamp-press {
+    0% { opacity: 0; transform: scale(1.06); }
+    55% { opacity: 1; transform: scale(0.985); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-mark { animation: none; opacity: 1; transform: none; }
+  }
+  .hero-eyebrow {
+    /* one line on desktop; the 40ch column only binds the prose */
+    width: max-content;
+    max-width: calc(100vw - 2 * var(--space-5));
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--track-caps);
+    color: var(--ink-3);
+    margin-bottom: var(--space-3);
+  }
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: var(--text-6xl);
+    font-weight: 700;
+    line-height: 1.02;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: var(--space-5);
+  }
+  .hero-lead {
+    font-size: var(--text-lg);
+    color: var(--ink-2);
+    max-width: var(--measure);
+    margin-bottom: var(--space-6);
+  }
+  .hero-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+  }
+  .hero-stamps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: center;
+  }
+
+  /* ---- field notes 2-col ---- */
+  .notes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-6) var(--space-8);
+  }
+  .note {
+    border-top: var(--border-ctl) solid var(--line);
+    padding-top: var(--space-4);
+  }
+
+  /* ---- honest ledger: ruled rows, quote + mono source ---- */
+  .ledger {
+    margin: 0;
+    border-top: var(--border-card) solid var(--line-strong);
+    border-bottom: var(--border-card) solid var(--line-strong);
+  }
+  .ledger-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-6);
+    padding: var(--space-4) var(--space-1);
+    border-top: var(--border-ctl) solid var(--line);
+  }
+  .ledger-row:first-child { border-top: none; }
+  .ledger-quote {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: var(--text-xl);
+    line-height: var(--leading-tight);
+    color: var(--ink);
+    margin: 0;
+    max-width: 62ch;
+  }
+  .ledger-src {
+    margin: 0;
+    flex: none;
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--track-caps);
+    color: var(--ink-3);
+    white-space: nowrap;
+  }
+
+  /* ---- tallies: mono strip, ruled top/bottom, NOT stat cards ---- */
+  .tallies {
+    list-style: none;
+    margin: 0;
+    padding: var(--space-5) 0;
+    border-top: var(--border-card) solid var(--line-strong);
+    border-bottom: var(--border-card) solid var(--line-strong);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4) var(--space-8);
+    align-items: baseline;
+  }
+  .tally {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    font-family: var(--font-mono);
+  }
+  .tally-n {
+    font-size: var(--text-2xl);
+    font-weight: 600;
+    color: var(--ink);
+    font-feature-settings: "tnum" 1;
+  }
+  .tally-label {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--track-caps);
+    color: var(--ink-3);
+  }
+
+  /* ---- open source CTA card ---- */
+  .cta {
+    background: var(--surface);
+    border: var(--border-card) solid var(--line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: var(--space-8);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .cta-mark { margin-bottom: var(--space-4); }
+  .cta-title {
+    font-family: var(--font-display);
+    font-size: var(--text-4xl);
+    font-weight: 700;
+    line-height: var(--leading-tight);
+    color: var(--ink);
+    margin-bottom: var(--space-3);
+  }
+  .cta-body {
+    color: var(--ink-2);
+    max-width: 54ch;
+    margin-bottom: var(--space-6);
+  }
+
+  /* ---- get started: compose well + install-guide link ---- */
+  .start-more { margin-top: var(--space-4); }
+  .start-link {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--accent-ink);
+    letter-spacing: 0.02em;
+  }
+
+  /* ---- scroll reveal (gate class added by JS only; see inline script) ---- */
+  :global(.reveal-ready) [data-reveal] {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 520ms ease, transform 520ms ease;
+    will-change: opacity, transform;
+  }
+  :global(.reveal-ready) [data-reveal].is-revealed {
+    opacity: 1;
+    transform: none;
+  }
+
+  @media (max-width: 900px) {
+    .notes-grid { grid-template-columns: 1fr; gap: var(--space-5); }
+    .ledger-row { flex-direction: column; gap: var(--space-2); }
+    .ledger-quote { font-size: var(--text-lg); }
+    .cta { padding: var(--space-6) var(--space-4); }
+  }
+</style>

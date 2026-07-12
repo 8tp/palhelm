@@ -1,0 +1,48 @@
+---
+/**
+ * Content entry: mono eyebrow, serif title, short honest body.
+ * Slots: eyebrow / title / default (body).
+ */
+interface Props {
+  /** heading element for the title, default h3 */
+  as?: "h2" | "h3" | "h4";
+  /** bump the title from --text-xl to --text-2xl */
+  large?: boolean;
+  class?: string;
+}
+const { as: Heading = "h3", large = false, class: className } = Astro.props;
+---
+<div class:list={["entry", className]}>
+  {Astro.slots.has("eyebrow") && (
+    <p class="entry-eyebrow"><slot name="eyebrow" /></p>
+  )}
+  <Heading class:list={["entry-title", { "entry-title-lg": large }]}>
+    <slot name="title" />
+  </Heading>
+  <div class="entry-body"><slot /></div>
+</div>
+
+<style>
+  .entry-eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: var(--track-caps);
+    color: var(--accent-ink);
+    margin-bottom: var(--space-2);
+  }
+  .entry-title {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: 700;
+    line-height: var(--leading-tight);
+    color: var(--ink);
+    margin-bottom: var(--space-2);
+  }
+  .entry-title-lg { font-size: var(--text-2xl); }
+  .entry-body {
+    color: var(--ink-2);
+    max-width: var(--measure);
+  }
+</style>

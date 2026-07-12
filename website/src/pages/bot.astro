@@ -1,0 +1,655 @@
+---
+import { Image } from "astro:assets";
+import Layout from "../layouts/Layout.astro";
+import Entry from "../components/Entry.astro";
+import Stamp from "../components/Stamp.astro";
+import Button from "../components/Button.astro";
+import Transcript from "../components/Transcript.astro";
+import TranscriptMsg from "../components/TranscriptMsg.astro";
+import CommandLedger from "../components/bot/CommandLedger.svelte";
+import mapLight from "../assets/shots/panel-map-light.png";
+
+const GITHUB_URL = "https://github.com/8tp/palhelm-bot";
+---
+<Layout
+  title="The Discord bot · Palhelm"
+  description="Your server in Discord: the Palhelm bot posts live server events and answers 32 slash commands. Everyday commands only read; admin commands take two approvals."
+  ogImage="/og-bot.png"
+>
+  <div class="page">
+    <!-- ── page header ─────────────────────────────────── -->
+    <header class="head">
+      <p class="eyebrow">The Discord bot</p>
+      <h1>Your server, in Discord.</h1>
+      <p class="lead">
+        The bot brings your server into Discord. It posts what happens as it
+        happens and answers 32 slash commands. Everyday commands only read; the
+        five admin commands need both a Discord admin role and the panel's own
+        admin login.
+      </p>
+      <div class="stamps">
+        <Stamp tilt>32 slash commands</Stamp>
+        <Stamp tone="ok" tilt>read-only</Stamp>
+      </div>
+    </header>
+
+    <!-- ── example hero ──────────────────── -->
+    <section class="hero" aria-label="An example Discord channel">
+      <Transcript caption="EXAMPLE · #palworld">
+        <TranscriptMsg author="HaruQ" time="14:02">
+          <span slot="avatar" class="who">H</span>
+          <span class="slash">/status</span>
+        </TranscriptMsg>
+
+        <TranscriptMsg author="palhelm" time="14:02">
+          My Palworld Server is up.
+          <div slot="embed" class="embed">
+            <p class="embed-title"><span class="ok">🟢</span> My Palworld Server · online</p>
+            <dl class="fields">
+              <div><dt>version</dt><dd>v1.0.0.100427</dd></div>
+              <div><dt>players</dt><dd>2 / 16</dd></div>
+              <div><dt>world day</dt><dd>143</dd></div>
+              <div><dt>fps</dt><dd>59</dd></div>
+              <div><dt>uptime</dt><dd>6d 4h</dd></div>
+            </dl>
+          </div>
+        </TranscriptMsg>
+
+        <TranscriptMsg author="palhelm" time="15:47">
+          <p class="event"><span class="ok">🟢</span> Kestrel came online</p>
+        </TranscriptMsg>
+
+        <TranscriptMsg author="palhelm" time="04:00">
+          <p class="event">
+            <span class="ok">✅</span> Backup complete:
+            <span class="mono">world_2026-07-12_0400.tar.gz</span> · 412 MB ·
+            scheduled
+          </p>
+        </TranscriptMsg>
+      </Transcript>
+    </section>
+
+    <!-- ── the command ledger ──────────────────────────── -->
+    <section class="block" aria-labelledby="ledger-h">
+      <div class="section-head">
+        <p class="eyebrow">The ledger</p>
+        <h2 id="ledger-h">All 32 commands</h2>
+        <p class="section-lead">
+          Grouped by what they do. Five admin commands are marked ADMIN and
+          need a Discord admin role.
+        </p>
+      </div>
+      <CommandLedger client:visible />
+    </section>
+
+    <!-- ── standout entries ────────────────────────────── -->
+    <section class="block" aria-labelledby="notes-h">
+      <div class="section-head">
+        <p class="eyebrow">Highlights</p>
+        <h2 id="notes-h">Five commands worth a closer look.</h2>
+      </div>
+
+      <!-- /ask -->
+      <div class="duo">
+        <div class="duo-text">
+          <Entry as="h3" large>
+            <span slot="eyebrow">/ask</span>
+            <span slot="title">An assistant that cites its sources.</span>
+            <p>
+              Ask about Palworld or about your server. The bot checks the live
+              server and its built-in game guide first, searches the web when it
+              needs to, and links where every answer came from. It refuses
+              anything that isn't Palworld.
+            </p>
+            <p>
+              The assistant is optional and stays off until you add an AI
+              provider key (OpenRouter). Answers cost whatever your chosen model
+              charges. Questions about your server send only the specific facts
+              a question needs to the model; the docs cover the provider privacy
+              requirements.
+            </p>
+          </Entry>
+        </div>
+        <div class="duo-fig">
+          <Transcript caption="EXAMPLE · /ask · sources cited">
+            <TranscriptMsg author="HaruQ" time="09:12">
+              <span slot="avatar" class="who">H</span>
+              <span class="slash">/ask</span> what does meteorite ore do?
+            </TranscriptMsg>
+            <TranscriptMsg author="palhelm" time="09:12">
+              <p>
+                Meteorite ore is a late-game refining material. You process it
+                in a production line to craft the strongest ammunition and
+                legendary-tier gear. It surfaces in the volcanic region and
+                around meteor craters, mined with a high-tier pickaxe or a
+                mining pal.
+              </p>
+              <p class="cite">
+                <span class="cite-label">source</span>
+                <span class="mono">palworld.wiki.gg/wiki/Meteorite_Ore</span>
+              </p>
+            </TranscriptMsg>
+          </Transcript>
+        </div>
+      </div>
+
+      <!-- /breedpath -->
+      <div class="duo duo-rev">
+        <div class="duo-text">
+          <Entry as="h3" large>
+            <span slot="eyebrow">/breedpath</span>
+            <span slot="title">Breeding plans from what you own.</span>
+            <p>
+              Tell it what you want to hatch. It looks at what you already own
+              and lays out the shortest chain of pairings, step by step. If a
+              pal can't be bred, it says so. It doesn't invent a path.
+            </p>
+          </Entry>
+        </div>
+        <div class="duo-fig">
+          <Transcript caption="EXAMPLE · /breedpath · illustrative chain">
+            <TranscriptMsg author="tessellate" time="21:30">
+              <span slot="avatar" class="who">T</span>
+              <span class="slash">/breedpath</span> anubis
+            </TranscriptMsg>
+            <TranscriptMsg author="palhelm" time="21:30">
+              <p>Shortest chain to Anubis, from your box:</p>
+              <ol class="steps">
+                <li><span class="ok">✅</span> Penking <span class="dim">(owned)</span></li>
+                <li><span class="ok">✅</span> Vanwyrm <span class="dim">(owned)</span></li>
+                <li><span class="egg">🥚</span> Penking × Vanwyrm → Bushi</li>
+                <li><span class="egg">🥚</span> Bushi × Penking → Anubis</li>
+              </ol>
+            </TranscriptMsg>
+          </Transcript>
+        </div>
+      </div>
+
+      <!-- charts -->
+      <div class="duo">
+        <div class="duo-text">
+          <Entry as="h3" large>
+            <span slot="eyebrow">/leaderboard · /trends</span>
+            <span slot="title">Charts in the channel.</span>
+            <p>
+              Leaderboards, trends and collection progress come back as clean
+              charts that match the panel's look, ready to read at a glance.
+            </p>
+          </Entry>
+        </div>
+        <div class="duo-fig">
+          <figure class="field-card">
+            <svg
+              class="chart"
+              viewBox="0 0 480 226"
+              role="img"
+              aria-label="Bar chart, leaderboard by level: Kestrel 52, mika_o 48, HaruQ 44, VossR 39, tessellate 31"
+            >
+              <!-- baseline -->
+              <line x1="100" y1="16" x2="100" y2="206" class="axis" />
+              <!-- rows -->
+              <g class="row">
+                <text x="92" y="34" class="name">Kestrel</text>
+                <rect x="100" y="21" width="350" height="20" rx="2" class="bar" />
+                <text x="456" y="34" class="val">52</text>
+              </g>
+              <g class="row">
+                <text x="92" y="72" class="name">mika_o</text>
+                <rect x="100" y="59" width="323" height="20" rx="2" class="bar" />
+                <text x="429" y="72" class="val">48</text>
+              </g>
+              <g class="row">
+                <text x="92" y="110" class="name">HaruQ</text>
+                <rect x="100" y="97" width="296" height="20" rx="2" class="bar" />
+                <text x="402" y="110" class="val">44</text>
+              </g>
+              <g class="row">
+                <text x="92" y="148" class="name">VossR</text>
+                <rect x="100" y="135" width="262" height="20" rx="2" class="bar" />
+                <text x="368" y="148" class="val">39</text>
+              </g>
+              <g class="row">
+                <text x="92" y="186" class="name">tessellate</text>
+                <rect x="100" y="173" width="209" height="20" rx="2" class="bar" />
+                <text x="315" y="186" class="val">31</text>
+              </g>
+            </svg>
+            <figcaption class="field-cap">
+              EXAMPLE · /leaderboard level · re-created from the bot's chart output
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <!-- activity feed -->
+      <div class="duo duo-rev">
+        <div class="duo-text">
+          <Entry as="h3" large>
+            <span slot="eyebrow">history · dispatch</span>
+            <span slot="title">History that survives restarts.</span>
+            <p>
+              The bot keeps its own history: who joined, who left and for how
+              long, milestones, trends and an optional weekly digest. Restarts
+              don't lose any of it.
+            </p>
+          </Entry>
+        </div>
+        <div class="duo-fig">
+          <Transcript caption="EXAMPLE · #palworld · activity feed">
+            <TranscriptMsg author="palhelm" time="18:20">
+              <p class="event"><span class="ok">🟢</span> mika_o came online</p>
+              <p class="event">
+                <span class="danger">🔴</span> VossR went offline ·
+                <span class="dim">played 2h 14m</span>
+              </p>
+            </TranscriptMsg>
+          </Transcript>
+        </div>
+      </div>
+
+      <!-- maps -->
+      <div class="duo">
+        <div class="duo-text">
+          <Entry as="h3" large>
+            <span slot="eyebrow">/map</span>
+            <span slot="title">Maps in the channel.</span>
+            <p>
+              Ask for the map and get a picture with bases and online players
+              marked. If map tiles aren't installed you get a clean text summary
+              instead of a failure.
+            </p>
+          </Entry>
+        </div>
+        <div class="duo-fig">
+          <figure class="field-card map-fig">
+            <div class="map-crop">
+              <Image
+                src={mapLight}
+                alt="The Palpagos Islands world map with guild bases and live player markers plotted over the terrain tiles."
+                widths={[420, 640]}
+                sizes="(max-width: 900px) 100vw, 480px"
+                loading="lazy"
+              />
+            </div>
+            <figcaption class="field-cap">
+              EXAMPLE · /map palpagos · bases and live players plotted
+            </figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── can't-break-it design ───────────────────────── -->
+    <section class="block safety" aria-labelledby="safe-h">
+      <div class="section-head safe-head">
+        <div>
+          <p class="eyebrow">By design</p>
+          <h2 id="safe-h">Nothing it says can hurt the server.</h2>
+        </div>
+        <Stamp tone="ok" tilt>read-only</Stamp>
+      </div>
+      <dl class="guards">
+        <div class="guard">
+          <dt>The read key is safe in public.</dt>
+          <dd>
+            Everyday commands use a read-only key, and what it returns leaves
+            out anything private. Safe even in a public channel.
+          </dd>
+        </div>
+        <div class="guard">
+          <dt>Admin commands need two approvals.</dt>
+          <dd>
+            The five admin commands need a Discord admin role and the panel's
+            own admin login. The everyday key alone can't trigger anything.
+          </dd>
+        </div>
+        <div class="guard">
+          <dt>It asks Discord for almost nothing.</dt>
+          <dd>
+            The bot can't read your messages and doesn't track member presence.
+          </dd>
+        </div>
+        <div class="guard">
+          <dt>It watches, it doesn't touch.</dt>
+          <dd>
+            If the server looks unhealthy the bot posts an alert. It never
+            restarts or fixes anything on its own.
+          </dd>
+        </div>
+      </dl>
+    </section>
+
+    <!-- ── footer CTA ──────────────────────────────────── -->
+    <section class="cta">
+      <p class="cta-lead">
+        The panel is where you run the server. The bot is how Discord sees it.
+      </p>
+      <div class="cta-actions">
+        <Button variant="primary" href="/panel">See the panel</Button>
+        <Button href={GITHUB_URL}>View on GitHub ↗</Button>
+      </div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .page {
+    max-width: var(--site-max);
+    margin-inline: auto;
+    padding: var(--space-10) var(--space-5) 0;
+  }
+
+  /* ── shared type ── */
+  .eyebrow {
+    font: 600 var(--text-xs) / 1 var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: var(--track-caps);
+    color: var(--accent-ink);
+    margin-bottom: var(--space-3);
+  }
+  h1 {
+    font-size: var(--text-5xl);
+    line-height: var(--leading-tight);
+    color: var(--ink);
+    margin-bottom: var(--space-4);
+  }
+  h2 {
+    font-size: var(--text-4xl);
+    line-height: var(--leading-tight);
+    color: var(--ink);
+  }
+
+  /* ── page header ── */
+  .head {
+    margin-bottom: var(--space-8);
+  }
+  .lead {
+    color: var(--ink-2);
+    max-width: var(--measure);
+    font-size: var(--text-lg);
+    margin-bottom: var(--space-5);
+  }
+  .stamps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  /* ── hero example ── */
+  .hero {
+    margin-bottom: var(--space-10);
+  }
+  .hero :global(.transcript-wrap) {
+    max-width: 640px;
+  }
+
+  /* ── blocks ── */
+  .block {
+    margin-bottom: var(--space-10);
+  }
+  .section-head {
+    margin-bottom: var(--space-6);
+  }
+  .section-lead {
+    color: var(--ink-2);
+    max-width: var(--measure);
+    margin-top: var(--space-3);
+  }
+
+  /* ── standout duos ── */
+  .duo {
+    display: flex;
+    gap: var(--space-8);
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: var(--space-10);
+  }
+  .duo:last-child {
+    margin-bottom: 0;
+  }
+  .duo-rev {
+    flex-direction: row-reverse;
+  }
+  .duo-text,
+  .duo-fig {
+    flex: 1 1 320px;
+    min-width: 0;
+  }
+
+  /* ── example-card inner styling (children of the dark card) ── */
+  .slash {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    color: var(--accent-ink);
+  }
+  .who {
+    font: 600 13px / 1 var(--font-mono);
+    color: var(--ink-2);
+  }
+  .embed-title {
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: var(--space-1);
+  }
+  .fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-2) var(--space-6);
+    margin-top: var(--space-2);
+  }
+  .fields div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .fields dt {
+    font: 600 var(--text-xs) / 1 var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: var(--track-caps);
+    color: var(--ink-3);
+  }
+  .fields dd {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--ink);
+  }
+  .event {
+    line-height: var(--leading-body);
+  }
+  .event + .event {
+    margin-top: var(--space-1);
+  }
+  .mono {
+    font-family: var(--font-mono);
+    font-size: 0.92em;
+  }
+  .ok {
+    color: var(--ok-ink);
+  }
+  .danger {
+    color: var(--danger-ink);
+  }
+  .egg {
+    /* keep the egg emoji at author color */
+    color: var(--ink);
+  }
+  .dim {
+    color: var(--ink-3);
+  }
+  .cite {
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--ink-3);
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+  }
+  .cite-label {
+    font: 600 var(--text-xs) / 1 var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: var(--track-caps);
+    color: var(--accent-ink);
+  }
+  .steps {
+    list-style: none;
+    margin-top: var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+  .steps li {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    color: var(--ink);
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+  }
+
+  /* ── dark card (chart + map figure), fixed dark values ── */
+  .field-card {
+    /* theme-constant dark surface, same trick as the example card shell */
+    --dk-surface: #221a0b;
+    --dk-line: #5a4c2b;
+    --dk-ink: #efe6cd;
+    --dk-ink-2: #bfb28a;
+    --dk-ink-3: #9e9166;
+    --dk-accent: #93a653;
+    background: var(--dk-surface);
+    border: var(--border-card) solid var(--dk-line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: var(--space-4);
+  }
+  .field-cap {
+    font: 600 var(--text-xs) / 1.4 var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: var(--track-caps);
+    color: var(--dk-ink-3);
+    margin-top: var(--space-3);
+  }
+  .chart {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .chart .bar {
+    fill: var(--dk-accent);
+  }
+  .chart .axis {
+    stroke: var(--dk-line);
+    stroke-width: 1;
+  }
+  .chart .name {
+    fill: var(--dk-ink-2);
+    font: 600 13px / 1 var(--font-mono);
+    text-anchor: end;
+  }
+  .chart .val {
+    fill: var(--dk-ink);
+    font: 600 13px / 1 var(--font-mono);
+    text-anchor: start;
+  }
+
+  /* ── map figure: square crop ── */
+  .map-crop {
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: 6px;
+    line-height: 0;
+  }
+  .map-crop :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+  }
+
+  /* ── safety section ── */
+  .safe-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+  .guards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0;
+    border-top: var(--border-ctl) solid var(--line-strong);
+  }
+  .guard {
+    padding: var(--space-4) var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--line);
+  }
+  .guard:nth-child(odd) {
+    border-right: 1px solid var(--line);
+    padding-left: 0;
+  }
+  .guard:nth-child(even) {
+    padding-left: var(--space-4);
+  }
+  .guard dt {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: var(--space-2);
+  }
+  .guard dd {
+    color: var(--ink-2);
+    font-size: var(--text-md);
+    line-height: var(--leading-body);
+  }
+
+  /* ── footer CTA ── */
+  .cta {
+    border-top: var(--border-card) solid var(--line);
+    margin-top: var(--space-10);
+    padding-top: var(--space-8);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-6);
+    flex-wrap: wrap;
+  }
+  .cta-lead {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    line-height: var(--leading-tight);
+    color: var(--ink);
+    max-width: 40ch;
+  }
+  .cta-actions {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 900px) {
+    .page {
+      padding: var(--space-8) var(--space-4) 0;
+    }
+    h1 {
+      font-size: var(--text-4xl);
+    }
+    .duo,
+    .duo-rev {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .guards {
+      grid-template-columns: 1fr;
+    }
+    .guard:nth-child(odd) {
+      border-right: 0;
+      padding-left: 0;
+    }
+    .guard:nth-child(even) {
+      padding-left: 0;
+    }
+  }
+</style>

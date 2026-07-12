@@ -1,0 +1,123 @@
+---
+/**
+ * Numbered screenshot card. 2px frame, paper lift, ruled caption row:
+ * FIG. NN (ink-3) · title (mono caps, ink-2) · stamps right.
+ * When imgDark exists both captures render and CSS [data-theme] swaps them:
+ * the light / dark toggle drives every card with zero per-card JS.
+ */
+import { Image } from "astro:assets";
+import Stamp from "./Stamp.astro";
+
+interface Props {
+  n: number;
+  title: string;
+  img: ImageMetadata;
+  imgDark?: ImageMetadata;
+  caption?: string;
+  stamps?: string[];
+  alt: string;
+  class?: string;
+  /** eager-load above-the-fold plates (e.g. Plate 01) */
+  eager?: boolean;
+}
+const {
+  n,
+  title,
+  img,
+  imgDark,
+  caption,
+  stamps = [],
+  alt,
+  class: className,
+  eager = false,
+} = Astro.props;
+const num = String(n).padStart(2, "0");
+const loading = eager ? "eager" : "lazy";
+const sizes = "(max-width: 1120px) 100vw, 1120px";
+const widths = [720, 1120, 1600];
+---
+<figure class:list={["plate", className]}>
+  <div class="plate-well">
+    <Image
+      class="plate-img plate-img-light"
+      src={img}
+      alt={alt}
+      widths={widths}
+      sizes={sizes}
+      loading={loading}
+    />
+    {imgDark && (
+      <Image
+        class="plate-img plate-img-dark"
+        src={imgDark}
+        alt={alt}
+        widths={widths}
+        sizes={sizes}
+        loading={loading}
+      />
+    )}
+  </div>
+  <figcaption class="plate-caption">
+    <span class="plate-n">FIG. {num}</span>
+    <span class="plate-title">{title}</span>
+    {caption && <span class="plate-note">{caption}</span>}
+    {stamps.length > 0 && (
+      <span class="plate-stamps">
+        {stamps.map((s) => <Stamp>{s}</Stamp>)}
+      </span>
+    )}
+  </figcaption>
+</figure>
+
+<style>
+  .plate {
+    background: var(--surface);
+    border: var(--border-card) solid var(--line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: var(--space-2);
+    min-width: 0;
+  }
+  .plate-well { line-height: 0; }
+  .plate-img {
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    display: block;
+  }
+  .plate-img-dark { display: none; }
+  /* explicit toggle wins in both directions; OS preference is the fallback.
+     Only hide the light capture when a dark sibling exists; a card with a
+     single capture keeps it in the dark theme rather than going blank. */
+  :global(:root[data-theme="dark"]) .plate-well:has(.plate-img-dark) .plate-img-light { display: none; }
+  :global(:root[data-theme="dark"]) .plate-img-dark { display: block; }
+  @media (prefers-color-scheme: dark) {
+    :global(:root:not([data-theme="light"])) .plate-well:has(.plate-img-dark) .plate-img-light { display: none; }
+    :global(:root:not([data-theme="light"])) .plate-img-dark { display: block; }
+  }
+
+  .plate-caption {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    border-top: var(--border-ctl) solid var(--line);
+    margin-top: var(--space-2);
+    padding: var(--space-3) var(--space-2) var(--space-1);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: var(--track-caps);
+  }
+  .plate-n { color: var(--ink-3); font-weight: 600; white-space: nowrap; }
+  .plate-title {
+    color: var(--ink-2);
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  .plate-note { color: var(--ink-3); letter-spacing: 0; }
+  .plate-stamps {
+    margin-left: auto;
+    display: inline-flex;
+    gap: var(--space-2);
+  }
+</style>

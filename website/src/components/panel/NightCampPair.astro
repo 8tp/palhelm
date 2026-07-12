@@ -1,0 +1,112 @@
+---
+/**
+ * Static light / dark pair for the dashboard card. Unlike the shared Plate
+ * (whose two captures swap with the header toggle), this renders BOTH captures
+ * side by side, always , so the reader sees the product's dark theme without
+ * touching the toggle. Local to /panel.
+ */
+import { Image } from "astro:assets";
+
+interface Props {
+  n: number;
+  title: string;
+  imgLight: ImageMetadata;
+  imgDark: ImageMetadata;
+  altLight: string;
+  altDark: string;
+  caption?: string;
+}
+const { n, title, imgLight, imgDark, altLight, altDark, caption } = Astro.props;
+const num = String(n).padStart(2, "0");
+const widths = [560, 900, 1120];
+const sizes = "(max-width: 760px) 100vw, 50vw";
+---
+<figure class="pair">
+  <div class="pair-grid">
+    <div class="pair-cell">
+      <div class="pair-well">
+        <Image src={imgLight} alt={altLight} widths={widths} sizes={sizes} loading="lazy" />
+      </div>
+      <span class="pair-tag">LIGHT</span>
+    </div>
+    <div class="pair-cell pair-cell-dark">
+      <div class="pair-well">
+        <Image src={imgDark} alt={altDark} widths={widths} sizes={sizes} loading="lazy" />
+      </div>
+      <span class="pair-tag">DARK</span>
+    </div>
+  </div>
+  <figcaption class="pair-caption">
+    <span class="pair-n">FIG. {num}</span>
+    <span class="pair-title">{title}</span>
+    {caption && <span class="pair-note">{caption}</span>}
+  </figcaption>
+</figure>
+
+<style>
+  .pair {
+    background: var(--surface);
+    border: var(--border-card) solid var(--line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: var(--space-2);
+    min-width: 0;
+  }
+  .pair-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+  }
+  .pair-cell { min-width: 0; position: relative; }
+  .pair-well { line-height: 0; }
+  .pair-well :global(img) {
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    display: block;
+  }
+  /* the dark cell keeps a warm near-black mat so the dark capture reads as
+     "dark theme" even on the light-theme page */
+  .pair-cell-dark .pair-well {
+    background: #181206;
+    border-radius: 6px;
+  }
+  .pair-tag {
+    position: absolute;
+    left: var(--space-2);
+    bottom: var(--space-2);
+    font: 600 10px/1 var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: var(--track-caps);
+    padding: 4px 7px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--surface) 82%, transparent);
+    border: 1px solid var(--line);
+    color: var(--ink-2);
+    backdrop-filter: blur(2px);
+  }
+  .pair-cell-dark .pair-tag {
+    background: rgba(24, 18, 6, 0.82);
+    border-color: #3b311c;
+    color: #bfb28a;
+  }
+  .pair-caption {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    border-top: var(--border-ctl) solid var(--line);
+    margin-top: var(--space-2);
+    padding: var(--space-3) var(--space-2) var(--space-1);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    letter-spacing: var(--track-caps);
+  }
+  .pair-n { color: var(--ink-3); font-weight: 600; white-space: nowrap; }
+  .pair-title { color: var(--ink-2); font-weight: 600; text-transform: uppercase; }
+  .pair-note { color: var(--ink-3); letter-spacing: 0; }
+
+  @media (max-width: 640px) {
+    .pair-grid { grid-template-columns: 1fr; }
+  }
+</style>

@@ -1,0 +1,47 @@
+---
+/**
+ * Field-guide button: 1.5px frame, radius 8px, presses down 1px on :active.
+ * primary = olive fill + --on-accent ink; secondary = framed on the card.
+ * Renders <a> when href is given, <button> otherwise.
+ */
+interface Props {
+  variant?: "primary" | "secondary";
+  href?: string;
+  type?: "button" | "submit";
+  class?: string;
+}
+const { variant = "secondary", href, type = "button", class: className } = Astro.props;
+const Tag = href ? "a" : "button";
+---
+<Tag
+  class:list={["btn", { "btn-primary": variant === "primary" }, className]}
+  href={href}
+  type={href ? undefined : type}
+>
+  <slot />
+</Tag>
+
+<style>
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font: 500 var(--text-md) / 1 var(--font-ui);
+    padding: 9px 16px;
+    border-radius: var(--radius-ctl);
+    border: var(--border-ctl) solid var(--line-strong);
+    background: var(--surface-2);
+    color: var(--ink);
+    cursor: pointer;
+    white-space: nowrap;
+    text-decoration: none;
+  }
+  .btn:hover { background: var(--surface-3); text-decoration: none; }
+  .btn:active { translate: 0 1px; }
+  .btn-primary {
+    background: var(--accent);
+    border-color: transparent;
+    color: var(--on-accent);
+  }
+  .btn-primary:hover { filter: brightness(1.08); background: var(--accent); }
+</style>

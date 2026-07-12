@@ -1,0 +1,65 @@
+---
+/**
+ * Console well: a recessed terminal block styled with the panel's --console-*
+ * tokens (dark ink on the light theme, olive on the dark theme). Not a generic
+ * dark code block, it uses the site palette in both themes.
+ * Slot content is the raw example; a `caption` mono-labels the well.
+ */
+interface Props {
+  caption?: string;
+  class?: string;
+}
+const { caption, class: className } = Astro.props;
+---
+<figure class:list={["well-wrap", className]}>
+  <div class="well" role="group" aria-label={caption ?? "terminal example"}>
+    {caption && (
+      <div class="well-bar">
+        <span class="well-dot" aria-hidden="true"></span>
+        <span class="well-label">{caption}</span>
+      </div>
+    )}
+    <pre class="well-body"><slot /></pre>
+  </div>
+</figure>
+
+<style>
+  .well-wrap { min-width: 0; }
+  .well {
+    background: var(--console-bg);
+    border: var(--border-card) solid var(--line-strong);
+    border-radius: var(--radius-card);
+    box-shadow: inset 0 1px 4px var(--console-shadow);
+    overflow: hidden;
+    min-width: 0;
+  }
+  .well-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    border-bottom: var(--border-ctl) solid var(--line);
+    font: 600 var(--text-xs)/1 var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: var(--track-caps);
+    color: var(--console-ts);
+  }
+  .well-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--console-cmd);
+    flex: none;
+  }
+  .well-body {
+    margin: 0;
+    padding: var(--space-4);
+    overflow-x: auto;
+    font: 400 var(--text-sm)/1.6 var(--font-mono);
+    color: var(--console-out);
+    -moz-tab-size: 2;
+    tab-size: 2;
+  }
+  .well-body :global(.c-cmd) { color: var(--console-cmd); }
+  .well-body :global(.c-sys) { color: var(--console-sys); }
+  .well-body :global(.c-ts) { color: var(--console-ts); }
+  .well-body :global(.c-err) { color: var(--console-err); }
+</style>
