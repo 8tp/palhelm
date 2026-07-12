@@ -5,7 +5,7 @@ A pure-Go package that parses Palworld `Level.sav` / `LevelMeta.sav` (1.0 format
 structs: players, pals, guilds, base camps. Read-only — no re-encoding.
 
 ## Module layout
-- Go module `github.com/palhelm/palhelm`, rooted at `backend/`.
+- Go module `github.com/8tp/palhelm`, rooted at `backend/`.
 - Package path: `backend/internal/sav`.
 - CLI for manual testing: `backend/cmd/savdump/main.go` — `savdump <file.sav>` prints parsed JSON.
 

@@ -1,6 +1,6 @@
 # Spec: backend core server
 
-Build the Palhelm HTTP server in `backend/` (module `github.com/palhelm/palhelm`, Go 1.26).
+Build the Palhelm HTTP server in `backend/` (module `github.com/8tp/palhelm`, Go 1.26).
 The API contract is `docs/API.md` — implement everything there EXCEPT the Backups and Config
 sections (a later task; stub them returning 501 with `{"error":{"code":"not_implemented"...}}`).
 Architecture context: `docs/ARCHITECTURE.md`.
