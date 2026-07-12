@@ -1,0 +1,62 @@
+/* Page-local styles for the configuration route, ported from design/mockups/config.html. */
+
+/* compose-flow note: a field note pinned above the editor — an index card with an inked
+   olive frame and a stamped icon chip, not a wash */
+.banner-info {
+  background: var(--surface);
+  border: var(--border-card) solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  color: var(--ink-2); padding: 11px 14px;
+}
+.banner-info .stamp-i {
+  flex: none; width: 26px; height: 26px; border-radius: 7px;
+  display: grid; place-items: center; rotate: -3deg; /* pressed a degree off-true */
+  border: var(--border-ctl) solid color-mix(in srgb, var(--accent) 55%, transparent);
+  background: var(--accent-soft); color: var(--accent-ink);
+}
+
+/* ini keys are machine words: specimen-tag labels in mono */
+.card .field > label { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink-2); }
+
+.field-hint { font-size: var(--text-xs); color: var(--ink-3); }
+.field-hint.warn { color: var(--warn-ink); }
+
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); }
+@media (max-width: 700px) { .field-grid { grid-template-columns: 1fr; } }
+
+/* modified value: a proofreader's mark — margin change-bar and an inked asterisk on the
+   key, plus the warn frame. No glow. */
+.field.modified { position: relative; }
+.field.modified::before {
+  content: ""; position: absolute; left: -11px; top: 3px; bottom: 3px;
+  width: 3px; border-radius: 1.5px; background: var(--warn);
+}
+.field.modified > label { color: var(--warn-ink); }
+.field.modified > label::after { content: " ✱"; color: var(--warn); }
+.field.modified .input { border-color: var(--warn); }
+
+.kv-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid var(--line);
+}
+.kv-row:last-child { border-bottom: 0; }
+.kv-row .k { font-size: var(--text-sm); color: var(--ink-2); }
+
+/* pending-changes tray: pinned above the desk edge; the destructive action alone
+   carries the danger ink */
+.footer-bar { box-shadow: var(--shadow-pop); border-color: var(--line-strong); }
+.footer-bar .card-body { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.footer-bar .spacer { flex: 1; }
+
+.manual-note {
+  font-family: var(--font-mono); font-size: var(--text-xs); color: var(--ink-3);
+  text-align: right; margin-top: -8px;
+}
+
+.raw-ini {
+  font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink);
+  background: var(--bg); border-radius: var(--radius-ctl);
+  padding: var(--space-4); overflow-x: auto; white-space: pre;
+  line-height: 1.6;
+}

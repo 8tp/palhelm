@@ -1,0 +1,165 @@
+/* ============================================================
+   Shared app-level styles layered on top of tokens.css + ui.css.
+   ui.css (ported verbatim from design/mockups/) already defines the field-guide
+   component library — chip-toggle, code-well, diff-list, meter, tabs, stamp, etc. — so
+   this file is only framework plumbing the static mockups didn't need to express in CSS:
+   skeletons, the native <dialog>, the toast stack, uPlot host sizing, the full-page
+   loader. Everything below reads tokens only — no raw hex.
+   ============================================================ */
+
+#root { min-height: 100vh; }
+
+/* ---------- pressed button state (settings.html theme row: solid, not soft-washed) ---------- */
+.btn[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+.btn[aria-pressed="true"]:hover { background: var(--accent); filter: brightness(1.08); }
+
+/* ---------- row kebab: keyboard-reachable row actions ----------
+   ui.css's own `.table .actions .btn { visibility: hidden }` / `tr:hover .actions .btn
+   { visibility: visible }` (verbatim from the mockups, not ours to edit) already governs
+   any button in a row's actions cell, hover-reveal only. `visibility: hidden` also
+   removes an element from sequential Tab focus navigation entirely in Chromium/Firefox —
+   so a hidden-until-focus kebab could never actually *receive* the Tab focus meant to
+   reveal it, a real bug caught by Playwright-driving the Players row kebab
+   (components/DropdownMenu.tsx). Override with the extra .row-kebab class (higher
+   specificity than ui.css's rule) to force `visibility: visible` always, and drive
+   show/hide entirely through opacity + pointer-events instead, which — unlike
+   visibility — keeps the element Tab-reachable while still invisible/unclickable. */
+.row-kebab { opacity: 0; pointer-events: none; }
+.table .actions .btn.row-kebab { visibility: visible; }
+.table tbody tr:hover .actions .btn.row-kebab,
+.actions .btn.row-kebab:focus-visible,
+.actions .btn.row-kebab[aria-expanded="true"] { opacity: 1; pointer-events: auto; }
+
+/* ---------- dropdown menu (Base UI Menu.*, see components/DropdownMenu.tsx) ----------
+   Zero CSS ships with the primitive; every visual state below is keyed off its own
+   data-* attributes exactly like the native <dialog> above — data-open/data-closed on
+   the popup, data-highlighted/data-disabled on items. */
+.menu-positioner { z-index: 60; outline: none; }
+.menu-popup {
+  min-width: 180px;
+  background: var(--surface);
+  border: var(--border-ctl) solid var(--line-strong);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-pop);
+  padding: 6px;
+  display: flex; flex-direction: column; gap: 1px;
+  outline: none;
+  transform-origin: var(--transform-origin);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+.menu-popup[data-starting-style],
+.menu-popup[data-ending-style] { opacity: 0; transform: scale(0.96) translateY(-2px); }
+.menu-group-label {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: var(--track-caps);
+  color: var(--ink-3); padding: 6px 10px 4px;
+}
+.menu-item {
+  display: flex; align-items: center; gap: 8px;
+  font: 500 var(--text-sm)/1 var(--font-ui);
+  color: var(--ink); padding: 7px 10px; border-radius: var(--radius-ctl);
+  cursor: pointer; white-space: nowrap; user-select: none;
+}
+.menu-item[data-highlighted] { background: var(--surface-2); outline: none; }
+.menu-item[data-disabled] { color: var(--ink-3); cursor: not-allowed; }
+.menu-item-danger { color: var(--danger-ink); }
+.menu-item-danger[data-highlighted] { background: var(--danger-soft); }
+
+/* ---------- tooltip (Base UI Tooltip.*, see components/Tooltip.tsx) ---------- */
+.tooltip-positioner { z-index: 70; outline: none; }
+.tooltip-popup {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--on-accent); background: var(--accent-ink);
+  border-radius: var(--radius-ctl); padding: 5px 9px;
+  box-shadow: var(--shadow-pop);
+  transition: opacity 100ms ease, transform 100ms ease;
+}
+.tooltip-popup[data-starting-style],
+.tooltip-popup[data-ending-style] { opacity: 0; transform: scale(0.96); }
+
+/* ---------- popover (Base UI Popover.*, see components/Popover.tsx) ---------- */
+.popover-positioner { z-index: 60; outline: none; }
+.popover-popup {
+  min-width: 240px; max-width: 320px;
+  background: var(--surface);
+  border: var(--border-card) solid var(--line-strong);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-pop);
+  padding: var(--space-3) var(--space-4);
+  outline: none;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+.popover-popup[data-starting-style],
+.popover-popup[data-ending-style] { opacity: 0; transform: scale(0.97) translateY(-2px); }
+.popover-title { font-family: var(--font-display); font-size: var(--text-md); font-weight: 700; margin-bottom: 4px; }
+.popover-description { font-size: var(--text-sm); color: var(--ink-2); }
+
+/* ---------- skeleton shimmer (card loading state) ---------- */
+.skel {
+  display: inline-block; border-radius: var(--radius-ctl);
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 37%, var(--surface-2) 63%);
+  background-size: 400% 100%;
+  animation: skel-shimmer 1.6s ease infinite;
+}
+.skel-text { height: 12px; }
+@keyframes skel-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skel { animation: none; }
+}
+
+/* ---------- native <dialog> modal (a certificate card in a top layer) ---------- */
+dialog.dialog {
+  background: var(--surface); color: var(--ink);
+  border: var(--border-card) solid var(--line-strong); border-radius: var(--radius-card);
+  padding: 0; width: min(440px, 92vw);
+  box-shadow: var(--shadow-pop);
+  /* the universal `* { margin: 0 }` reset in ui.css strips the UA style that centers
+     top-layer <dialog> elements — restore it explicitly. */
+  margin: auto;
+}
+dialog.dialog::backdrop { background: rgba(20, 15, 4, 0.55); }
+.dialog-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px; border-bottom: var(--border-ctl) solid var(--line);
+}
+.dialog-head h2 { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 700; }
+.dialog-body { padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
+.dialog-foot { display: flex; justify-content: flex-end; gap: var(--space-2); padding: 12px var(--space-4); border-top: var(--border-ctl) solid var(--line); }
+.dialog-checkbox { display: flex; align-items: center; gap: 8px; font-size: var(--text-sm); color: var(--ink-2); }
+
+/* ---------- toast stack (stamped notices, same wash trick as pill/banner) ---------- */
+.toast-stack {
+  position: fixed; right: var(--space-5); bottom: var(--space-5); z-index: 100;
+  display: flex; flex-direction: column; gap: var(--space-2); max-width: 360px;
+}
+.toast {
+  background: var(--surface-2); border: var(--border-ctl) solid var(--line-strong); color: var(--ink);
+  border-radius: var(--radius-card); padding: 10px 14px; font-size: var(--text-sm);
+  box-shadow: var(--shadow-pop);
+}
+.toast-ok { border-color: color-mix(in srgb, var(--ok) 55%, transparent); color: var(--ok-ink); }
+.toast-danger { border-color: color-mix(in srgb, var(--danger) 55%, transparent); color: var(--danger-ink); }
+
+/* ---------- uPlot host sizing ---------- */
+.uplot-wrap { position: relative; width: 100%; }
+.uplot-host { width: 100%; }
+.uplot-host .u-legend { display: none; }
+.chart-annotation {
+  position: absolute; transform: translate(-50%, 0);
+  font-family: var(--font-mono); font-size: 10px; color: var(--ink-3);
+  white-space: nowrap; pointer-events: none; display: none;
+}
+
+/* ---------- full-page loader (auth bootstrap) ---------- */
+.page-loader {
+  min-height: 100vh; display: grid; place-items: center; background: var(--bg);
+}
+.page-loader .helm-mark .wheel { transform-origin: 50% 50%; animation: helm-spin 1.1s linear infinite; }
+@keyframes helm-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .page-loader .helm-mark .wheel { animation: none; }
+}

@@ -1,0 +1,40 @@
+.pal-info-button {
+  width: 24px; height: 24px; padding: 0; flex: none;
+  display: inline-grid; place-items: center;
+  color: var(--ink-3); background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: 999px; cursor: pointer;
+}
+.pal-info-button:hover, .pal-info-button.is-active {
+  color: var(--accent-ink); border-color: color-mix(in srgb, var(--accent) 55%, transparent); background: var(--accent-soft);
+}
+.pal-info-button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.pal-detail-panel {
+  padding: 12px; display: flex; flex-direction: column; gap: 12px;
+  color: var(--ink-2); background: color-mix(in srgb, var(--surface-2) 76%, var(--accent-soft));
+  border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+}
+.pal-detail-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.pal-detail-fact, .pal-talent-box {
+  min-width: 0; padding: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-ctl);
+}
+.pal-detail-fact span, .pal-talent-box span {
+  display: block; color: var(--ink-3); font-size: 10px; text-transform: uppercase; letter-spacing: var(--track-caps);
+}
+.pal-detail-fact strong { display: block; margin-top: 3px; font-size: var(--text-xs); overflow-wrap: anywhere; }
+.pal-detail-section h4 { margin: 0 0 6px; font-size: var(--text-xs); color: var(--ink-2); }
+.pal-talent-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.pal-talent-box { text-align: center; }
+.pal-talent-box strong { display: block; margin-top: 2px; font-family: var(--font-mono); font-size: var(--text-md); }
+.pal-skill-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.pal-skill-list span {
+  padding: 4px 7px; border-radius: 999px; color: var(--ink-2); background: var(--surface); border: 1px solid var(--line);
+  font-size: 11px; line-height: 1.2;
+}
+.pal-detail-muted { color: var(--ink-3); font-size: var(--text-xs); }
+.pal-detail-identity { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; color: var(--ink-3); font-family: var(--font-mono); font-size: 10px; }
+
+@media (max-width: 520px) {
+  .pal-detail-facts { grid-template-columns: 1fr; }
+  .pal-talent-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

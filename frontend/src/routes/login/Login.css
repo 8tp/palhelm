@@ -1,0 +1,68 @@
+.login-page { display: grid; place-items: center; min-height: 100vh; position: relative; }
+
+/* the expedition map on the desk: full-bleed hero, calm center.
+   At night camp it dims to a lantern-lit chart (design/mockups/login.html). */
+.desk {
+  position: fixed; inset: 0; z-index: -1;
+  background: url("../../assets/images/hero-paper.png") center / cover no-repeat;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .desk { opacity: 0.13; }
+}
+:root[data-theme="dark"] .desk { opacity: 0.13; }
+
+.login-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-6);
+  padding: var(--space-6); width: 100%; max-width: 420px;
+}
+
+/* brand: the mark is stamped onto the page, then the wordmark */
+.login-brand { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); }
+.login-brand .word {
+  /* the olive stamp (wm-stamp): one ink, heavy, pressed a degree off-true */
+  font-family: var(--font-ui); font-weight: 600; font-size: var(--text-3xl);
+  letter-spacing: 0.02em; color: var(--accent-ink);
+  rotate: -1.5deg;
+}
+.login-brand .tagline {
+  font-family: var(--font-display); font-style: italic;
+  font-size: var(--text-md); color: var(--ink-2);
+}
+
+/* stamp press: the mark comes down onto the paper and seats */
+@keyframes stamp-press {
+  0%   { transform: scale(1.6) rotate(-10deg); opacity: 0; }
+  55%  { transform: scale(0.94) rotate(1.5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.helm-mark { display: block; }
+.helm-mark .wheel {
+  transform-origin: 50% 50%;
+  animation: stamp-press 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .helm-mark .wheel { animation: none; }
+}
+
+/* the field card: chunky frame + an inner certificate rule */
+.login-card {
+  width: 100%; padding: var(--space-6);
+  display: flex; flex-direction: column; gap: var(--space-4);
+  position: relative; overflow: visible;
+}
+.login-card::before {
+  content: ""; position: absolute; inset: 6px;
+  border: 1px solid var(--line); border-radius: calc(var(--radius-card) - 4px);
+  pointer-events: none;
+}
+.login-card h1 { font-family: var(--font-display); font-size: var(--text-xl); font-weight: 700; }
+.login-card .server { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink-2); margin-top: 2px; }
+.login-card .form-error {
+  font-size: var(--text-sm); color: var(--danger-ink);
+  background: linear-gradient(var(--danger-soft), var(--danger-soft)) var(--surface);
+  border: var(--border-ctl) solid color-mix(in srgb, var(--danger) 45%, transparent);
+  border-radius: var(--radius-ctl); padding: 8px 10px;
+}
+
+.login-foot { font-size: var(--text-xs); color: var(--ink-2); display: flex; gap: var(--space-3); }
+.login-foot a { color: var(--ink-2); text-decoration: underline; }

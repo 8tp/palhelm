@@ -1,0 +1,573 @@
+/* ============================================================
+   Palhelm v2 "Expedition field-guide" — component library
+   Same class names as v1 ui.css; everything reads tokens.css.
+   Cards are index cards on a paper desk: chunky solid frames,
+   confident radii, stamp-flavored status, one olive spine.
+   ============================================================ */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+body {
+  font-family: var(--font-ui);
+  font-size: var(--text-md);
+  line-height: var(--leading-body);
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* paper grain: sub-perceptual canvas texture over the whole desk */
+body::before {
+  content: "";
+  position: fixed; inset: 0; z-index: 2000;
+  pointer-events: none;
+  background: url("../assets/images/tex-noise-canvas.png") repeat;
+  background-size: 512px 512px;
+  mix-blend-mode: multiply;
+  opacity: var(--paper-grain-opacity);
+}
+:root[data-theme="dark"] body::before { mix-blend-mode: overlay; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body::before { mix-blend-mode: overlay; }
+}
+
+a { color: var(--accent-ink); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+:is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-ctl);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* forced-colors (Windows High Contrast etc.): the box-shadow focus-ring above is
+   author-drawn color, which the UA typically suppresses entirely in this mode — so
+   `outline: none` above would leave keyboard focus with zero visible indicator, a
+   WCAG 2.4.7 failure. `outline: 2px solid transparent` still paints: forced-colors
+   substitutes the system's focus/Highlight color for any *rendered* outline, even one
+   authored transparent, so this restores a real ring without picking a literal color
+   that might clash with the user's chosen high-contrast palette. Also drop the
+   box-shadow explicitly (system-color hygiene) so no author-colored ring can survive
+   on engines that don't strip it. */
+@media (forced-colors: active) {
+  :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible,
+  .input:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+}
+
+/* ---------- app shell ---------- */
+.shell { display: grid; grid-template-columns: var(--rail-w) 1fr; min-height: 100vh; }
+
+/* left rail: the guide's margin column */
+.rail {
+  background: var(--surface);
+  border-right: var(--border-card) solid var(--line);
+  display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh;
+}
+.rail-brand {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px; border-bottom: var(--border-card) solid var(--line);
+}
+.rail-brand .mark { flex: none; }
+.rail-brand .word {
+  font-family: var(--font-mono); font-weight: 600;
+  font-size: 15px; letter-spacing: 0.04em; color: var(--ink);
+}
+.rail-brand .word b { color: var(--accent-ink); font-weight: 600; } /* olive stamp, not gold */
+.rail-nav { padding: var(--space-2); display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.rail-group {
+  font-family: var(--font-mono); font-size: 11px;
+  text-transform: uppercase; letter-spacing: var(--track-caps);
+  color: var(--ink-3); padding: 14px 10px 4px;
+}
+.rail-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 10px; border-radius: var(--radius-ctl);
+  color: var(--ink-2); font-size: var(--text-md); font-weight: 500;
+}
+.rail-item:hover { background: var(--surface-2); color: var(--ink); text-decoration: none; }
+.rail-item[aria-current="page"] {
+  background: var(--accent-soft); color: var(--accent-ink);
+  position: relative;
+}
+.rail-item[aria-current="page"]::before {
+  content: ""; position: absolute; left: -8px; top: 6px; bottom: 6px;
+  width: 3px; background: var(--accent); border-radius: 1.5px;
+}
+.rail-item svg { flex: none; opacity: 0.85; }
+.rail-foot {
+  border-top: var(--border-card) solid var(--line); padding: 10px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: var(--text-xs); color: var(--ink-3);
+}
+.rail-foot .who { display: flex; flex-direction: column; }
+.rail-foot .who b { color: var(--ink-2); font-weight: 500; }
+
+/* main column */
+.main { display: flex; flex-direction: column; min-width: 0; }
+
+/* helm strip — the olive spine. The one bold element: a deep-olive
+   cloth band, identical at noon and at night camp. Everything inside
+   restyles itself by token remap; no component knows it's on the band. */
+.helmstrip {
+  height: var(--helmstrip-h);
+  display: flex; align-items: stretch;
+  background: var(--band-bg);
+  border-bottom: 3px solid var(--band-edge);
+  padding: 0 var(--space-5);
+  gap: var(--space-6);
+  position: sticky; top: 0; z-index: 10;
+  color: var(--band-ink);
+
+  /* token remap: band-local values for everything drawn on the spine */
+  --ink: var(--band-ink);
+  --ink-2: var(--band-ink-2);
+  --ink-3: var(--band-ink-2);
+  --surface: var(--band-bg); /* stamp/pill underlays composite over the band itself */
+  --surface-2: var(--band-well);
+  --surface-3: var(--band-well-2);
+  --line: var(--band-line);
+  --line-strong: var(--band-line-strong);
+  --bg: var(--band-bg);
+  --accent: var(--band-chart);
+  --ok: var(--band-ok);       --ok-ink: var(--band-ok-ink);       --ok-soft: var(--band-ok-soft);
+  --warn: var(--band-warn);   --warn-ink: var(--band-warn-ink);   --warn-soft: var(--band-warn-soft);
+  --danger: var(--band-danger); --danger-ink: var(--band-danger-ink); --danger-soft: var(--band-danger-soft);
+  --chart-line: var(--band-chart);
+
+  /* remap completion: without these, a solid .btn-primary/.btn-danger-solid (or any
+     accent-ink text/wash) drawn directly on the strip falls back to the page-level
+     --on-accent/--on-danger/--accent-ink/--accent-soft — near-white ink on the band's
+     light --band-chart/--band-danger fills, ~1.4:1 / ~2.1:1 in light theme. --band-edge
+     (the strip's own bottom-rule ink) is dark enough on both light swatches to clear
+     4.5:1 with real margin. */
+  --on-accent: var(--band-edge);   /* 9.39:1 on --band-chart fill */
+  --on-danger: var(--band-edge);   /* 6.26:1 on --band-danger fill */
+  --accent-ink: var(--band-chart); /* 6.59:1 directly on the band (--surface here) */
+  --accent-soft: rgba(204, 215, 155, 0.14); /* --band-chart wash; --accent-ink stays 4.83:1 over it */
+}
+
+/* Nested-dialog token reset. Shell.tsx mounts the Broadcast/Save/Restart dialogs (and
+   any ConfirmDialog) as DOM descendants of <header class="helmstrip">. showModal()
+   paints a native <dialog> in the top layer, but CSS custom-property inheritance still
+   follows the *DOM* tree, not paint order — so without this reset every dialog under
+   the strip would silently pick up the band's remapped --ink/--surface/--accent/etc.
+   (see the .helmstrip remap above), turning e.g. .btn-primary into near-white text on a
+   pale olive fill. Bind straight back to --page-* (tokens.css), frozen copies of the
+   page-level theme values that the .helmstrip block never touches, so a dialog reads as
+   page chrome regardless of where in the DOM it happens to be mounted — light or dark,
+   under the strip or not. */
+dialog.dialog {
+  --ink: var(--page-ink); --ink-2: var(--page-ink-2); --ink-3: var(--page-ink-3);
+  --surface: var(--page-surface); --surface-2: var(--page-surface-2); --surface-3: var(--page-surface-3);
+  --line: var(--page-line); --line-strong: var(--page-line-strong);
+  --bg: var(--page-bg);
+  --accent: var(--page-accent); --accent-ink: var(--page-accent-ink); --accent-soft: var(--page-accent-soft);
+  --on-accent: var(--page-on-accent);
+  --ok: var(--page-ok); --ok-ink: var(--page-ok-ink); --ok-soft: var(--page-ok-soft);
+  --warn: var(--page-warn); --warn-ink: var(--page-warn-ink); --warn-soft: var(--page-warn-soft);
+  --danger: var(--page-danger); --danger-ink: var(--page-danger-ink); --danger-soft: var(--page-danger-soft);
+  --on-danger: var(--page-on-danger);
+  --chart-line: var(--page-chart-line);
+}
+
+.instrument { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.instrument + .instrument { border-left: 1px solid var(--band-line); padding-left: var(--space-6); }
+.instrument .label {
+  font-family: var(--font-mono); font-size: 11px;
+  text-transform: uppercase; letter-spacing: var(--track-caps);
+  color: var(--band-ink-2); display: block;
+}
+.instrument .value {
+  font-family: var(--font-mono); font-size: var(--text-md); font-weight: 600;
+  color: var(--band-ink); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.instrument .value small { color: var(--band-ink-2); font-weight: 400; }
+.helmstrip .grow { flex: 1; }
+.helmstrip .actions { display: flex; align-items: center; gap: var(--space-2); }
+
+/* state pill — a rubber stamp: rounded rect, inked border, mono caps */
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 2px 8px; border-radius: 5px; white-space: nowrap;
+  border: var(--border-ctl) solid;
+}
+.pill .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+/* status washes composite over a --surface underlay so the ink keeps
+   ≥4.5:1 on any ground (light warn-ink is ~4.98:1 straight on --bg, comfortably
+   above AA — this comment previously said 4.24:1, which was stale/wrong) */
+.pill-ok     { background: linear-gradient(var(--ok-soft), var(--ok-soft)) var(--surface);
+               color: var(--ok-ink);
+               border-color: color-mix(in srgb, var(--ok) 55%, transparent); }
+.pill-ok .dot     { background: var(--ok); }
+.pill-warn   { background: linear-gradient(var(--warn-soft), var(--warn-soft)) var(--surface);
+               color: var(--warn-ink);
+               border-color: color-mix(in srgb, var(--warn) 55%, transparent); }
+.pill-warn .dot   { background: var(--warn); }
+.pill-danger { background: linear-gradient(var(--danger-soft), var(--danger-soft)) var(--surface);
+               color: var(--danger-ink);
+               border-color: color-mix(in srgb, var(--danger) 55%, transparent); }
+.pill-danger .dot { background: var(--danger); }
+.pill-idle   { background: var(--surface-2);   color: var(--ink-2);
+               border-color: color-mix(in srgb, var(--ink-3) 45%, transparent); }
+.pill-idle .dot   { background: var(--ink-3); }
+@keyframes pulse { 50% { opacity: 0.35; } }
+.pill-ok .dot { animation: pulse 2.4s ease-in-out infinite; }
+
+/* rubber stamp: mono caps, inked frame, status wash over a --surface
+   underlay — same contrast trick as the pill. Works on any element,
+   including an empty-state h3 headline. */
+.stamp {
+  display: inline-flex; align-items: center; gap: 6px;
+  font: 600 11px/1 var(--font-mono);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 6px 10px; border-radius: 5px; white-space: nowrap;
+  border: var(--border-ctl) solid color-mix(in srgb, var(--ink-3) 45%, transparent);
+  background: var(--surface); color: var(--ink-2);
+}
+.stamp-ok     { color: var(--ok-ink);
+                border-color: color-mix(in srgb, var(--ok) 55%, transparent);
+                background: linear-gradient(var(--ok-soft), var(--ok-soft)) var(--surface); }
+.stamp-warn   { color: var(--warn-ink);
+                border-color: color-mix(in srgb, var(--warn) 55%, transparent);
+                background: linear-gradient(var(--warn-soft), var(--warn-soft)) var(--surface); }
+.stamp-danger { color: var(--danger-ink);
+                border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+                background: linear-gradient(var(--danger-soft), var(--danger-soft)) var(--surface); }
+.stamp-tilt   { rotate: -1.5deg; } /* pressed a degree off-true */
+
+/* stamped toggle chip: a stamp that can be pressed on/off — hollow dot
+   when the layer is off, olive-stamped when on */
+.chip-toggle {
+  display: inline-flex; align-items: center; gap: 6px;
+  font: 600 11px/1 var(--font-mono);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  padding: 6px 10px; border-radius: 5px;
+  border: var(--border-ctl) solid color-mix(in srgb, var(--ink-3) 45%, transparent);
+  background: var(--surface); color: var(--ink-2);
+  box-shadow: var(--shadow-card);
+  cursor: pointer; white-space: nowrap;
+}
+.chip-toggle::before {
+  content: ""; width: 7px; height: 7px; border-radius: 50%; flex: none;
+  border: var(--border-ctl) solid var(--ink-3); /* hollow: not stamped on */
+}
+.chip-toggle:hover { background: var(--surface-2); color: var(--ink); }
+.chip-toggle:active { translate: 0 1px; }
+.chip-toggle[aria-pressed="true"] {
+  background: linear-gradient(var(--accent-soft), var(--accent-soft)) var(--surface);
+  color: var(--accent-ink);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.chip-toggle[aria-pressed="true"]::before { border: 0; background: var(--accent); }
+.chip-toggle .n { font-weight: 400; }
+
+/* ---------- content ---------- */
+.content { padding: var(--space-6); display: flex; flex-direction: column; gap: var(--space-5); }
+.page-head { display: flex; align-items: baseline; gap: var(--space-3); }
+.page-head h1 {
+  font-family: var(--font-display); font-size: var(--text-2xl);
+  font-weight: 700; letter-spacing: 0;
+}
+.page-head .sub { color: var(--ink-2); font-size: var(--text-sm); font-family: var(--font-mono); }
+.page-head .spacer { flex: 1; }
+
+/* tabs: file-folder dividers in the field binder — mono specimen labels
+   on a solid inked baseline, the open divider stamped in olive */
+.tabs { display: flex; gap: 2px; border-bottom: 2px solid var(--line); }
+.tab {
+  font-family: var(--font-mono); font-size: var(--text-xs); font-weight: 600;
+  text-transform: uppercase; letter-spacing: var(--track-caps);
+  padding: 9px 14px; color: var(--ink-2); border: 0; background: none; cursor: pointer;
+  border-bottom: 3px solid transparent; margin-bottom: -2px;
+  border-radius: var(--radius-ctl) var(--radius-ctl) 0 0;
+}
+.tab:hover { color: var(--ink); background: var(--surface-2); }
+.tab[aria-selected="true"] {
+  color: var(--accent-ink); background: var(--accent-soft);
+  border-bottom-color: var(--accent);
+}
+.tab .count {
+  /* small stamped tally, matches the pill geometry */
+  font-size: 11px; color: var(--ink-2);
+  background: var(--surface-2); border-radius: 5px; padding: 1px 6px; margin-left: 6px;
+  border: 1px solid color-mix(in srgb, var(--ink-3) 40%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* toolbar: search + filters row above a ledger */
+.toolbar { display: flex; gap: var(--space-2); align-items: center; }
+.toolbar .hint { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* cards: index cards on the desk — chunky frame, confident radius, paper lift */
+.card {
+  background: var(--surface);
+  border: var(--border-card) solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  display: flex; flex-direction: column;
+  min-width: 0;
+  overflow: hidden; /* flush children respect the radius */
+}
+.card-head {
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: 12px 16px; border-bottom: var(--border-ctl) solid var(--line);
+}
+.card-head h2 { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 700; }
+.card-head .hint { color: var(--ink-3); font-size: var(--text-xs); }
+.card-head .spacer { flex: 1; }
+.card-body { padding: var(--space-4); }
+.card-body.flush { padding: 0; }
+
+/* stat tiles: specimen entries — mono label, big inked number */
+.stat { padding: 14px 16px; }
+.stat .label {
+  font-family: var(--font-mono); font-size: 11px;
+  text-transform: uppercase; letter-spacing: var(--track-caps);
+  color: var(--ink-3);
+}
+.stat .value {
+  font-family: var(--font-mono); font-size: var(--text-2xl); font-weight: 600;
+  font-variant-numeric: tabular-nums; line-height: var(--leading-tight);
+  margin-top: 2px;
+}
+.stat .value small { font-size: var(--text-sm); color: var(--ink-3); font-weight: 400; }
+.stat .delta { font-size: var(--text-xs); color: var(--ink-2); margin-top: 4px; }
+.stat .delta.up { color: var(--ok-ink); }
+.stat .delta.down { color: var(--danger-ink); }
+/* up/down is otherwise color-only (fails under grayscale/forced-colors, SC 1.4.1) — a
+   small directional glyph carries the same meaning without relying on hue. The
+   `content: "text" / ""` alt-text form marks it decorative to assistive tech, since the
+   delta's own text already reads fine on its own (e.g. "28 kept · 412 MB total"). */
+.stat .delta.up::before { content: "▲ " / ""; }
+.stat .delta.down::before { content: "▼ " / ""; }
+
+/* buttons: stamped controls — solid frame, presses down 1px */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  font: 500 var(--text-md)/1 var(--font-ui);
+  padding: 7px 14px; border-radius: var(--radius-ctl);
+  border: var(--border-ctl) solid var(--line-strong);
+  background: var(--surface-2); color: var(--ink);
+  cursor: pointer; white-space: nowrap;
+}
+.btn:hover { background: var(--surface-3); }
+.btn:active { translate: 0 1px; }
+.btn-primary { background: var(--accent); border-color: transparent; color: var(--on-accent); }
+.btn-primary:hover { filter: brightness(1.08); background: var(--accent); }
+.btn-danger { background: transparent; border-color: var(--danger); color: var(--danger-ink); }
+.btn-danger:hover { background: var(--danger-soft); }
+/* solid danger: the one button on a screen that stops the server */
+.btn-danger-solid { background: var(--danger); border-color: transparent; color: var(--on-danger); }
+.btn-danger-solid:hover { filter: brightness(1.08); background: var(--danger); }
+.btn-ghost { background: transparent; border-color: transparent; color: var(--ink-2); }
+.btn-ghost:hover { background: var(--surface-2); color: var(--ink); }
+.btn-sm { padding: 4px 10px; font-size: var(--text-sm); }
+.btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+/* inputs */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field > label { font-size: var(--text-sm); font-weight: 500; color: var(--ink-2); }
+.input, select.input {
+  font: 400 var(--text-md)/1.4 var(--font-ui);
+  color: var(--ink); background: var(--bg);
+  border: var(--border-ctl) solid var(--line-strong); border-radius: var(--radius-ctl);
+  padding: 7px 10px; width: 100%;
+}
+.input::placeholder { color: var(--ink-3); }
+.input:focus { outline: none; box-shadow: var(--focus-ring); }
+.input-mono { font-family: var(--font-mono); font-size: var(--text-sm); }
+/* read-only values recede: flat on the card, faint frame, secondary ink */
+.input[readonly] { background: transparent; border-color: var(--line); color: var(--ink-2); }
+.field-hint { font-size: var(--text-xs); color: var(--ink-3); }
+.field-hint.warn { color: var(--warn-ink); }
+.search { position: relative; }
+.search .input { padding-left: 30px; }
+.search svg { position: absolute; left: 9px; top: 50%; translate: 0 -50%; color: var(--ink-3); }
+
+/* tables: ruled ledger lines inside the card frame */
+.table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.table th {
+  text-align: left; font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: var(--track-caps);
+  color: var(--ink-3); background: var(--surface-2);
+  padding: 8px 12px; border-bottom: var(--border-ctl) solid var(--line);
+  white-space: nowrap;
+}
+.table td {
+  padding: 9px 12px; border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.table tbody tr:last-child td { border-bottom: 0; }
+.table tbody tr:hover { background: var(--surface-2); }
+.table .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.table .actions { text-align: right; white-space: nowrap; }
+.table .actions .btn { visibility: hidden; }
+.table tr:hover .actions .btn { visibility: visible; }
+
+/* selected entry: olive wash + the same 3px spine the rail uses */
+.table tbody tr.row-selected,
+.table tbody tr.row-selected:hover { background: var(--accent-soft); }
+.row-selected td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+
+/* identity cell: avatar + name + id */
+.who-cell { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.avatar {
+  width: 28px; height: 28px; border-radius: 50%; flex: none;
+  display: grid; place-items: center;
+  font-size: 11px; font-weight: 600; color: var(--ink-2);
+  background: var(--surface-3); border: var(--border-ctl) solid var(--line-strong);
+  overflow: hidden;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+.who-cell .name { font-weight: 500; color: var(--ink); }
+.who-cell .id { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+
+/* specimen ledger: mono labels, ruled 1px grid like table rows */
+.kv { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); }
+.kv > div { background: var(--surface); padding: 10px 16px; }
+.kv .label {
+  font-family: var(--font-mono); font-size: 11px;
+  text-transform: uppercase; letter-spacing: var(--track-caps);
+  color: var(--ink-3); display: block;
+}
+.kv .val { font-family: var(--font-mono); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
+
+/* kv rows: prose label left, value or pill right, ruled apart */
+.kv-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid var(--line);
+  gap: var(--space-3);
+}
+.kv-row:last-child { border-bottom: 0; }
+.kv-row .k { font-size: var(--text-sm); color: var(--ink-2); flex: none; }
+.kv-row .v { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* console: typed field notes on the desk. By day it reads as typewriter
+   ink on the recessed paper; at night camp the well drops to true dark
+   and the output glows lantern-phosphor olive (--console-* in tokens.css). */
+.console {
+  background: var(--console-bg);
+  color: var(--console-out);
+  font-family: var(--font-mono); font-size: var(--text-sm);
+  padding: var(--space-4); overflow-y: auto;
+  display: flex; flex-direction: column; gap: 3px;
+  box-shadow: inset 0 2px 6px var(--console-shadow);
+}
+.console .line { display: grid; grid-template-columns: 66px 1fr; gap: var(--space-3); }
+.console .ts { color: var(--console-ts); font-variant-numeric: tabular-nums; }
+.console .cmd { color: var(--console-cmd); }
+.console .cmd::before { content: "❯ "; color: var(--console-ts); }
+.console .err { color: var(--console-err); }
+.console .sys { color: var(--console-sys); }
+
+/* chart frame: olive ink line on ruled paper */
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: auto; }
+.chart .axis {
+  font-family: var(--font-mono); font-size: 10px; fill: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.legend-row { display: flex; gap: var(--space-4); align-items: center; font-size: var(--text-xs); color: var(--ink-2); }
+.legend-row .key { display: inline-flex; align-items: center; gap: 6px; }
+.legend-row .swatch { width: 10px; height: 3px; border-radius: 2px; background: var(--chart-line); }
+
+/* empty states */
+.empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--space-2); padding: var(--space-10) var(--space-6);
+  text-align: center; color: var(--ink-2);
+}
+.empty svg { color: var(--ink-3); margin-bottom: var(--space-2); }
+.empty h3:not(.stamp) { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 700; color: var(--ink); }
+.empty p { font-size: var(--text-sm); max-width: 42ch; }
+
+/* toast / banner */
+.banner {
+  display: flex; align-items: center; gap: 10px;
+  border: var(--border-ctl) solid var(--line); border-radius: var(--radius-card);
+  padding: 10px 14px; font-size: var(--text-sm);
+}
+/* banner washes composite over --surface like pills/stamps, so their
+   ink holds ≥4.5:1 even when a banner sits on the desk (--bg) */
+.banner-warn { background: linear-gradient(var(--warn-soft), var(--warn-soft)) var(--surface);
+  border-color: color-mix(in srgb, var(--warn) 45%, transparent); color: var(--warn-ink); }
+.banner-info { background: linear-gradient(var(--accent-soft), var(--accent-soft)) var(--surface);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent); color: var(--accent-ink); }
+
+/* code well: a command on a paper slip */
+.code-well {
+  font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink);
+  background: var(--surface);
+  border: var(--border-ctl) solid var(--line-strong); border-radius: var(--radius-ctl);
+  box-shadow: var(--shadow-card);
+  padding: 10px 14px; display: inline-block;
+}
+
+/* diff list: add/modify/delete in ok/warn/danger ink on a paper slip,
+   each entry ruled off with its ink in the margin */
+.diff-list {
+  font-family: var(--font-mono); font-size: var(--text-sm);
+  display: flex; flex-direction: column;
+  background: var(--surface);
+  border: var(--border-ctl) solid var(--line); border-radius: var(--radius-ctl);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+.diff-list > div { padding: 7px 14px; border-bottom: 1px solid var(--line); }
+.diff-list > div:last-child { border-bottom: 0; }
+.diff-list .add { color: var(--ok-ink);     box-shadow: inset 3px 0 0 var(--ok); }
+.diff-list .chg { color: var(--warn-ink);   box-shadow: inset 3px 0 0 var(--warn); }
+.diff-list .rem { color: var(--danger-ink); box-shadow: inset 3px 0 0 var(--danger); }
+
+/* meter: an olive gauge with graduations on the empty track */
+.meter {
+  position: relative; height: 10px; border-radius: 5px;
+  background: var(--surface-2);
+  border: var(--border-ctl) solid var(--line-strong);
+  overflow: hidden; margin-top: 10px;
+}
+.meter::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(to right,
+    transparent 0 calc(10% - 1px), var(--line) calc(10% - 1px) 10%);
+}
+.meter .fill { position: relative; z-index: 1; height: 100%; background: var(--accent); }
+
+/* layout grids */
+.grid { display: grid; gap: var(--space-4); }
+.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.cols-2 { grid-template-columns: repeat(2, 1fr); }
+.span-2 { grid-column: span 2; }
+@media (max-width: 1100px) {
+  .cols-4 { grid-template-columns: repeat(2, 1fr); }
+  .cols-3, .cols-2 { grid-template-columns: 1fr; }
+  .span-2 { grid-column: span 1; }
+}
+
+/* responsive shell: rail collapses to top bar on narrow screens */
+@media (max-width: 860px) {
+  .shell { grid-template-columns: 1fr; }
+  .rail { position: static; height: auto; flex-direction: row; align-items: center; border-right: 0; border-bottom: var(--border-card) solid var(--line); overflow-x: auto; }
+  .rail-nav { flex-direction: row; padding: 0 var(--space-2); }
+  .rail-group, .rail-foot { display: none; }
+  .helmstrip { overflow-x: auto; }
+  /* .instrument's min-width:0 (set for the desktop row, so long values could ellipsize
+     instead of pushing siblings) fights the scroll here: flex items are still allowed to
+     shrink below their content, so nowrap labels/values overlap instead of the row
+     overflowing into `overflow-x: auto`'s scrollbar. Pin them to content width so the strip
+     scrolls horizontally instead of squeezing text. */
+  .helmstrip .instrument { flex: none; }
+}

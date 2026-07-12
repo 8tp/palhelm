@@ -1,0 +1,102 @@
+/* Page-local styles for the live map, ported from design/mockups/map.html. */
+
+.map-card { height: 70vh; min-height: 480px; }
+
+.map-well {
+  position: relative; flex: 1; min-height: 0; background: var(--bg);
+  overflow: hidden; display: flex; touch-action: none;
+}
+.map-well.pannable { cursor: grab; }
+.map-well.pannable:active { cursor: grabbing; }
+
+.map-layer { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.map-layer img { position: absolute; display: block; image-rendering: auto; user-select: none; -webkit-user-drag: none; }
+
+/* plain grid stand-in for tiles (?mocktiles) */
+.map-grid {
+  position: absolute; left: 0; top: 0;
+  background:
+    linear-gradient(var(--chart-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--chart-grid) 1px, transparent 1px);
+  background-size: 16px 16px;
+  border: 1px solid var(--line);
+}
+
+.map-toggles {
+  position: absolute; top: 12px; left: 12px; z-index: 2;
+  display: flex; flex-wrap: wrap; gap: 6px; max-width: calc(100% - 24px);
+}
+
+/* second row: the base tile-pyramid picker (e.g. Palpagos / World Tree) — only rendered when
+   the dataset reports more than one layer, so it sits just under the overlay-toggle row */
+.map-layer-toggles { top: 48px; }
+
+.map-coord {
+  position: absolute; bottom: 12px; right: 12px; z-index: 2;
+  font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink-2);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-ctl);
+  padding: 6px 12px; font-variant-numeric: tabular-nums;
+}
+
+.map-zoom {
+  position: absolute; bottom: 12px; left: 12px; z-index: 2;
+  display: flex; flex-direction: column; border: 1px solid var(--line);
+  border-radius: var(--radius-ctl); overflow: hidden; background: var(--surface);
+}
+.map-zoom button {
+  width: 32px; height: 32px; border: 0; background: transparent; color: var(--ink);
+  font-size: 16px; line-height: 1; cursor: pointer; display: grid; place-items: center;
+}
+.map-zoom button:first-child { border-bottom: 1px solid var(--line); }
+.map-zoom button:hover { background: var(--surface-3); }
+
+/* markers (screen-space layer, unscaled chips) */
+.marker { position: absolute; transform: translate(-50%, -50%); z-index: 1; pointer-events: none; }
+.marker-player { display: flex; align-items: center; gap: 6px; }
+.marker-player .dot {
+  width: 10px; height: 10px; border-radius: 50%; background: var(--accent);
+  border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--accent);
+  flex: none;
+}
+.marker-player .chip {
+  font-size: 11px; font-weight: 500; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line-strong);
+  border-radius: var(--radius-ctl); padding: 2px 7px; white-space: nowrap;
+}
+.marker-base { display: flex; align-items: center; gap: 6px; }
+.marker-base .sq {
+  /* --brass-bright is ~1.48:1 on the cream desk (--bg) in light theme, well under the
+     3:1 UI-graphics floor — swap the brand-gold outline for --ink-2, which the mockup
+     (design/mockups/map.html) already uses here and holds ≥3:1 in both themes. */
+  width: 12px; height: 12px; flex: none;
+  border: var(--border-ctl) solid var(--ink-2);
+  background: color-mix(in srgb, var(--ink-2) 14%, transparent);
+}
+.marker-base .chip {
+  font-size: 11px; color: var(--ink-2);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-ctl);
+  padding: 2px 7px; white-space: nowrap;
+}
+.marker-travel { display: flex; align-items: center; gap: 6px; }
+.marker-travel .diamond {
+  width: 11px; height: 11px; background: var(--ok); border: 2px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--ok); transform: rotate(45deg); flex: none;
+}
+.marker-travel .chip {
+  font-size: 11px; color: var(--ok-ink);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-ctl);
+  padding: 2px 7px; white-space: nowrap;
+}
+.marker-tower { display: flex; align-items: center; gap: 6px; }
+.marker-tower .tri {
+  width: 0; height: 0; flex: none;
+  border-left: 6px solid transparent; border-right: 6px solid transparent;
+  border-bottom: 10px solid var(--danger);
+}
+.marker-tower .chip {
+  font-size: 11px; color: var(--danger-ink);
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-ctl);
+  padding: 2px 7px; white-space: nowrap;
+}
+
+.map-empty-fill { margin: auto; }

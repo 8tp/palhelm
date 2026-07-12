@@ -1,0 +1,32 @@
+/* Page-local styles for panel settings, ported from design/mockups/settings.html. */
+
+.kv-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid var(--line);
+  gap: var(--space-3);
+}
+.kv-row:last-child { border-bottom: 0; }
+.kv-row .k { font-size: var(--text-sm); color: var(--ink-2); flex: none; }
+.kv-row .v {
+  font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink);
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* theme choice: the selected option is stamped solid in olive — inked commitment,
+   not a tinted glow */
+.theme-row { display: flex; gap: var(--space-2); }
+.theme-row .btn[aria-pressed="true"] {
+  background: var(--accent); color: var(--on-accent); border-color: transparent;
+}
+.theme-row .btn[aria-pressed="true"]:hover { background: var(--accent); filter: brightness(1.08); }
+
+.about-links { display: flex; gap: var(--space-4); font-size: var(--text-sm); }
+
+.field-hint { font-size: var(--text-xs); color: var(--ink-3); }
+.field-hint.mono { font-family: var(--font-mono); }
+
+/* integration api: one-time key reveal — the code well grows to hold the 56-char key and the
+   copy button sits beside it rather than below, so the whole value reads as one control */
+.key-reveal-row { display: flex; align-items: center; gap: var(--space-2); }
+.key-reveal-row .code-well { flex: 1; min-width: 0; }
+.key-reveal-value { display: block; word-break: break-all; }

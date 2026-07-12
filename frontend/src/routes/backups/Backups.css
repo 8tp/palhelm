@@ -1,0 +1,49 @@
+/* Page-local layout for the backups route, ported from design/mockups/backups.html. */
+
+.backups-layout { display: grid; grid-template-columns: 1fr 300px; gap: var(--space-4); align-items: start; }
+@media (max-width: 1100px) { .backups-layout { grid-template-columns: 1fr; } }
+
+.backups-main { display: flex; flex-direction: column; gap: var(--space-3); min-width: 0; }
+
+.toolbar { display: flex; gap: var(--space-2); align-items: center; }
+.toolbar .search { width: 300px; }
+.toolbar .spacer { flex: 1; }
+.toolbar .next-hint { color: var(--ink-3); font-size: var(--text-xs); }
+
+.snap-name { font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink); white-space: nowrap; }
+.snap-day { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+.table .num { white-space: nowrap; }
+
+/* inline browse-contents drawer (same visual family as the mockup's dry-run block) */
+.contents-drawer {
+  background: var(--bg); border-top: 1px solid var(--line);
+  padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3);
+}
+.contents-drawer h3 { font-size: var(--text-sm); font-weight: 600; color: var(--ink); }
+.contents-list {
+  font-family: var(--font-mono); font-size: var(--text-sm);
+  display: flex; flex-direction: column; gap: 4px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-ctl);
+  padding: 10px 14px;
+}
+.contents-list .row { display: flex; gap: var(--space-4); }
+.contents-list .row .path { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.contents-list .row .size { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+/* restore dry-run worksheet: a slip on the desk, the olive spine running on through it —
+   the same visual family as the mockup's inline dry-run row, applied inside the restore dialog */
+.dryrun {
+  background: var(--bg);
+  border-radius: var(--radius-ctl);
+  box-shadow: inset 3px 0 0 var(--accent);
+  padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3);
+}
+.dryrun h3 { font-family: var(--font-mono); font-size: var(--text-sm); font-weight: 600; color: var(--ink); }
+
+.sched-next { display: flex; justify-content: space-between; align-items: center; padding-top: var(--space-2); border-top: 1px solid var(--line); }
+.sched-next .label {
+  font-size: var(--text-xs); text-transform: uppercase; letter-spacing: var(--track-caps); color: var(--ink-3);
+}
+.sched-next .num { font-family: var(--font-mono); font-size: var(--text-sm); }
+
+.confirm-word .input { font-family: var(--font-mono); letter-spacing: 0.08em; }

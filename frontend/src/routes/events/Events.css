@@ -1,0 +1,17 @@
+.events-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.events-toolbar .search { width: min(360px, 100%); }
+.events-toolbar .input { width: auto; }
+.events-count { margin-left: auto; color: var(--ink-3); font: var(--text-xs)/1.4 var(--font-mono); }
+.events-table-wrap { overflow-x: auto; }
+.events-table .events-time { white-space: nowrap; width: 190px; }
+.events-pagination { display: flex; justify-content: center; align-items: center; gap: var(--space-3); margin-top: var(--space-3); }
+@media (max-width: 700px) {
+  .events-toolbar { align-items: stretch; flex-direction: column; }
+  .events-toolbar .search, .events-toolbar .input { width: 100%; }
+  .events-count { margin-left: 0; }
+}

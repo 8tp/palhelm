@@ -1,0 +1,100 @@
+/* ============================================================
+   Command palette (⌘K) — cmdk used standalone, wrapped in the app's existing
+   native-<dialog> chrome (see components/CommandPalette.tsx and
+   docs/research/raw/shadcn-eval.md §4). cmdk ships zero CSS: every selector below
+   targets its own boolean HTML attributes (`cmdk-root`, `cmdk-item`, ...) and
+   `data-selected`/`data-disabled`, the same data-attribute-driven approach as the
+   Base UI primitives in app.css. Field-guide index-card palette: mono specimen
+   group labels, stamped kbd hints, olive selection wash.
+   ============================================================ */
+
+/* `display` MUST stay scoped to `[open]`: this is author CSS, and author-origin rules
+   override the UA stylesheet's `dialog:not([open]) { display: none }` regardless of
+   specificity (author always beats user-agent in the cascade) — an unconditional
+   `display: flex` here would make the closed dialog render inline in the page instead
+   of staying hidden, a real bug caught by screenshotting it in the closed state. */
+dialog.dialog-command[open] {
+  width: min(640px, 94vw);
+  max-height: min(72vh, 560px);
+  margin: 10vh auto auto;
+  padding: 0;
+  display: flex;
+}
+dialog.dialog-command .dialog-body { padding: 0; gap: 0; min-height: 0; display: flex; }
+
+.palette-command {
+  display: flex; flex-direction: column; min-height: 0; flex: 1;
+  outline: none;
+}
+
+.palette-input-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px; border-bottom: var(--border-ctl) solid var(--line);
+  color: var(--ink-3);
+}
+[cmdk-input] {
+  flex: 1; border: 0; outline: none; background: none;
+  font: 400 var(--text-lg)/1.3 var(--font-ui); color: var(--ink);
+}
+[cmdk-input]::placeholder { color: var(--ink-3); }
+
+[cmdk-list] {
+  overflow-y: auto; padding: var(--space-2);
+  min-height: 120px;
+}
+[cmdk-empty] {
+  padding: var(--space-6) var(--space-4); text-align: center;
+  color: var(--ink-3); font-size: var(--text-sm);
+}
+
+[cmdk-group] { padding-top: 6px; }
+[cmdk-group-items] { display: flex; flex-direction: column; gap: 1px; }
+[cmdk-group-heading] {
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: var(--track-caps);
+  color: var(--ink-3); padding: 8px 10px 4px;
+}
+
+[cmdk-item] {
+  display: flex; align-items: center; gap: 10px;
+  font: 500 var(--text-sm)/1.3 var(--font-ui); color: var(--ink);
+  padding: 8px 10px; border-radius: var(--radius-ctl);
+  cursor: pointer; user-select: none;
+}
+[cmdk-item] svg { flex: none; color: var(--ink-3); }
+[cmdk-item][data-selected="true"] {
+  background: var(--accent-soft); color: var(--accent-ink);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+[cmdk-item][data-selected="true"] svg { color: var(--accent-ink); }
+[cmdk-item][data-disabled="true"] { color: var(--ink-3); cursor: not-allowed; }
+[cmdk-item].palette-item-danger { color: var(--danger-ink); }
+[cmdk-item].palette-item-danger[data-selected="true"] {
+  background: var(--danger-soft); box-shadow: inset 3px 0 0 var(--danger);
+}
+
+.palette-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); flex: 1; min-width: 0; }
+.palette-row > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.palette-hint {
+  font-family: var(--font-mono); font-size: 11px; color: var(--ink-3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 45%;
+}
+
+.palette-kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  font: 600 11px/1 var(--font-mono); text-transform: uppercase;
+  color: var(--ink-2); background: var(--surface-2);
+  border: var(--border-ctl) solid var(--line-strong); border-radius: 5px;
+  padding: 3px 6px; min-width: 20px;
+}
+
+.palette-foot {
+  display: flex; align-items: center; gap: var(--space-4);
+  padding: 10px 16px; border-top: var(--border-ctl) solid var(--line);
+  font-size: var(--text-xs); color: var(--ink-3);
+}
+.palette-foot span { display: inline-flex; align-items: center; gap: 6px; }
+
+@media (max-width: 700px) {
+  dialog.dialog-command { width: 94vw; margin-top: 6vh; }
+}
