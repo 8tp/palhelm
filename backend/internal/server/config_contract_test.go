@@ -12,9 +12,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/palhelm/palhelm/internal/config"
-	"github.com/palhelm/palhelm/internal/gameconfig"
-	"github.com/palhelm/palhelm/internal/store"
+	"github.com/8tp/palhelm/internal/config"
+	"github.com/8tp/palhelm/internal/gameconfig"
+	"github.com/8tp/palhelm/internal/store"
 )
 
 // TestConfigFrontendContractAgainstRealHandler exercises the exact GET/PUT/error documents

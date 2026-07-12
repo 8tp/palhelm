@@ -7,7 +7,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/palhelm/palhelm/internal/webdist"
+	"github.com/8tp/palhelm/internal/webdist"
 )
 
 // spaHandler serves the embedded frontend: real files with sensible caching,

@@ -1,20 +1,18 @@
 # Spec: frontend
 
-React SPA in `frontend/`, embedded into the Go binary at build time. The design mockups in
-`design/mockups/` are the visual contract — the app must read pixel-equivalent to them.
-API contract: `docs/API.md`.
+React SPA in `frontend/`, embedded into the Go binary at build time. The app renders against a
+fixed field-guide design system. API contract: `docs/API.md`.
 
 ## Stack (fixed, no substitutions)
 - Vite + React 19 + TypeScript (strict). Router: `react-router` v7 (library mode, `BrowserRouter`).
 - Data: TanStack Query v5. Charts: `uplot` (+ thin React wrapper written in-repo). No UI kit,
   no Tailwind, no CSS-in-JS.
-- Styling: copy `design/mockups/tokens.css` and `ui.css` verbatim to `frontend/src/styles/`
-  (fix the font paths; fonts via the five woff2 files copied to `frontend/src/assets/fonts/`).
+- Styling: the design tokens and component styles live in `frontend/src/styles/`
+  (`tokens.css`, `ui.css`); fonts are the woff2 files under `frontend/src/assets/fonts/`.
   Page-specific styles go in per-route CSS files reusing tokens. NEVER hardcode a color.
-  Promote these page-local mockup patterns into shared components: toggle chip, code well,
-  diff list, meter bar, pressed-button state (see design/README.md).
-- Icons: inline SVGs extracted from the mockups into `src/components/icons.tsx` (16px, stroke
-  currentColor). Do not add an icon package.
+  Shared component patterns: toggle chip, code well, diff list, meter bar, pressed-button state.
+- Icons: inline SVGs in `src/components/icons.tsx` (16px, stroke currentColor). Do not add an
+  icon package.
 
 ## Structure
 ```

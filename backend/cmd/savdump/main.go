@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/palhelm/palhelm/internal/sav"
+	"github.com/8tp/palhelm/internal/sav"
 )
 
 func main() {

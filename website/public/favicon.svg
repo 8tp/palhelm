@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 26 26" fill="none">
-  <!-- v3 "sphere-wheel" mark (design/mark-v3-sphere-wheel.md), favicon cut: helm ring +
+  <!-- v3 "sphere-wheel" mark favicon cut: helm ring +
        8 ticks + diagonal split, MINUS the diamond window (it muddies below 20px). Colors
        are baked static (light desk / night-camp) since a favicon document has no access
        to the app's tokens.css custom properties. -->

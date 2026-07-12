@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/palhelm/palhelm/internal/paldeck"
+	"github.com/8tp/palhelm/internal/paldeck"
 )
 
 // palIconExtensions are tried in order when resolving a CharacterID to an on-disk icon file.

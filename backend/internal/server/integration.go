@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/palhelm/palhelm/internal/store"
+	"github.com/8tp/palhelm/internal/store"
 )
 
 // integrationRouter returns the dedicated GET-only sub-router mounted at

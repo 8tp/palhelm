@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/palhelm/palhelm/internal/store"
+	"github.com/8tp/palhelm/internal/store"
 )
 
 // apiKeyPrincipal identifies a validated bearer request. It is a distinct type from

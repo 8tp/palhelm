@@ -1,4 +1,4 @@
-// Inline SVG icons extracted from design/mockups/*.html. 16px, stroke currentColor unless noted.
+// Inline SVG icons extracted from the design mockups. 16px, stroke currentColor unless noted.
 import type { SVGProps } from "react";
 
 export type IconProps = SVGProps<SVGSVGElement>;
@@ -8,11 +8,11 @@ function base(props: IconProps) {
 }
 
 /**
- * The sphere-wheel mark (design/mark-v3-sphere-wheel.md "The mark"): the helm wheel's 8 radial
+ * The sphere-wheel mark (the sphere-wheel mark): the helm wheel's 8 radial
  * ticks + ring, fused with a capture sphere — a diagonal split with a leaf-green (var(--sphere))
  * upper-left half and a small offset diamond window. No equatorial band, no center button, no
  * gold (--brass retired from the mark). Line work (ring / ticks / split) takes the context color
- * var(--accent), as the old mark did. Geometry is exact from design/mark-v3-sphere-wheel.md — the
+ * var(--accent), as the old mark did. Geometry follows the sphere-wheel mark — the
  * rail uses 26px, login's hero 72px; pass `strokeWidth` to tune line weight. `dotRadius` is a
  * retained no-op prop (the v3 mark has no center dot) so existing call sites need no change. Wrap
  * in `wheelClassName="wheel"` to target the group for the login stamp-press / page-loader spin

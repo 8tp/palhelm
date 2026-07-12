@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/palhelm/palhelm/internal/config"
-	"github.com/palhelm/palhelm/internal/store"
+	"github.com/8tp/palhelm/internal/config"
+	"github.com/8tp/palhelm/internal/store"
 )
 
 // newIntegrationTestServer builds a fully wired Server against a temp SQLite store and an

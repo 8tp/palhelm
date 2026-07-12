@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/palhelm/palhelm/internal/paldeck"
-	"github.com/palhelm/palhelm/internal/sav"
+	"github.com/8tp/palhelm/internal/paldeck"
+	"github.com/8tp/palhelm/internal/sav"
 	_ "modernc.org/sqlite"
 )
 

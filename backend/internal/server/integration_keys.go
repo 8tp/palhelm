@@ -18,7 +18,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/palhelm/palhelm/internal/store"
+	"github.com/8tp/palhelm/internal/store"
 )
 
 // maxActiveIntegrationKeys bounds active keys, and by extension the integrationAuth cache

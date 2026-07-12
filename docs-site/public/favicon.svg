@@ -1,4 +1,4 @@
-<!-- Palhelm v3 "sphere-wheel" favicon (design/mark-v3-sphere-wheel.md): helm ring + 8 ticks
+<!-- Palhelm v3 "sphere-wheel" favicon: helm ring + 8 ticks
      + diagonal split, capture-sphere green half, MINUS the diamond window (it muddies below
      20px). Colors baked static since a favicon document has no access to the app tokens. -->
 <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26" fill="none">

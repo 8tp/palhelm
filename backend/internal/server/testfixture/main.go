@@ -11,9 +11,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/palhelm/palhelm/internal/config"
-	"github.com/palhelm/palhelm/internal/server"
-	"github.com/palhelm/palhelm/internal/store"
+	"github.com/8tp/palhelm/internal/config"
+	"github.com/8tp/palhelm/internal/server"
+	"github.com/8tp/palhelm/internal/store"
 )
 
 func main() {

@@ -12,8 +12,8 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/palhelm/palhelm/internal/backup"
-	"github.com/palhelm/palhelm/internal/gameconfig"
+	"github.com/8tp/palhelm/internal/backup"
+	"github.com/8tp/palhelm/internal/gameconfig"
 )
 
 func backupID(w http.ResponseWriter, r *http.Request) (int64, bool) {

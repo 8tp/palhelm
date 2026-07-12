@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/palhelm/palhelm/internal/store"
+	"github.com/8tp/palhelm/internal/store"
 )
 
 // TestParseBearerAcceptsValidTokenCaseInsensitiveScheme proves spec §3: the scheme is

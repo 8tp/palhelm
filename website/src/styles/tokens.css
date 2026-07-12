@@ -281,7 +281,7 @@
   --paper-grain-opacity: 0.06;
 }
 
-/* ---- marketing extension (site-only; DESIGN.md §4) ---- */
+/* ---- marketing extension (site-only) ---- */
 :root {
   --text-4xl: 34px;  /* section titles */
   --text-5xl: 48px;  /* page titles */

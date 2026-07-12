@@ -16,7 +16,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/palhelm/palhelm/internal/paldeck"
+	"github.com/8tp/palhelm/internal/paldeck"
 )
 
 func main() {

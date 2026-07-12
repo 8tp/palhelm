@@ -14,9 +14,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/palhelm/palhelm/internal/palworld"
-	"github.com/palhelm/palhelm/internal/sav"
-	"github.com/palhelm/palhelm/internal/store"
+	"github.com/8tp/palhelm/internal/palworld"
+	"github.com/8tp/palhelm/internal/sav"
+	"github.com/8tp/palhelm/internal/store"
 )
 
 // Publisher receives live SSE messages from pollers.

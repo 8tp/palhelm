@@ -22,9 +22,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/palhelm/palhelm/internal/config"
-	"github.com/palhelm/palhelm/internal/sav"
-	"github.com/palhelm/palhelm/internal/store"
+	"github.com/8tp/palhelm/internal/config"
+	"github.com/8tp/palhelm/internal/sav"
+	"github.com/8tp/palhelm/internal/store"
 )
 
 // auditDataServer builds a wired server with an effectively unlimited integration rate

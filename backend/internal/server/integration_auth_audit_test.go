@@ -23,7 +23,7 @@ import (
 
 	"log/slog"
 
-	"github.com/palhelm/palhelm/internal/config"
+	"github.com/8tp/palhelm/internal/config"
 )
 
 // TestUniform401AndZeroStateAcrossEveryFailureMode is the H4/oracle proof at the HTTP layer.

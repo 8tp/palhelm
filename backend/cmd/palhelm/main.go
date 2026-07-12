@@ -15,10 +15,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/palhelm/palhelm/internal/config"
-	"github.com/palhelm/palhelm/internal/sav"
-	"github.com/palhelm/palhelm/internal/server"
-	"github.com/palhelm/palhelm/internal/store"
+	"github.com/8tp/palhelm/internal/config"
+	"github.com/8tp/palhelm/internal/sav"
+	"github.com/8tp/palhelm/internal/server"
+	"github.com/8tp/palhelm/internal/store"
 )
 
 // version is stamped at build time via -ldflags "-X main.version=...".

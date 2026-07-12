@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/palhelm/palhelm/internal/palworld"
+	"github.com/8tp/palhelm/internal/palworld"
 )
 
 // CountdownStage describes when a warning is sent relative to countdown start.

@@ -14,11 +14,9 @@ level and the parts of the backend, frontend, and bot you are most likely to tou
 palhelm/
   backend/     Go server: API, pollers, engines, save parser, storage
   frontend/    React and TypeScript web app, embedded into the binary
-  bot/         Discord bot, a separate Node project
   docs/        source-of-truth docs: architecture, API, specs, roadmaps
   docs-site/   this documentation site (Astro and Starlight)
   website/     the public showcase site
-  design/      the design system and mockups
   scripts/     support scripts, including the tile and icon fetchers
   examples/    example configuration
   assets/      shared assets

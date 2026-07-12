@@ -1,6 +1,6 @@
 /* ============================================================
    Shared app-level styles layered on top of tokens.css + ui.css.
-   ui.css (ported verbatim from design/mockups/) already defines the field-guide
+   ui.css (ported verbatim from the design mockups) already defines the field-guide
    component library — chip-toggle, code-well, diff-list, meter, tabs, stamp, etc. — so
    this file is only framework plumbing the static mockups didn't need to express in CSS:
    skeletons, the native <dialog>, the toast stack, uPlot host sizing, the full-page

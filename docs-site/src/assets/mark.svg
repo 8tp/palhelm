@@ -1,4 +1,4 @@
-<!-- Palhelm v3 "sphere-wheel" mark (design/mark-v3-sphere-wheel.md): helm ring + 8 ticks +
+<!-- Palhelm v3 "sphere-wheel" mark (sphere-wheel mark): helm ring + 8 ticks +
      diagonal split, capture-sphere green halves with an offset diamond window. Geometry
      matches website/src/components/Mark.astro. Colors are hardcoded to the olive spine band
      context because the docs header band is constant across themes: ring/ticks/split #ccd79b

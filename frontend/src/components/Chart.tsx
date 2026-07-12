@@ -24,9 +24,9 @@ function readVar(name: string, fallback: string): string {
 }
 
 /**
- * uPlot wrapper matching the mockup chart aesthetic (design/mockups/ui.css `.chart`): faint grid,
+ * uPlot wrapper matching the mockup chart aesthetic (the shared design styles `.chart`): faint grid,
  * mono axis labels, a 2px accent line with soft area fill under it, and an emphasized dot on the
- * most recent point. One y-axis only — never dual-axis (see design/README.md dataviz rules).
+ * most recent point. One y-axis only — never dual-axis (see the design system notes dataviz rules).
  */
 export function Chart({ data, height = 180, ariaLabel, xFormat, yFormat, yRange, annotation, xAxis = true }: ChartProps) {
   const hostRef = useRef<HTMLDivElement>(null);

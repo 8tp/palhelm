@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/palhelm/palhelm/internal/config"
-	"github.com/palhelm/palhelm/internal/store"
+	"github.com/8tp/palhelm/internal/config"
+	"github.com/8tp/palhelm/internal/store"
 )
 
 // newKeyManagementTestServer builds a full server with both an admin and a viewer

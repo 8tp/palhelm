@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/palhelm/palhelm/internal/config"
-	"github.com/palhelm/palhelm/internal/store"
+	"github.com/8tp/palhelm/internal/config"
+	"github.com/8tp/palhelm/internal/store"
 )
 
 // integrationOpenAPIDoc parses the embedded openapi.json once per test.

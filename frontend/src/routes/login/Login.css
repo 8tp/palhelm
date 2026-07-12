@@ -1,7 +1,7 @@
 .login-page { display: grid; place-items: center; min-height: 100vh; position: relative; }
 
 /* the expedition map on the desk: full-bleed hero, calm center.
-   At night camp it dims to a lantern-lit chart (design/mockups/login.html). */
+   At night camp it dims to a lantern-lit chart (the design mockups). */
 .desk {
   position: fixed; inset: 0; z-index: -1;
   background: url("../../assets/images/hero-paper.png") center / cover no-repeat;

@@ -21,7 +21,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/palhelm/palhelm/internal/store"
+	"github.com/8tp/palhelm/internal/store"
 )
 
 var (

@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/palhelm/palhelm/internal/config"
-	"github.com/palhelm/palhelm/internal/gameconfig"
+	"github.com/8tp/palhelm/internal/config"
+	"github.com/8tp/palhelm/internal/gameconfig"
 )
 
 func TestAuthRoleMatrix(t *testing.T) {

@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 /* Utilities exist but resolve to the vars, so theme switching keeps
-   working through :root[data-theme] (DESIGN.md §4). */
+   working through :root[data-theme]. */
 @theme inline {
   --color-bg: var(--bg); --color-surface: var(--surface);
   --color-surface-2: var(--surface-2); --color-surface-3: var(--surface-3);
@@ -62,7 +62,7 @@
 
   /* forced-colors: the box-shadow focus ring is author-drawn color, which this mode
      suppresses , a transparent outline still paints in the system Highlight color,
-     restoring a visible ring (see design/mockups/ui.css for the full rationale). */
+     restoring a visible ring (see the shared design styles for the full rationale). */
   @media (forced-colors: active) {
     :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
       outline: 2px solid transparent;

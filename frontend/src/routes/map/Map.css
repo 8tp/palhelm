@@ -1,4 +1,4 @@
-/* Page-local styles for the live map, ported from design/mockups/map.html. */
+/* Page-local styles for the live map, ported from the design mockups. */
 
 .map-card { height: 70vh; min-height: 480px; }
 
@@ -67,7 +67,7 @@
 .marker-base .sq {
   /* --brass-bright is ~1.48:1 on the cream desk (--bg) in light theme, well under the
      3:1 UI-graphics floor — swap the brand-gold outline for --ink-2, which the mockup
-     (design/mockups/map.html) already uses here and holds ≥3:1 in both themes. */
+     (the design mockups) already uses here and holds ≥3:1 in both themes. */
   width: 12px; height: 12px; flex: none;
   border: var(--border-ctl) solid var(--ink-2);
   background: color-mix(in srgb, var(--ink-2) 14%, transparent);

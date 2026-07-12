@@ -1,4 +1,4 @@
-/* Page-local layout for the console route, ported from design/mockups/console.html. */
+/* Page-local layout for the console route, ported from the design mockups. */
 
 .console-layout { display: grid; grid-template-columns: 1fr 300px; gap: var(--space-4); align-items: stretch; flex: 1; min-height: 0; }
 @media (max-width: 1100px) { .console-layout { grid-template-columns: 1fr; } }

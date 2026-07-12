@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/palhelm/palhelm/internal/store"
+	"github.com/8tp/palhelm/internal/store"
 )
 
 func testEngine(t *testing.T) (*Engine, *store.Store, string) {

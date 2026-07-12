@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/palhelm/palhelm/internal/sav"
+	"github.com/8tp/palhelm/internal/sav"
 )
 
 func TestUpgradeFromV020DatabasePreservesData(t *testing.T) {

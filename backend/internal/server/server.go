@@ -18,13 +18,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/palhelm/palhelm/internal/backup"
-	"github.com/palhelm/palhelm/internal/config"
-	"github.com/palhelm/palhelm/internal/gameconfig"
-	"github.com/palhelm/palhelm/internal/palworld"
-	"github.com/palhelm/palhelm/internal/poller"
-	"github.com/palhelm/palhelm/internal/steamavatar"
-	"github.com/palhelm/palhelm/internal/store"
+	"github.com/8tp/palhelm/internal/backup"
+	"github.com/8tp/palhelm/internal/config"
+	"github.com/8tp/palhelm/internal/gameconfig"
+	"github.com/8tp/palhelm/internal/palworld"
+	"github.com/8tp/palhelm/internal/poller"
+	"github.com/8tp/palhelm/internal/steamavatar"
+	"github.com/8tp/palhelm/internal/store"
 )
 
 //go:embed openapi.json

@@ -11,9 +11,8 @@ npm run build     # static build → dist/
 npm run preview   # serve the built output
 ```
 
-- `DESIGN.md` — the build contract: concept, tokens, components, page specs.
-- `src/styles/tokens.css` — verbatim copy of `design/mockups/tokens.css` plus a small
-  marketing type-scale extension. The product repo stays the source of truth.
+- `src/styles/tokens.css` — the design tokens shared with the panel, plus a small
+  marketing type-scale extension.
 - `src/assets/shots/` — panel captures taken from the frontend's mock mode (`?mock`);
   pal icons show placeholder chips there because mock mode serves no icon files.
 - `public/hero/` — the ambient hero footage: an animated pass over a license-clean

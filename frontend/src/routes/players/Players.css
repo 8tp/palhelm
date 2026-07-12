@@ -1,4 +1,4 @@
-/* Page-local layout for the players route, ported from design/mockups/players.html. */
+/* Page-local layout for the players route, ported from the design mockups. */
 
 .players-layout { display: grid; grid-template-columns: 1fr 340px; gap: var(--space-4); align-items: start; }
 @media (max-width: 1100px) { .players-layout { grid-template-columns: 1fr; } }

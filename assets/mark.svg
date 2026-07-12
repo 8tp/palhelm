@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 26 26" fill="none">
   <!-- Palhelm mark v3 "sphere-wheel": abstracted ship's helm (8 ticks + ring) fused with a
        capture sphere — diagonal split, leaf-green upper-left half (#63ad50) + offset diamond
-       window; line work olive #55682b. See design/mark-v3-sphere-wheel.md. -->
+       window; line work olive #55682b. -->
   <path d="M6.99 19.01 A8.5 8.5 0 1 1 19.01 6.99 Z" fill="#63ad50"/>
   <path d="M6.99 19.01 L19.01 6.99" stroke="#55682b" stroke-width="2" stroke-linecap="round"/>
   <rect x="15.1" y="15.1" width="3" height="3" rx="0.6" transform="rotate(45 16.6 16.6)" fill="#63ad50"/>

@@ -2,8 +2,8 @@ package poller
 
 import (
 	"context"
-	"github.com/palhelm/palhelm/internal/palworld"
-	"github.com/palhelm/palhelm/internal/store"
+	"github.com/8tp/palhelm/internal/palworld"
+	"github.com/8tp/palhelm/internal/store"
 	"io"
 	"log/slog"
 	"path/filepath"

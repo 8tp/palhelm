@@ -1,4 +1,4 @@
-module github.com/palhelm/palhelm
+module github.com/8tp/palhelm
 
 go 1.26.5
 

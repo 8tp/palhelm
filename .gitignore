@@ -34,3 +34,6 @@ oo2core*
 .DS_Store
 .idea/
 .vscode/
+
+# wrangler local cache
+.wrangler/

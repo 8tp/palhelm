@@ -23,7 +23,7 @@ services:
       - ../data:/palworld
 
   palhelm:
-    image: ghcr.io/palhelm/palhelm:latest   # or build: .
+    image: ghcr.io/8tp/palhelm:latest   # or build: .
     container_name: palhelm
     restart: unless-stopped
     depends_on:
