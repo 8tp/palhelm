@@ -1,0 +1,19 @@
+.git
+.gitignore
+palhelm
+
+frontend/node_modules
+frontend/dist
+backend/internal/webdist/dist
+
+# Runtime/operator data must never enter the image build context. This includes
+# the proprietary Oodle library and any Pocketpair-derived tiles/icons.
+backend/data
+data
+palhelm-data
+**/map-tiles
+**/map-tiles-*
+**/pal-icons
+
+docs/reviews
+docs/prompts

@@ -1,0 +1,36 @@
+# binaries & build output
+/palhelm
+/backend/palhelm
+/frontend/dist/
+node_modules/
+/website/dist/
+/docs-site/dist/
+*.log
+
+# separate product, ships as its own repo
+/bot/
+
+# local-only operational data
+/.deploy-backups/
+/.sav-analysis/
+*.bak-*
+
+# local runtime data
+/data/
+/bot/data/
+*.db
+*.sqlite*
+
+# secrets / local overrides
+.env
+.env.*
+*.local.yml
+
+# oodle runtime lib (never redistribute)
+*.so.9
+oo2core*
+
+# editor/os noise
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,22 @@
+services:
+  palworld:
+    image: thijsvanloef/palworld-server-docker:latest
+    container_name: palworld
+    restart: unless-stopped
+    environment:
+      TZ: "America/New_York"
+      PUID: 1000
+      PGID: 1000
+      PORT: 8211
+      PLAYERS: 16
+      MULTITHREADING: "true"
+      SERVER_NAME: "fixture server" # keep this comment
+      ADMIN_PASSWORD: "replaced-secret"
+      COMMUNITY_SERVER: "false"
+    volumes:
+      - ./data:/palworld
+
+  other:
+    image: busybox
+    environment:
+      SERVER_NAME: "untouched"

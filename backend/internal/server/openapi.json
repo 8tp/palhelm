@@ -1,0 +1,226 @@
+{
+  "openapi": "3.1.0",
+  "info": {"title": "Palhelm API", "version": "1.0.0"},
+  "security": [{"session": []}],
+  "paths": {
+    "/healthz": {"get": {"security": [], "responses": {"200": {"description": "Liveness"}}}},
+    "/api/openapi.json": {"get": {"security": [], "responses": {"200": {"description": "This document"}}}},
+    "/api/v1/auth/login": {"post": {"security": [], "responses": {"200": {"description": "Session created"}}}},
+    "/api/v1/auth/logout": {"post": {"responses": {"200": {"description": "Session cleared"}}}},
+    "/api/v1/auth/session": {"get": {"responses": {"200": {"description": "Current session"}}}},
+    "/api/v1/server": {"get": {"responses": {"200": {"description": "Server status"}}}},
+    "/api/v1/server/health": {"get": {"responses": {"200": {"description": "Data-source health"}}}},
+    "/api/v1/server/announce": {"post": {"responses": {"200": {"description": "Announcement sent"}}}},
+    "/api/v1/server/save": {"post": {"responses": {"200": {"description": "Save requested"}}}},
+    "/api/v1/server/shutdown": {"post": {"responses": {"202": {"description": "Shutdown scheduled"}}}},
+    "/api/v1/server/shutdown/cancel": {"post": {"responses": {"200": {"description": "Countdown cancelled"}}}},
+    "/api/v1/metrics/current": {"get": {"responses": {"200": {"description": "Current metrics"}}}},
+    "/api/v1/metrics/history": {"get": {"responses": {"200": {"description": "Metric series"}}}},
+    "/api/v1/players": {"get": {"responses": {"200": {"description": "Players"}}}},
+    "/api/v1/players/{uid}": {"get": {"parameters": [{"name":"uid","in":"path","required":true,"schema":{"type":"string"}}], "responses": {"200": {"description": "Player detail"}}}},
+    "/api/v1/players/{uid}/kick": {"post": {"parameters": [{"name":"uid","in":"path","required":true,"schema":{"type":"string"}}], "responses": {"200": {"description": "Player kicked"}}}},
+    "/api/v1/players/{uid}/ban": {"post": {"parameters": [{"name":"uid","in":"path","required":true,"schema":{"type":"string"}}], "responses": {"200": {"description": "Player banned"}}}},
+    "/api/v1/players/{uid}/unban": {"post": {"parameters": [{"name":"uid","in":"path","required":true,"schema":{"type":"string"}}], "responses": {"200": {"description": "Player unbanned"}}}},
+    "/api/v1/whitelist": {"get": {"responses": {"200": {"description": "Whitelist"}}}, "put": {"responses": {"200": {"description": "Whitelist replaced"}}}},
+    "/api/v1/guilds": {"get": {"responses": {"200": {"description": "Guilds"}}}},
+    "/api/v1/world": {"get": {"responses": {"200": {"description": "Save parse status"}}}},
+    "/api/v1/world/parse": {"post": {"responses": {"200": {"description": "Save parsed"}}}},
+    "/api/v1/map/dataset": {"get": {"responses": {"200": {"description": "Map tile pyramid provenance (fetched_at/game_version/source), defaulted to a pre-1.0 marker when unset"}}}},
+    "/api/v1/paldeck/icon/{characterId}": {"get": {"parameters": [{"name":"characterId","in":"path","required":true,"schema":{"type":"string"}}], "responses": {"200": {"description": "Pal preview icon image (webp or png), matched case-insensitively"}, "404": {"description": "No icon installed for this CharacterID; the frontend should fall back to an initials avatar"}}}},
+    "/api/v1/paldeck/icon-dataset": {"get": {"responses": {"200": {"description": "Installed pal-icon set provenance (source/fetchedAt/count) plus the full known CharacterID roster"}}}},
+    "/api/v1/console/exec": {"post": {"responses": {"200": {"description": "Command executed"}}}},
+    "/api/v1/console/log": {"get": {"responses": {"200": {"description": "Console history"}}}},
+    "/api/v1/console/saved": {"get": {"responses": {"200": {"description": "Saved commands"}}}, "post": {"responses": {"201": {"description": "Command saved"}}}},
+    "/api/v1/console/saved/{id}": {"delete": {"parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"integer"}}], "responses": {"204": {"description": "Command deleted"}}}},
+    "/api/v1/events": {"get": {"responses": {"200": {"description": "Events"}}}},
+    "/api/v1/events/stream": {"get": {"responses": {"200": {"description": "SSE stream"}}}},
+    "/api/v1/backups": {
+      "get": {"responses": {"200": {"description": "Indexed backups", "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/Backup"}}}}}}},
+      "post": {"responses": {"201": {"description": "Backup created", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Backup"}}}}, "409": {"description": "Another backup operation is running", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}}}
+    },
+    "/api/v1/backups/{id}/download": {
+      "get": {"parameters": [{"$ref": "#/components/parameters/BackupID"}], "responses": {"200": {"description": "gzip-compressed tar archive", "headers": {"Content-Disposition": {"schema": {"type": "string"}}}, "content": {"application/gzip": {"schema": {"type": "string", "contentEncoding": "binary"}}}}, "400": {"description": "Invalid backup id", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}, "404": {"description": "Backup not found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}}},
+      "head": {"parameters": [{"$ref": "#/components/parameters/BackupID"}], "responses": {"200": {"description": "Archive metadata without a response body", "headers": {"Content-Disposition": {"schema": {"type": "string"}}, "Content-Length": {"schema": {"type": "integer"}}}}, "400": {"description": "Invalid backup id"}, "404": {"description": "Backup not found"}}}
+    },
+    "/api/v1/backups/{id}/contents": {"get": {"parameters": [{"$ref": "#/components/parameters/BackupID"}], "responses": {"200": {"description": "Archive contents", "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/BackupEntry"}}}}}, "400": {"description": "Invalid backup id", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}, "404": {"description": "Backup not found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}}}},
+    "/api/v1/backups/{id}/restore/dry-run": {"post": {"parameters": [{"$ref": "#/components/parameters/BackupID"}], "responses": {"200": {"description": "Restore difference preview", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/BackupDiff"}}}}, "400": {"description": "Invalid backup id", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}, "404": {"description": "Backup not found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}, "409": {"description": "Another backup operation is running", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}}}},
+    "/api/v1/backups/{id}/restore": {"post": {"parameters": [{"$ref": "#/components/parameters/BackupID"}], "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RestoreRequest"}}}}, "responses": {"200": {"description": "Backup restored", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/BackupDiff"}}}}, "400": {"description": "Invalid confirmation", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}, "404": {"description": "Backup not found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}, "409": {"description": "Server is reachable or another backup operation is running", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}}}},
+    "/api/v1/backups/{id}": {"delete": {"parameters": [{"$ref": "#/components/parameters/BackupID"}], "responses": {"200": {"description": "Backup deleted", "content": {"application/json": {"schema": {"type": "object", "required": ["ok"], "properties": {"ok": {"type": "boolean", "const": true}}}}}}, "400": {"description": "Invalid backup id", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}, "404": {"description": "Backup not found", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}, "409": {"description": "Another backup operation is running", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}}}},
+    "/api/v1/backups/schedule": {"get": {"responses": {"200": {"description": "Persisted backup schedule", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/BackupSchedule"}}}}}}, "put": {"requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/BackupScheduleUpdate"}}}}, "responses": {"200": {"description": "Updated backup schedule and actual next deadline", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/BackupSchedule"}}}}, "400": {"description": "Invalid schedule", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}}}},
+    "/api/v1/config": {
+      "get": {"responses": {"200": {"description": "Merged desired/effective configuration and deployment capabilities", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ConfigDoc"}}}}}},
+      "put": {"requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ConfigUpdate"}}}}, "responses": {"200": {"description": "Updated full configuration document", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ConfigDoc"}}}}, "400": {"description": "Invalid setting or missing version", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}, "409": {"description": "Read-only deployment or external file conflict", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}}}
+    },
+    "/api/v1/config/raw": {"get": {"responses": {"200": {"description": "Raw effective PalWorldSettings.ini", "content": {"text/plain": {"schema": {"type": "string"}}}}, "404": {"description": "INI file unavailable", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}}}},
+    "/api/v1/config/apply": {"post": {"responses": {"501": {"description": "One-click apply intentionally disabled; error includes manualCommand", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}}}},
+    "/api/v1/integration-keys": {
+      "post": {"summary": "Create a bearer key for the Integration API (admin only)", "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CreateIntegrationKeyRequest"}}}}, "responses": {
+        "201": {"description": "Key created. The plaintext key appears here and nowhere else, ever - store it now.", "headers": {"Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/IntegrationKeyCreated"}}}},
+        "400": {"description": "label missing, not 1-64 chars after trimming, or contains control characters", "headers": {"Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+        "401": {"description": "No session", "headers": {"Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+        "403": {"description": "Viewer sessions may not manage keys", "headers": {"Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+        "409": {"description": "The active-key cap (100) has been reached", "headers": {"Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+      }},
+      "get": {"summary": "List all keys, including revoked ones, newest first (admin only)", "responses": {
+        "200": {"description": "Keys, never including plaintext or a digest", "headers": {"Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"type": "array", "items": {"$ref": "#/components/schemas/IntegrationKey"}}}}},
+        "401": {"description": "No session", "headers": {"Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+        "403": {"description": "Viewer sessions may not manage keys", "headers": {"Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+      }}
+    },
+    "/api/v1/integration-keys/{id}": {
+      "delete": {"summary": "Soft-revoke a key (admin only, idempotent)", "parameters": [{"$ref": "#/components/parameters/IntegrationKeyID"}], "responses": {
+        "200": {"description": "Revoked (or already-revoked, returned unchanged)", "headers": {"Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/IntegrationKey"}}}},
+        "401": {"description": "No session", "headers": {"Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+        "403": {"description": "Viewer sessions may not manage keys", "headers": {"Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+        "404": {"description": "Unknown key id", "headers": {"Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}}
+      }}
+    },
+    "/api/integration/v1/players": {
+      "get": {"summary": "Keyset-paginated player roster", "security": [{"bearerAuth": []}], "parameters": [{"$ref": "#/components/parameters/IntegrationLimit"}, {"$ref": "#/components/parameters/IntegrationCursor"}, {"$ref": "#/components/parameters/IntegrationOnline"}, {"$ref": "#/components/parameters/IntegrationIfNoneMatch"}], "responses": {
+        "200": {"description": "A page of players", "headers": {"ETag": {"$ref": "#/components/headers/ETag"}, "Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/IntegrationPlayersPage"}}}},
+        "304": {"$ref": "#/components/responses/IntegrationNotModified"},
+        "400": {"description": "Invalid limit, cursor, or online value (invalid_limit / invalid_cursor / invalid_request)", "headers": {"Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+        "401": {"$ref": "#/components/responses/IntegrationUnauthorized"},
+        "429": {"$ref": "#/components/responses/IntegrationRateLimited"}
+      }},
+      "post": {"summary": "Only GET is registered on this router; every other method is rejected after auth", "security": [{"bearerAuth": []}], "responses": {"405": {"$ref": "#/components/responses/IntegrationMethodNotAllowed"}}}
+    },
+    "/api/integration/v1/players/{uid}": {
+      "get": {"summary": "One player, with their pals", "security": [{"bearerAuth": []}], "parameters": [{"$ref": "#/components/parameters/IntegrationUID"}, {"$ref": "#/components/parameters/IntegrationIfNoneMatch"}], "responses": {
+        "200": {"description": "Player detail", "headers": {"ETag": {"$ref": "#/components/headers/ETag"}, "Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/IntegrationPlayerDetailEnvelope"}}}},
+        "304": {"$ref": "#/components/responses/IntegrationNotModified"},
+        "401": {"$ref": "#/components/responses/IntegrationUnauthorized"},
+        "404": {"description": "Unknown uid, or the path segment failed the pre-store uid pattern check", "headers": {"Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+        "429": {"$ref": "#/components/responses/IntegrationRateLimited"}
+      }},
+      "post": {"summary": "Only GET is registered on this router; every other method is rejected after auth", "security": [{"bearerAuth": []}], "parameters": [{"$ref": "#/components/parameters/IntegrationUID"}], "responses": {"405": {"$ref": "#/components/responses/IntegrationMethodNotAllowed"}}}
+    },
+    "/api/integration/v1/pals": {
+      "get": {"summary": "Keyset-paginated bulk pal roster with owner uid/name joined in", "security": [{"bearerAuth": []}], "parameters": [{"$ref": "#/components/parameters/IntegrationLimit"}, {"$ref": "#/components/parameters/IntegrationCursor"}, {"$ref": "#/components/parameters/IntegrationIfNoneMatch"}], "responses": {
+        "200": {"description": "A page of pals", "headers": {"ETag": {"$ref": "#/components/headers/ETag"}, "Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/IntegrationPalsPage"}}}},
+        "304": {"$ref": "#/components/responses/IntegrationNotModified"},
+        "400": {"$ref": "#/components/responses/IntegrationBadRequest"},
+        "401": {"$ref": "#/components/responses/IntegrationUnauthorized"},
+        "429": {"$ref": "#/components/responses/IntegrationRateLimited"}
+      }},
+      "post": {"summary": "Only GET is registered on this router; every other method is rejected after auth", "security": [{"bearerAuth": []}], "responses": {"405": {"$ref": "#/components/responses/IntegrationMethodNotAllowed"}}}
+    },
+    "/api/integration/v1/guilds": {
+      "get": {"summary": "All guilds with members and bases (not paginated)", "security": [{"bearerAuth": []}], "parameters": [{"$ref": "#/components/parameters/IntegrationIfNoneMatch"}], "responses": {
+        "200": {"description": "Guild list", "headers": {"ETag": {"$ref": "#/components/headers/ETag"}, "Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/IntegrationGuildsEnvelope"}}}},
+        "304": {"$ref": "#/components/responses/IntegrationNotModified"},
+        "401": {"$ref": "#/components/responses/IntegrationUnauthorized"},
+        "429": {"$ref": "#/components/responses/IntegrationRateLimited"}
+      }},
+      "post": {"summary": "Only GET is registered on this router; every other method is rejected after auth", "security": [{"bearerAuth": []}], "responses": {"405": {"$ref": "#/components/responses/IntegrationMethodNotAllowed"}}}
+    },
+    "/api/integration/v1/map": {
+      "get": {"summary": "Map dataset metadata for plotting base coordinates client-side (no tile images)", "security": [{"bearerAuth": []}], "parameters": [{"$ref": "#/components/parameters/IntegrationIfNoneMatch"}], "responses": {
+        "200": {"description": "Map dataset metadata", "headers": {"ETag": {"$ref": "#/components/headers/ETag"}, "Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/IntegrationMapEnvelope"}}}},
+        "304": {"$ref": "#/components/responses/IntegrationNotModified"},
+        "401": {"$ref": "#/components/responses/IntegrationUnauthorized"},
+        "429": {"$ref": "#/components/responses/IntegrationRateLimited"}
+      }},
+      "post": {"summary": "Only GET is registered on this router; every other method is rejected after auth", "security": [{"bearerAuth": []}], "responses": {"405": {"$ref": "#/components/responses/IntegrationMethodNotAllowed"}}}
+    },
+    "/api/integration/v1/server": {
+      "get": {"summary": "Server status from the poller's cached last-successful snapshot (never a per-request upstream call)", "security": [{"bearerAuth": []}], "parameters": [{"$ref": "#/components/parameters/IntegrationIfNoneMatch"}], "responses": {
+        "200": {"description": "Server status; state is \"unreachable\" with zero-value fields when no snapshot exists, never a 5xx", "headers": {"ETag": {"$ref": "#/components/headers/ETag"}, "Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/IntegrationServerEnvelope"}}}},
+        "304": {"$ref": "#/components/responses/IntegrationNotModified"},
+        "401": {"$ref": "#/components/responses/IntegrationUnauthorized"},
+        "429": {"$ref": "#/components/responses/IntegrationRateLimited"}
+      }},
+      "post": {"summary": "Only GET is registered on this router; every other method is rejected after auth", "security": [{"bearerAuth": []}], "responses": {"405": {"$ref": "#/components/responses/IntegrationMethodNotAllowed"}}}
+    },
+    "/api/integration/v1/metrics/current": {
+      "get": {"summary": "Current performance/uptime telemetry, field-for-field with the session metrics view", "security": [{"bearerAuth": []}], "parameters": [{"$ref": "#/components/parameters/IntegrationIfNoneMatch"}], "responses": {
+        "200": {"description": "Current metrics", "headers": {"ETag": {"$ref": "#/components/headers/ETag"}, "Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/IntegrationMetricsEnvelope"}}}},
+        "304": {"$ref": "#/components/responses/IntegrationNotModified"},
+        "401": {"$ref": "#/components/responses/IntegrationUnauthorized"},
+        "429": {"$ref": "#/components/responses/IntegrationRateLimited"}
+      }},
+      "post": {"summary": "Only GET is registered on this router; every other method is rejected after auth", "security": [{"bearerAuth": []}], "responses": {"405": {"$ref": "#/components/responses/IntegrationMethodNotAllowed"}}}
+    },
+    "/api/integration/v1/events": {
+      "get": {"summary": "Bounded recent public activity with strict server-side redaction", "security": [{"bearerAuth": []}], "parameters": [{"$ref": "#/components/parameters/IntegrationEventLimit"}, {"$ref": "#/components/parameters/IntegrationIfNoneMatch"}], "responses": {
+        "200": {"description": "Recent allowlisted join, leave, backup, and system transitions; never event metadata or admin/config/audit details", "headers": {"ETag": {"$ref": "#/components/headers/ETag"}, "Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/IntegrationEventsEnvelope"}}}},
+        "304": {"$ref": "#/components/responses/IntegrationNotModified"},
+        "400": {"description": "Invalid bounded recent-event limit (invalid_limit)", "headers": {"Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+        "401": {"$ref": "#/components/responses/IntegrationUnauthorized"},
+        "429": {"$ref": "#/components/responses/IntegrationRateLimited"}
+      }},
+      "post": {"summary": "Only GET is registered on this router; every other method is rejected after auth", "security": [{"bearerAuth": []}], "responses": {"405": {"$ref": "#/components/responses/IntegrationMethodNotAllowed"}}}
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "session": {"type": "apiKey", "in": "cookie", "name": "palhelm_session"},
+      "bearerAuth": {"type": "http", "scheme": "bearer", "description": "Integration API key, format phk_<8 lowercase hex>_<43 base64url chars> (56 chars total). Created via POST /api/v1/integration-keys; the plaintext is shown exactly once. Scoped to the GET-only /api/integration/v1 group and never accepted by any session-gated route. Treat keys as passwords and serve this API over TLS at the network edge."}
+    },
+    "parameters": {
+      "BackupID": {"name": "id", "in": "path", "required": true, "schema": {"type": "integer", "format": "int64", "minimum": 1}},
+      "IntegrationKeyID": {"name": "id", "in": "path", "required": true, "schema": {"type": "string", "pattern": "^[0-9a-f]{8}$"}},
+      "IntegrationLimit": {"name": "limit", "in": "query", "required": false, "description": "Page size. Out-of-range or non-integer values return 400 invalid_limit.", "schema": {"type": "integer", "minimum": 1, "maximum": 500, "default": 100}},
+      "IntegrationEventLimit": {"name": "limit", "in": "query", "required": false, "description": "Bounded number of recent public events. Out-of-range or non-integer values return 400 invalid_limit.", "schema": {"type": "integer", "minimum": 1, "maximum": 100, "default": 50}},
+      "IntegrationCursor": {"name": "cursor", "in": "query", "required": false, "description": "Opaque keyset cursor from a previous page's nextCursor. Undecodable, wrong-version, or wrong-charset values return 400 invalid_cursor. Never construct this value; treat it as opaque.", "schema": {"type": "string"}},
+      "IntegrationOnline": {"name": "online", "in": "query", "required": false, "description": "When \"true\", filters to players in the poller's current online set. Any other non-empty value returns 400 invalid_request.", "schema": {"type": "string", "enum": ["true"]}},
+      "IntegrationIfNoneMatch": {"name": "If-None-Match", "in": "header", "required": false, "description": "Comma-separated list of ETags (weak comparison) or \"*\"; a match returns 304 with no body.", "schema": {"type": "string"}},
+      "IntegrationUID": {"name": "uid", "in": "path", "required": true, "description": "Must match ^[0-9a-fA-F-]{1,36}$ before any store lookup; anything else returns 404 without a store query.", "schema": {"type": "string", "pattern": "^[0-9a-fA-F-]{1,36}$"}}
+    },
+    "headers": {
+      "ETag": {"description": "Weak content-hash ETag (SHA-256 of the response body, first 32 hex chars, W/-prefixed). Present on every integration 200 and echoed unchanged on the resulting 304; never present on 4xx/5xx.", "schema": {"type": "string"}},
+      "NoStore": {"description": "Always \"no-store\": set on every /api/integration/v1 response regardless of status, and on every /api/v1/integration-keys response.", "schema": {"type": "string", "const": "no-store"}},
+      "RetryAfter": {"description": "Seconds to wait before retrying. Present on every 429. On the fail-closed limiter-map-full path this is the full 60s window, since there is no oldest timestamp to compute a tighter value from.", "schema": {"type": "integer", "minimum": 1}},
+      "WWWAuthenticate": {"description": "Present on every 401 from the integration group.", "schema": {"type": "string", "const": "Bearer"}},
+      "Allow": {"description": "Present on every 405 from the integration group.", "schema": {"type": "string", "const": "GET"}}
+    },
+    "responses": {
+      "IntegrationUnauthorized": {"description": "Missing, duplicate, malformed, unknown-id, wrong-secret, or revoked bearer token. Every failure mode returns this identical body and headers - there is no distinguishable variant to probe with.", "headers": {"WWW-Authenticate": {"$ref": "#/components/headers/WWWAuthenticate"}, "Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "IntegrationRateLimited": {"description": "The per-key rate limit (default 60 req/min, PALHELM_INTEGRATION_RATE_LIMIT) was exceeded.", "headers": {"Retry-After": {"$ref": "#/components/headers/RetryAfter"}, "Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "IntegrationBadRequest": {"description": "Invalid limit, cursor, or query parameter (invalid_limit / invalid_cursor / invalid_request).", "headers": {"Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "IntegrationMethodNotAllowed": {"description": "The integration router registers only GET handlers; every other method on a real or unknown path is rejected after auth with this envelope.", "headers": {"Allow": {"$ref": "#/components/headers/Allow"}, "Cache-Control": {"$ref": "#/components/headers/NoStore"}}, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Error"}}}},
+      "IntegrationNotModified": {"description": "If-None-Match matched the current representation (weak comparison, member-wise, or a bare \"*\"). No body.", "headers": {"ETag": {"$ref": "#/components/headers/ETag"}, "Cache-Control": {"$ref": "#/components/headers/NoStore"}}}
+    },
+    "schemas": {
+      "Error": {"type": "object", "required": ["error"], "properties": {"error": {"type": "object", "required": ["code", "message"], "properties": {"code": {"type": "string"}, "message": {"type": "string"}, "manualCommand": {"type": "string"}}}}},
+      "Backup": {"type": "object", "required": ["id", "file", "createdAt", "sizeBytes", "trigger"], "properties": {"id": {"type": "integer", "format": "int64"}, "file": {"type": "string"}, "createdAt": {"type": "string", "format": "date-time"}, "sizeBytes": {"type": "integer", "format": "int64", "minimum": 0}, "trigger": {"type": "string", "enum": ["scheduled", "manual", "pre-restore", "imported"]}, "worldDay": {"type": "integer", "format": "int64"}}},
+      "BackupEntry": {"type": "object", "required": ["path", "sizeBytes", "modifiedAt"], "properties": {"path": {"type": "string"}, "sizeBytes": {"type": "integer", "format": "int64", "minimum": 0}, "modifiedAt": {"type": "string", "format": "date-time"}}},
+      "BackupChange": {"type": "object", "required": ["path", "kind"], "properties": {"path": {"type": "string"}, "kind": {"type": "string", "enum": ["add", "modify", "delete"]}, "fromSize": {"type": "integer", "format": "int64", "minimum": 0}, "toSize": {"type": "integer", "format": "int64", "minimum": 0}}},
+      "BackupDiff": {"type": "object", "required": ["changes", "requiresStop"], "properties": {"changes": {"type": "array", "items": {"$ref": "#/components/schemas/BackupChange"}}, "requiresStop": {"type": "boolean", "const": true}}},
+      "BackupSchedule": {"type": "object", "required": ["enabled", "everyMinutes", "keepDays", "nextRunAt"], "properties": {"enabled": {"type": "boolean"}, "everyMinutes": {"type": "integer", "minimum": 1}, "keepDays": {"type": "integer", "minimum": 1}, "nextRunAt": {"type": ["string", "null"], "format": "date-time"}}},
+      "BackupScheduleUpdate": {"type": "object", "required": ["enabled", "everyMinutes", "keepDays"], "properties": {"enabled": {"type": "boolean"}, "everyMinutes": {"type": "integer", "minimum": 1}, "keepDays": {"type": "integer", "minimum": 1}}},
+      "RestoreRequest": {"type": "object", "required": ["confirm"], "properties": {"confirm": {"type": "string", "const": "RESTORE"}}},
+      "ConfigCapability": {"type": "object", "required": ["available"], "properties": {"available": {"type": "boolean"}, "reason": {"type": "string"}}},
+      "ConfigSetting": {"type": "object", "required": ["key", "value", "effectiveValue", "type", "group", "default", "pending", "editable", "readOnly"], "properties": {"key": {"type": "string"}, "value": {"type": ["string", "number", "boolean"]}, "effectiveValue": {"type": ["string", "number", "boolean"]}, "type": {"type": "string", "enum": ["string", "integer", "number", "boolean"]}, "group": {"type": "string"}, "default": {"type": ["string", "number", "boolean"]}, "pending": {"type": "boolean"}, "editable": {"type": "boolean"}, "readOnly": {"type": "boolean"}}},
+      "ConfigDoc": {"type": "object", "required": ["source", "service", "capabilities", "manualCommand", "settings"], "properties": {"source": {"type": "string", "enum": ["compose", "ini"]}, "composeFile": {"type": "string"}, "service": {"type": "string"}, "version": {"type": "string"}, "capabilities": {"type": "object", "required": ["write", "apply"], "properties": {"write": {"$ref": "#/components/schemas/ConfigCapability"}, "apply": {"$ref": "#/components/schemas/ConfigCapability"}}}, "manualCommand": {"type": "string"}, "settings": {"type": "array", "items": {"$ref": "#/components/schemas/ConfigSetting"}}}},
+      "ConfigUpdate": {"type": "object", "required": ["version", "changes"], "properties": {"version": {"type": "string"}, "changes": {"type": "object", "additionalProperties": {"type": ["string", "number", "boolean"]}}}},
+      "CreateIntegrationKeyRequest": {"type": "object", "required": ["label"], "properties": {"label": {"type": "string", "minLength": 1, "maxLength": 64, "description": "Trimmed server-side; 1-64 chars after trimming, control characters rejected. Duplicate labels are allowed - the id disambiguates."}}},
+      "IntegrationKey": {"type": "object", "required": ["id", "label", "createdAt", "lastUsedAt", "revokedAt"], "properties": {"id": {"type": "string", "pattern": "^[0-9a-f]{8}$", "description": "The public, non-secret key id - the stable handle used in logs, audit events, and the Settings UI."}, "label": {"type": "string"}, "createdAt": {"type": "string", "format": "date-time"}, "lastUsedAt": {"type": ["string", "null"], "format": "date-time", "description": "Merges the in-memory coalesced value; may be fresher than the last SQLite write (persisted at most once per 60s per key)."}, "revokedAt": {"type": ["string", "null"], "format": "date-time", "description": "Set by DELETE; revoked keys are retained (not hard-deleted) and keep appearing here for the audit trail."}}},
+      "IntegrationKeyCreated": {"allOf": [{"$ref": "#/components/schemas/IntegrationKey"}, {"type": "object", "required": ["key"], "properties": {"key": {"type": "string", "description": "The plaintext bearer key. Present only in this one response, never again - store it now. This example is deliberately fake and does not match the real phk_ token grammar (wrong charset/length on purpose), so it can never validate and never trains a scanner to ignore the prefix.", "example": "phk_00000000_EXAMPLE-NOT-A-REAL-KEY"}}}]},
+      "IntegrationPlayer": {"type": "object", "required": ["uid", "name", "online", "level", "guildId", "guildName", "firstSeenAt", "lastSeenAt", "playtimeSec"], "properties": {"uid": {"type": "string", "description": "Save-derived GUID; the join key for /players/{uid}, pals[].ownerUid, and guild members."}, "name": {"type": "string"}, "online": {"type": "boolean"}, "level": {"type": "integer"}, "guildId": {"type": "string"}, "guildName": {"type": "string"}, "firstSeenAt": {"type": ["string", "null"], "format": "date-time"}, "lastSeenAt": {"type": ["string", "null"], "format": "date-time"}, "playtimeSec": {"type": "integer", "format": "int64"}, "captureTotal": {"type": "integer", "format": "int64", "minimum": 0, "description": "Lifetime RecordData.TribeCaptureCount. Omitted when the player save does not provide it."}, "uniquePalsCaptured": {"type": "integer", "minimum": 0, "description": "Count of positive species entries in RecordData.PalCaptureCount. Omitted when unavailable."}, "paldeckUnlocked": {"type": "integer", "minimum": 0, "description": "Count of true RecordData.PaldeckUnlockFlag entries (seen/unlocked, not necessarily caught). Omitted when unavailable."}}},
+      "IntegrationPalTalents": {"type": "object", "required": ["hp", "melee", "shot", "defense"], "properties": {"hp": {"type": ["integer", "null"], "minimum": 0}, "melee": {"type": ["integer", "null"], "minimum": 0}, "shot": {"type": ["integer", "null"], "minimum": 0}, "defense": {"type": ["integer", "null"], "minimum": 0}}},
+      "IntegrationPal": {"type": "object", "required": ["instanceId", "characterId", "displayName", "level", "isAlpha", "isLucky", "inParty", "partySlot", "boxPage", "boxSlot", "placement", "baseId", "hp", "gender", "talents", "passiveSkillIds", "equippedSkillIds"], "properties": {"instanceId": {"type": "string"}, "characterId": {"type": "string"}, "displayName": {"type": "string"}, "level": {"type": "integer"}, "isAlpha": {"type": "boolean"}, "isLucky": {"type": "boolean"}, "inParty": {"type": "boolean"}, "partySlot": {"type": ["integer", "null"], "minimum": 0}, "boxPage": {"type": ["integer", "null"], "minimum": 0}, "boxSlot": {"type": ["integer", "null"], "minimum": 0, "maximum": 29}, "placement": {"type": "string", "enum": ["party", "box", "base", "unknown"], "description": "Safe derived placement. base means baseId joined the Pal's worker container; unknown is never inferred as base."}, "baseId": {"type": ["string", "null"], "description": "Derived base join key matching guilds[].bases[].id; null unless placement is base. Raw container GUIDs are never exposed."}, "hp": {"type": ["number", "null"]}, "gender": {"type": "string", "enum": ["", "male", "female", "unknown"]}, "talents": {"$ref": "#/components/schemas/IntegrationPalTalents"}, "passiveSkillIds": {"type": "array", "items": {"type": "string"}}, "equippedSkillIds": {"type": "array", "items": {"type": "string"}}}},
+      "IntegrationPlayerDetail": {"allOf": [{"$ref": "#/components/schemas/IntegrationPlayer"}, {"type": "object", "required": ["pals"], "properties": {"pals": {"type": "array", "items": {"$ref": "#/components/schemas/IntegrationPal"}}}}]},
+      "IntegrationPalListItem": {"allOf": [{"$ref": "#/components/schemas/IntegrationPal"}, {"type": "object", "required": ["ownerUid", "ownerName", "ownerSource", "ownerResolved"], "properties": {"ownerUid": {"type": "string"}, "ownerName": {"type": "string", "description": "Empty string when ownership is unresolved or the joined player has no name."}, "ownerSource": {"type": "string", "enum": ["save", "personal_container", "last_observed", "unresolved"], "description": "How player attribution was established. last_observed is historical attribution while a Pal is outside a personal container; it is not proof of current possession."}, "ownerResolved": {"type": "boolean", "description": "True when ownerUid joins a current public player row. Consult ownerSource for attribution certainty."}}}]},
+      "IntegrationGuildMember": {"type": "object", "required": ["uid", "name"], "properties": {"uid": {"type": "string"}, "name": {"type": "string"}}},
+      "IntegrationLocation": {"type": "object", "required": ["x", "y"], "properties": {"x": {"type": "number"}, "y": {"type": "number"}}},
+      "IntegrationBase": {"type": "object", "required": ["id", "location", "level"], "properties": {"id": {"type": "string"}, "location": {"$ref": "#/components/schemas/IntegrationLocation"}, "level": {"type": "integer"}}},
+      "IntegrationGuild": {"type": "object", "required": ["id", "name", "adminUid", "memberCount", "members", "bases"], "properties": {"id": {"type": "string"}, "name": {"type": "string"}, "adminUid": {"type": "string"}, "memberCount": {"type": "integer"}, "members": {"type": "array", "items": {"$ref": "#/components/schemas/IntegrationGuildMember"}}, "bases": {"type": "array", "items": {"$ref": "#/components/schemas/IntegrationBase"}}}},
+      "IntegrationMapTransform": {"type": "object", "required": ["a", "b", "c", "d"], "properties": {"a": {"type": "number"}, "b": {"type": "number"}, "c": {"type": "number"}, "d": {"type": "number"}}},
+      "IntegrationMapLayer": {"type": "object", "required": ["id", "minZoom", "maxZoom"], "properties": {"id": {"type": "string"}, "label": {"type": "string"}, "format": {"type": "string"}, "tileSize": {"type": "integer"}, "minZoom": {"type": "integer"}, "maxZoom": {"type": "integer"}, "transform": {"$ref": "#/components/schemas/IntegrationMapTransform"}, "bounds": {"type": "array", "items": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2}, "minItems": 2, "maxItems": 2}}},
+      "IntegrationMap": {"type": "object", "required": ["source", "gameVersion", "fetchedAt", "layers"], "properties": {"source": {"type": "string"}, "gameVersion": {"type": "string"}, "fetchedAt": {"type": ["string", "null"], "format": "date-time"}, "notes": {"type": "string"}, "layers": {"type": "array", "items": {"$ref": "#/components/schemas/IntegrationMapLayer"}}}},
+      "IntegrationSave": {"type": "object", "required": ["state", "formatDrift", "lastParseAt", "players", "pals", "guilds"], "properties": {"state": {"type": "string", "enum": ["ok", "drift", "unknown"]}, "formatDrift": {"type": "boolean"}, "lastParseAt": {"type": ["string", "null"], "format": "date-time"}, "players": {"type": "integer"}, "pals": {"type": "integer"}, "guilds": {"type": "integer"}}},
+      "IntegrationServer": {"type": "object", "required": ["name", "description", "version", "state", "uptimeSec", "save"], "properties": {"name": {"type": "string"}, "description": {"type": "string"}, "version": {"type": "string"}, "state": {"type": "string", "enum": ["running", "countdown", "stopping", "unreachable"]}, "uptimeSec": {"type": "integer", "format": "int64"}, "save": {"$ref": "#/components/schemas/IntegrationSave"}}},
+      "IntegrationMetrics": {"type": "object", "required": ["fps", "fpsAvg", "frameTimeMs", "players", "maxPlayers", "day", "uptimeSec", "baseCamps"], "properties": {"fps": {"type": "number"}, "fpsAvg": {"type": "number"}, "frameTimeMs": {"type": "number"}, "players": {"type": "integer"}, "maxPlayers": {"type": "integer"}, "day": {"type": "integer", "format": "int64"}, "uptimeSec": {"type": "integer", "format": "int64"}, "baseCamps": {"type": "integer"}}},
+      "IntegrationPlayersPage": {"type": "object", "required": ["data", "lastParseAt", "formatDrift", "nextCursor"], "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/IntegrationPlayer"}}, "lastParseAt": {"type": ["string", "null"], "format": "date-time"}, "formatDrift": {"type": "boolean"}, "nextCursor": {"type": ["string", "null"], "description": "Opaque; the key of the last row returned. Null whenever fewer than limit rows were returned - an empty data array with a non-null nextCursor never occurs."}}},
+      "IntegrationPlayerDetailEnvelope": {"type": "object", "required": ["data", "lastParseAt", "formatDrift"], "properties": {"data": {"$ref": "#/components/schemas/IntegrationPlayerDetail"}, "lastParseAt": {"type": ["string", "null"], "format": "date-time"}, "formatDrift": {"type": "boolean"}}},
+      "IntegrationPalsPage": {"type": "object", "required": ["data", "lastParseAt", "formatDrift", "nextCursor"], "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/IntegrationPalListItem"}}, "lastParseAt": {"type": ["string", "null"], "format": "date-time"}, "formatDrift": {"type": "boolean"}, "nextCursor": {"type": ["string", "null"]}}},
+      "IntegrationGuildsEnvelope": {"type": "object", "required": ["data", "lastParseAt", "formatDrift"], "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/IntegrationGuild"}}, "lastParseAt": {"type": ["string", "null"], "format": "date-time"}, "formatDrift": {"type": "boolean"}}},
+      "IntegrationMapEnvelope": {"type": "object", "required": ["data"], "properties": {"data": {"$ref": "#/components/schemas/IntegrationMap"}}},
+      "IntegrationServerEnvelope": {"type": "object", "required": ["data"], "properties": {"data": {"$ref": "#/components/schemas/IntegrationServer"}}},
+      "IntegrationMetricsEnvelope": {"type": "object", "required": ["data"], "properties": {"data": {"$ref": "#/components/schemas/IntegrationMetrics"}}}
+      ,"IntegrationEvent": {"type": "object", "required": ["at", "kind", "message"], "properties": {"at": {"type": "string", "format": "date-time"}, "kind": {"type": "string", "enum": ["join", "leave", "backup", "system"]}, "message": {"type": "string", "description": "Sanitized player transition, generic Backup completed, or an explicitly allowlisted system state. Event metadata is never exposed."}}}
+      ,"IntegrationEventsEnvelope": {"type": "object", "required": ["data"], "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/IntegrationEvent"}}}}
+    }
+  }
+}

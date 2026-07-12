@@ -1,0 +1,53 @@
+# Example: Palhelm alongside the thijsvanloef/palworld-server-docker image.
+# Install this as ./compose/docker-compose.yml. Relative sources below are therefore
+# resolved from ./compose. The dedicated ./compose directory must be owned by UID/GID 1000
+# so Palhelm can make sibling backups and atomic renames; never bind only this file.
+services:
+  palworld:
+    image: thijsvanloef/palworld-server-docker:latest
+    container_name: palworld
+    restart: unless-stopped
+    stop_grace_period: 30s
+    ports:
+      - "8211:8211/udp"
+      - "27015:27015/udp"
+    environment:
+      PUID: 1000
+      PGID: 1000
+      PLAYERS: 16
+      RCON_ENABLED: "true"
+      RCON_PORT: 25575
+      SERVER_NAME: "my palworld server"
+      ADMIN_PASSWORD: "change-me"        # also enables the REST API auth
+    volumes:
+      - ../data:/palworld
+
+  palhelm:
+    image: ghcr.io/palhelm/palhelm:latest   # or build: .
+    container_name: palhelm
+    restart: unless-stopped
+    depends_on:
+      - palworld
+    # match the uid/gid that owns the save files (PUID/PGID above) so the
+    # panel can read saves and restore backups
+    user: "1000:1000"
+    ports:
+      # bind to a private interface (VPN/tailnet/localhost) — never the internet
+      - "127.0.0.1:8080:8080"
+    environment:
+      PALHELM_ADMIN_PASSWORD: "change-me-too"    # panel login
+      # PALHELM_VIEWER_PASSWORD: "read-only-login"
+      # PALHELM_TRUSTED_PROXIES: "10.0.0.0/8"   # comma-separated CIDRs; other forwarded headers ignored
+      # PALHELM_SECURE_COOKIES: "true"           # force Secure cookies behind a TLS-terminating proxy
+      PALWORLD_REST_URL: "http://palworld:8212"
+      PALWORLD_ADMIN_PASSWORD: "change-me"       # same as the game server's
+      PALWORLD_RCON_ADDR: "palworld:25575"
+      PALWORLD_SAVE_DIR: "/game/Saved"
+      # config editor: let Palhelm edit this compose file's env block
+      PALHELM_COMPOSE_FILE: "/compose/docker-compose.yml"
+      PALHELM_GAME_SERVICE: "palworld"
+      # One-click Docker apply is intentionally disabled. Palhelm displays the host command.
+    volumes:
+      - ../data/Pal/Saved:/game/Saved           # rw: restore writes here
+      - ../palhelm-data:/data                   # panel DB, backups, oodle lib
+      - ./:/compose                             # dedicated compose dir, rw for atomic replace
