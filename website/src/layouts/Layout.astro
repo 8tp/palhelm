@@ -18,6 +18,35 @@ const isCurrent = (href: string) =>
   path === href || path === `${href}/` ? "page" : undefined;
 
 const GITHUB_URL = "https://github.com/8tp/palhelm";
+
+// Structured data: describe the site and the software so search engines can
+// render rich results. Applies site-wide; the description is Palhelm-level, not
+// per-page, so it stays stable across routes.
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://palhelm.com/#website",
+      url: "https://palhelm.com/",
+      name: "Palhelm",
+      description:
+        "Self-hosted control panel and Discord companion for Palworld dedicated servers.",
+    },
+    {
+      "@type": "SoftwareApplication",
+      "@id": "https://palhelm.com/#software",
+      name: "Palhelm",
+      applicationCategory: "DeveloperApplication",
+      operatingSystem: "Docker, Linux",
+      url: "https://palhelm.com/",
+      description:
+        "Self-hosted web admin panel for Palworld dedicated servers: live dashboard, players, RCON console, world map, backups, and a read-only integration API. Ships as one Docker image.",
+      license: "https://www.apache.org/licenses/LICENSE-2.0",
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    },
+  ],
+};
 ---
 <html lang="en">
   <head>
@@ -40,6 +69,7 @@ const GITHUB_URL = "https://github.com/8tp/palhelm";
     <meta name="twitter:image" content={ogImageUrl} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
+    <script type="application/ld+json" is:inline set:html={JSON.stringify(structuredData)} />
     <script is:inline>
       /* no-flash: resolve the theme before first paint.
          Stored choice wins; otherwise follow the OS. Always sets an explicit
