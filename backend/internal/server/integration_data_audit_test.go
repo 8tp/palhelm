@@ -2,9 +2,7 @@
 // docs/specs/integration-api.md). Scope: redaction, pagination, freshness, and JSON
 // encoding — auth/limiter/scope enumeration belong to a sibling audit and are not
 // duplicated here. Every redaction test proves its fixture non-vacuous against the
-// session API first (the v0.3.0 VACUOUS FIXTURE lesson, docs/reviews/2026-07-review.md).
-//
-// Written by an independent auditor; no production file was modified.
+// session API first, guarding against fixtures that pass trivially.
 package server
 
 import (

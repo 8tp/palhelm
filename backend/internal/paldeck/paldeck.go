@@ -213,8 +213,8 @@ var legacyNames = map[string]string{
 	"yeti_grass":              "Wumpo Botan",
 }
 
-// v1Names covers the 72 Palworld 1.0 additions catalogued in
-// docs/research/raw/content-audit-codex.md §3, plus three 1.0 IDs subsequently observed in the
+// v1Names covers the 72 Palworld 1.0 additions catalogued during the 1.0 content
+// audit, plus three 1.0 IDs subsequently observed in the
 // live save audit (Herbil, Ribbuny Botan, and Tarantriss). A couple of "Lux" variants resolve to
 // a suffix (_Thunder) that doesn't match the pre-1.0 "Lux = _Electric" convention seen in
 // legacyNames above — Pocketpair's own internal naming isn't fully consistent.

@@ -1,9 +1,7 @@
 // Adversarial migration audit for the v0.4.0 runner (spec: docs/specs/integration-api.md
-// §10). Goes beyond the implementer's §10.3 tests: real data volume through both the
+// §10). Goes beyond the §10.3 tests: real data volume through both the
 // session and integration query paths, interrupted-migration replay, corrupt version
 // values, concurrent Open, and a structural proof that 002 touched nothing that existed.
-//
-// Written by an independent auditor; no production file was modified.
 package store
 
 import (

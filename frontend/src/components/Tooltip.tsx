@@ -2,7 +2,7 @@ import type { ReactElement, ReactNode, RefObject } from "react";
 import { Tooltip as BaseTooltip } from "@base-ui/react/tooltip";
 
 /**
- * Shared delay group (see docs/research/raw/shadcn-eval.md §1): mount once near the app
+ * Shared delay group (see the UI library evaluation): mount once near the app
  * root so hovering from one icon button to the next re-triggers instantly instead of
  * re-waiting the full delay, matching how a native OS tooltip group behaves.
  */

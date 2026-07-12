@@ -1,7 +1,7 @@
 package server
 
 // Adversarial scope audit for the v0.4.0 Integration API (docs/specs/integration-api.md §1,
-// §12.1). These tests are the mission's flagship proof: they walk the REAL chi router with
+// §12.1). These tests are the flagship proof: they walk the REAL chi router with
 // chi.Walk - never a hand-kept list - and prove that a valid bearer token confers access to
 // exactly the seven integration GETs and nothing else, that no non-GET handler lives inside
 // the integration mount, and that a session cookie authenticates nothing on that mount. The
@@ -9,8 +9,7 @@ package server
 // non-GET handler under the integration mount, or lets a bearer token cross into a session or
 // admin route.
 //
-// Written by an independent auditor who did not implement the code under test; every added
-// test states the threat it closes and is enumerated from the router itself.
+// Every added test states the threat it closes and is enumerated from the router itself.
 
 import (
 	"net/http"

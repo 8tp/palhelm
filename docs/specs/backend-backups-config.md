@@ -72,6 +72,5 @@ engine bullet) first.
   into testdata with secrets replaced).
 - Catalog: env↔ini mapping spot checks.
 
-Ground rules: work only in backend/ (do not touch internal/sav or third_party — a hardening
-task may be running there in parallel; if you must touch shared files like go.mod, make
-minimal additive edits). No git. `go test ./... -count=1` and `go vet ./...` green.
+Conventions: keep `internal/sav` and `third_party` untouched from here, make shared-file edits
+(like go.mod) minimal and additive, and keep `go test ./... -count=1` and `go vet ./...` green.

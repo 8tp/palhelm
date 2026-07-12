@@ -2,7 +2,7 @@
 //
 // cmdk (see components/CommandPalette.tsx) statically imports the real package solely
 // to build its own `Command.Dialog` wrapper. This app deliberately never renders that —
-// per docs/research/raw/shadcn-eval.md §4, the palette reuses the app's existing
+// per the UI library evaluation, the palette reuses the app's existing
 // native-<dialog>-based `Dialog` component as outer chrome instead, exactly like every
 // other modal in the app. Because cmdk bundles Command and CommandDialog as one module
 // with an unconditional top-level `import * as Dialog from "@radix-ui/react-dialog"`,

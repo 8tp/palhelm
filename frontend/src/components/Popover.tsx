@@ -3,7 +3,7 @@ import { Popover as BasePopover } from "@base-ui/react/popover";
 
 /**
  * Field-guide-styled popover wrapper (Base UI `Popover.*`), built per the shadcn/ui
- * adoption evaluation (docs/research/raw/shadcn-eval.md §1) alongside DropdownMenu and
+ * adoption evaluation (the UI library evaluation) alongside DropdownMenu and
  * Tooltip. Kept generic and currently unused by any screen: nothing in the app's
  * in-scope surface (Players/Backups tables, app-root wiring) has an existing gap that
  * needs it yet — see the eval's own note that Popover is "worth it, secondary... lower

@@ -1,7 +1,7 @@
 /* ============================================================
    Command palette (⌘K) — cmdk used standalone, wrapped in the app's existing
    native-<dialog> chrome (see components/CommandPalette.tsx and
-   docs/research/raw/shadcn-eval.md §4). cmdk ships zero CSS: every selector below
+   the UI library evaluation). cmdk ships zero CSS: every selector below
    targets its own boolean HTML attributes (`cmdk-root`, `cmdk-item`, ...) and
    `data-selected`/`data-disabled`, the same data-attribute-driven approach as the
    Base UI primitives in app.css. Field-guide index-card palette: mono specimen

@@ -16,9 +16,9 @@ npm run preview   # serve the built output
   marketing type-scale extension. The product repo stays the source of truth.
 - `src/assets/shots/` — panel captures taken from the frontend's mock mode (`?mock`);
   pal icons show placeholder chips there because mock mode serves no icon files.
-- `public/hero/` — the ambient hero footage: grok `image_to_video` over
-  `assets/v2-explorations/login/hero-paper.png` (license-clean, no game assets),
-  ping-pong-looped and encoded to webm/mp4 with a poster fallback.
+- `public/hero/` — the ambient hero footage: an animated pass over a license-clean
+  paper background (no game assets), ping-pong-looped and encoded to webm/mp4 with a
+  poster fallback.
 - Every screenshot plate participates in the noon / night-camp toggle in the spine.
 
 The GitHub links point at https://github.com/8tp/palhelm and

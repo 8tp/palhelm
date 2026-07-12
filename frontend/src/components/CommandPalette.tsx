@@ -32,7 +32,7 @@ const STATUS_LABEL = (p: Player): string => (p.banned ? "Banned" : p.online ? "O
 
 /**
  * The ⌘K / Ctrl+K command palette. cmdk drives fuzzy filtering, keyboard nav, and
- * grouped results (see docs/research/raw/shadcn-eval.md §4); the outer chrome is the
+ * grouped results (see the UI library evaluation); the outer chrome is the
  * app's existing native-<dialog> `Dialog` so focus trap / Esc-to-close come free, just
  * like every other dialog in the app. Player-scoped actions and the saved-command
  * insert never touch the API directly — they hand off to app/paletteBridge.tsx, which

@@ -4,7 +4,7 @@ import { IconKebab } from "./icons";
 
 /**
  * Field-guide-styled dropdown menu — a thin wrapper over Base UI's `Menu.*` compound
- * components (see docs/research/raw/shadcn-eval.md §3). Base UI ships zero CSS; all
+ * components (see the UI library evaluation). Base UI ships zero CSS; all
  * visual states are driven off its `data-*` attributes (`data-open`/`data-closed` on the
  * popup, `data-highlighted`/`data-disabled` on items) styled in styles/app.css under
  * "dropdown menu". No new mutation logic lives here — callers pass the same handlers

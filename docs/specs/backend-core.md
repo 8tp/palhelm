@@ -37,7 +37,8 @@ REST /players gives `playerId`/`userId` (e.g. `steam_7656...`); the sav parser g
 - An integration-style test with `httptest` faking the palworld REST API (info/metrics/players) exercising: login → metrics current/history → players list → kick (asserts the fake got the call) → events.
 - `go vet ./...` and `go test ./...` green. No network in tests. Keep internal/sav untouched (its tests must stay green).
 
-## Ground rules
-Work only in `backend/`. No git commits. Dependencies: chi v5, modernc.org/sqlite, golang-jwt/jwt/v5; nothing else heavy without a comment justifying it. Log with `log/slog`. Keep handlers thin; logic in services. Every exported symbol documented. Wire everything in main so `PALHELM_ADMIN_PASSWORD=x PALWORLD_REST_URL=... go run ./cmd/palhelm serve` works.
-
-Finish with: summary, test output, the exact env vars needed to run against a real server, and any contract deviations from docs/API.md (update docs/API.md inline if you must deviate, and say so).
+## Conventions
+Dependencies are kept lean: chi v5, modernc.org/sqlite, and golang-jwt/jwt/v5, with anything
+heavier justified in a comment. Logging goes through `log/slog`. Handlers stay thin and logic
+lives in services, and every exported symbol is documented. The API contract is `docs/API.md`;
+keep it in sync with the handlers.

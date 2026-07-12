@@ -60,15 +60,7 @@ set `data-theme` on `<html>`, persist localStorage, "System" clears it).
 
 ## Quality bar
 - `npm run build` clean; `tsc --noEmit` clean; no console errors in the browser.
-- Screenshot-verify each finished route against its mockup with:
-  `node <scratch>/shot.mjs <url> <out.png> dark`
-  (run `npm run dev -- --port 5199` + `?mock`; also shoot light mode for dashboard).
-  Compare side by side with `design/mockups/*.html` shots and fix drift (spacing, colors,
-  type sizes) before reporting done.
+- Both themes verified against the design reference; fix drift in spacing, colors, and type sizes.
 - Keyboard: dialogs trap focus and close on Esc; tables' hover actions also reachable via a
   row kebab button (visible on focus).
 - `prefers-reduced-motion` honored (pulse/settle animations off).
-
-## Ground rules
-Work only in `frontend/` (plus reading design/ and docs/). Do not modify design/mockups or the
-backend. No git. pnpm not available — use npm. Node 24 present.

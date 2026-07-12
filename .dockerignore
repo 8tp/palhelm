@@ -15,5 +15,8 @@ palhelm-data
 **/map-tiles-*
 **/pal-icons
 
-docs/reviews
-docs/prompts
+# Docs are not needed in the runtime image.
+docs
+design
+website
+docs-site

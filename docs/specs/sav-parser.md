@@ -88,9 +88,7 @@ Fixtures dir: `<scratch>/`
 - Copy the fixtures into `backend/internal/sav/testdata/` (they're small) so tests are hermetic.
 - A benchmark on Level.sav parse (guards the no-RAM-blowup goal).
 
-## Ground rules
-- Work ONLY under `backend/`. Do not run git commit. gofmt/goimports clean; `go vet` clean.
-- Dependencies allowed: chi (later), modernc.org/sqlite (later), go-oodle, purego. Keep the sav
-  package dependency-light (stdlib + oodle only).
-- Style: small files per concern (container.go, oodle.go, gvas.go, props.go, character.go,
-  group.go, world.go), exported API documented.
+## Conventions
+- The sav package stays dependency-light: standard library plus go-oodle and purego only.
+- Code is split into small files by concern (container.go, oodle.go, gvas.go, props.go,
+  character.go, group.go, world.go), gofmt and vet clean, with the exported API documented.

@@ -1,9 +1,9 @@
 # Spec: sav parser + Oodle loader hardening
 
-Adversarial review findings (Grok 4.5, 2026-07-10) on `internal/sav` and
-`third_party/go-oodle`. Threat model: corrupted or hostile .sav input (DoS via allocation),
-and local-privilege attacks on the native-library load path (code execution). Fix all HIGH
-and MEDIUM items; LOW at your judgment. Keep all existing tests green; add tests where noted.
+Adversarial review findings (2026-07-10) on `internal/sav` and `third_party/go-oodle`.
+Threat model: corrupted or hostile .sav input (DoS via allocation), and local-privilege
+attacks on the native-library load path (code execution). The HIGH and MEDIUM items are
+addressed; LOW items are optional. Existing tests stay green, with tests added where noted.
 
 ## High
 

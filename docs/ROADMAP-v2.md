@@ -1,7 +1,7 @@
 # Roadmap — post-v0.3.0
 
-Larger 1.0-era items surfaced by the v2 research (docs/research/v2-design-research.md) that
-deliberately did NOT ship with the redesign. Ranked by the research's value/effort analysis.
+Larger 1.0-era items that deliberately did NOT ship with the redesign, ranked by a
+value/effort analysis.
 
 ## Blocked on upstream
 

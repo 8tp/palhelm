@@ -53,8 +53,6 @@ sphere #63ad50.
 - assets/mark.svg, assets/favicon.svg (repo README branding)
 - OG images (og-bot.png, og-docs.png: regenerate; og-dashboard/og-panel: re-crop from
   re-captured screenshots)
-- design/mockups/*.html reference marks: OPTIONAL, low priority (design archive)
 
-Rationale: proof sheet at /tmp scratchpad mark-proof2.png (16/26/64 on cream, night,
-band, all legible; concepts from grok imagine + codex imagegen, direction picked by
-the design lead from grok's green sheet).
+The mark reads legibly at 16, 26, and 64 px on the cream and night surfaces and on the
+olive band.

@@ -8,8 +8,6 @@ package server
 // documented in-flight bucket-recreation caveat, X-Real-IP evasion), plaintext-key containment
 // across every response surface the server can emit, the 100-key cap under concurrent creates,
 // and the guarantee that no slog line ever carries key material.
-//
-// Written by an independent auditor who did not implement the code under test.
 
 import (
 	"bytes"
