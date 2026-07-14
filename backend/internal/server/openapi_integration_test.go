@@ -51,6 +51,7 @@ func TestIntegrationOpenAPIPathsAdvertiseExactStatuses(t *testing.T) {
 		"/api/integration/v1/map":             {"get": {"200", "304", "401", "429"}, "post": {"405"}},
 		"/api/integration/v1/server":          {"get": {"200", "304", "401", "429"}, "post": {"405"}},
 		"/api/integration/v1/metrics/current": {"get": {"200", "304", "401", "429"}, "post": {"405"}},
+		"/api/integration/v1/world/summary":   {"get": {"200", "304", "401", "429"}, "post": {"405"}},
 		"/api/integration/v1/events":          {"get": {"200", "304", "400", "401", "429"}, "post": {"405"}},
 	}
 	for path, methods := range want {
@@ -89,6 +90,7 @@ func TestIntegrationOpenAPIBearerSecurityScheme(t *testing.T) {
 		"/api/integration/v1/players", "/api/integration/v1/players/{uid}", "/api/integration/v1/pals",
 		"/api/integration/v1/guilds", "/api/integration/v1/map", "/api/integration/v1/server",
 		"/api/integration/v1/metrics/current",
+		"/api/integration/v1/world/summary",
 		"/api/integration/v1/events",
 	} {
 		op := object(t, object(t, paths, path), "get")
@@ -269,7 +271,7 @@ func headersAt(t *testing.T, doc map[string]any, path, method, status string) ma
 }
 
 // TestIntegrationOpenAPIGETResponsesMatchLiveHandlers is the dynamic half of the contract:
-// for every one of the seven integration GET paths, real 200/401/404/405/429 (and 304 for a
+// for every integration GET path, real 200/401/404/405/429 (and 304 for a
 // representative path) responses are asserted to (a) be a status the document advertises, (b)
 // carry the headers the document promises, and (c) for 200s, match the documented schema
 // field-for-field against a real, non-empty response body.
@@ -297,6 +299,7 @@ func TestIntegrationOpenAPIGETResponsesMatchLiveHandlers(t *testing.T) {
 		{"/api/integration/v1/map", "/api/integration/v1/map", true},
 		{"/api/integration/v1/server", "/api/integration/v1/server", true},
 		{"/api/integration/v1/metrics/current", "/api/integration/v1/metrics/current", true},
+		{"/api/integration/v1/world/summary", "/api/integration/v1/world/summary", true},
 		{"/api/integration/v1/events", "/api/integration/v1/events", true},
 	}
 

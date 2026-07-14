@@ -33,7 +33,11 @@ just sits unused — so rollback needs no manual step.
 
 1. **Official REST API** (`http://palworld:8212/v1/api/*`, HTTP basic auth `admin:<ADMIN_PASSWORD>`) —
    primary channel: info, players (with position/level/ping), metrics, settings, announce,
-   kick/ban/unban, save, graceful `shutdown {waittime,message}`, force `stop`.
+   kick/ban/unban, save, graceful `shutdown {waittime,message}`, force `stop`. Palworld 1.0's
+   optional `game-data` snapshot is handled by a separately bounded, opt-in path because it can
+   contain every loaded actor plus IP/platform identifiers; those two private fields are dropped
+   during decode, then raw identifiers/actions are discarded during a one-time projection. Only
+   aggregate counts plus at most 2,048 sanitized useful actors remain in the memory-only cache.
    The panel proxies it server-side; the admin password never reaches the browser.
 2. **RCON** (`palworld:25575`, Source RCON) — console passthrough for the Console screen and
    the few things REST lacks (`TeleportToPlayer` etc.). Vanilla command set is small; we do not
@@ -82,7 +86,8 @@ palhelm serve
  ├─ pollers
  │   ├─ metrics    every 5s   REST /metrics → SQLite ring (raw 24h, 1-min rollups 30d)
  │   ├─ players    every 15s  REST /players → session tracking (join/leave events)
- │   └─ savesync   every 10m  Level.sav parse → players/pals/guilds/bases tables
+ │   ├─ savesync   every 10m  Level.sav parse → players/pals/guilds/bases tables
+ │   └─ game-data  every 30s  optional bounded live-actor snapshot → memory-only cache
  ├─ engines
  │   ├─ backup     schedule + manual; REST-GUID-resolved SaveGames/0/<world>; retention policy;
  │   │             browse (list contents), restore = dry-run diff first, then guided swap
@@ -93,7 +98,7 @@ palhelm serve
  ├─ HTTP API  /api/v1/*  (JSON, documented in docs/API.md, OpenAPI spec served at /api/openapi.json)
  │   └─ /api/v1/integration-keys  admin-only bearer-key management (create/list/revoke)
  ├─ Integration API  /api/integration/v1/*  a separate, GET-only, bearer-token-authenticated
- │   sub-router (players, pals, guilds, map, server, metrics) for bots/dashboards/scripts —
+ │   sub-router (players, pals, guilds, map, server, metrics, aggregate world summary) for bots/dashboards/scripts —
  │   viewer-minus redaction, keyset pagination, ETags, per-key rate limiting; never reachable
  │   with a session cookie, and the session API never reachable with a bearer key
  └─ embedded SPA at /

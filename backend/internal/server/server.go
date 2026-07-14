@@ -16,8 +16,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/8tp/palhelm/internal/backup"
 	"github.com/8tp/palhelm/internal/config"
 	"github.com/8tp/palhelm/internal/gameconfig"
@@ -25,6 +23,8 @@ import (
 	"github.com/8tp/palhelm/internal/poller"
 	"github.com/8tp/palhelm/internal/steamavatar"
 	"github.com/8tp/palhelm/internal/store"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 //go:embed openapi.json
@@ -56,8 +56,10 @@ func New(cfg config.Config, st *store.Store, log *slog.Logger) (*Server, http.Ha
 	}
 	hub := NewHub()
 	pal := palworld.NewClient(cfg.RESTURL, cfg.RESTUser, cfg.PalworldPassword)
+	pal.SetGameDataTimeout(cfg.GameDataTimeout)
 	health := &poller.Health{REST: "error", RCON: "error", SaveState: "unavailable"}
 	p := poller.New(pal, st, hub, health, cfg.MetricsInterval, cfg.PlayersInterval, cfg.SaveSyncInterval, cfg.SaveDir, log)
+	p.ConfigureGameData(cfg.GameDataEnabled, cfg.GameDataInterval)
 	activeKeys, err := st.ActiveAPIKeys(context.Background())
 	if err != nil {
 		// A transient DB read failure here must not crash the whole panel: an empty cache
@@ -178,6 +180,7 @@ func (s *Server) routes() http.Handler {
 			api.Get("/whitelist", s.whitelist)
 			api.Get("/guilds", s.guilds)
 			api.Get("/world", s.world)
+			api.Get("/world/snapshot", s.worldSnapshot)
 			api.Get("/map/dataset", s.mapDataset)
 			api.Get("/paldeck/icon/{characterId}", s.paldeckIcon)
 			api.Get("/paldeck/icon-dataset", s.paldeckIconDataset)
@@ -230,7 +233,7 @@ func (s *Server) securityHeaders(next http.Handler) http.Handler {
 		w.Header().Set("X-Frame-Options", "DENY")
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
-		if strings.HasPrefix(r.URL.Path, "/api/v1/auth/") || r.URL.Path == "/api/v1/config" || r.URL.Path == "/api/v1/config/raw" || strings.HasPrefix(r.URL.Path, "/api/v1/integration-keys") {
+		if strings.HasPrefix(r.URL.Path, "/api/v1/auth/") || r.URL.Path == "/api/v1/config" || r.URL.Path == "/api/v1/config/raw" || r.URL.Path == "/api/v1/world/snapshot" || strings.HasPrefix(r.URL.Path, "/api/v1/integration-keys") {
 			w.Header().Set("Cache-Control", "no-store")
 		}
 		next.ServeHTTP(w, r)

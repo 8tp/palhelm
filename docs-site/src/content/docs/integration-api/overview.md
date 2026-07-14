@@ -85,7 +85,7 @@ Save-derived, not paginated (`/players/{uid}`, `/guilds`):
 }
 ```
 
-Live-only (`/map`, `/server`, `/metrics/current`, `/events`):
+Live-only (`/map`, `/server`, `/metrics/current`, `/world/summary`, `/events`):
 
 ```json
 {
@@ -98,7 +98,7 @@ Live-only (`/map`, `/server`, `/metrics/current`, `/events`):
 - `formatDrift` is `true` when the last parse hit an unrecognized save layout and had to skip some data. It also appears only on save-derived endpoints.
 - `nextCursor` appears only on paginated endpoints. See [Pagination and limits](/integration-api/pagination-and-limits/).
 
-All timestamps are RFC 3339 in UTC. The eight endpoints and their full field lists are in [Endpoints](/integration-api/endpoints/).
+All timestamps are RFC 3339 in UTC. The nine endpoints and their full field lists are in [Endpoints](/integration-api/endpoints/).
 
 ## Transport and browser access
 
@@ -113,6 +113,6 @@ Every response also carries `Cache-Control: no-store`. Do not cache or persist a
 ## Where to go next
 
 - [Keys and redaction](/integration-api/keys-and-redaction/): creating and revoking keys, the key format, and exactly what is hidden from token responses.
-- [Endpoints](/integration-api/endpoints/): all eight routes with example requests and responses.
+- [Endpoints](/integration-api/endpoints/): all nine routes with example requests and responses.
 - [Pagination and limits](/integration-api/pagination-and-limits/): cursors, conditional requests, rate limits, and the uniform 401.
 - [OpenAPI spec](/integration-api/openapi/): the machine-readable contract and how to generate a client.

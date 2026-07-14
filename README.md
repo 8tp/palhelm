@@ -78,6 +78,30 @@ scripts/fetch-map-tiles.sh ./palhelm-data/map-tiles   # live map tiles
 scripts/fetch-pal-icons.sh ./palhelm-data/pal-icons   # pal preview icons
 ```
 
+## Optional configuration
+
+| Env var | Default | Purpose |
+|---|---|---|
+| `PALHELM_ADDR` | `:8080` | listen address |
+| `PALHELM_DATA_DIR` | `/data` | SQLite DB, backups, map tiles, Oodle lib |
+| `PALHELM_ADMIN_PASSWORD` | — (required) | panel admin login |
+| `PALHELM_VIEWER_PASSWORD` | unset | optional read-only login |
+| `PALHELM_TRUSTED_PROXIES` | unset | comma-separated proxy CIDRs allowed to supply forwarded client IP and HTTPS; forwarding headers from other peers are ignored |
+| `PALHELM_SECURE_COOKIES` | `false` | force the session cookie's `Secure` flag behind TLS termination (direct TLS and trusted forwarded HTTPS are also detected) |
+| `PALWORLD_REST_URL` | — | game REST API, e.g. `http://palworld:8212` |
+| `PALWORLD_ADMIN_PASSWORD` | — | game admin password (REST basic auth + RCON) |
+| `PALWORLD_RCON_ADDR` | — | e.g. `palworld:25575` |
+| `PALWORLD_SAVE_DIR` | — | the mounted `Saved/` directory |
+| `PALHELM_COMPOSE_FILE` / `PALHELM_GAME_SERVICE` | unset / `palworld` | enable Config when the containing directory supports safe atomic writes |
+| `PALHELM_DOCKER_CONTROL` | ignored | retained for v0.2 compatibility; one-click apply is disabled in v0.3.0 |
+| `PALHELM_METRICS_INTERVAL` | `5s` | metrics sampling |
+| `PALHELM_SAVE_SYNC_INTERVAL` | `10m` | save parsing cadence |
+| `PALHELM_GAME_DATA_ENABLED` | `false` | opt in to the Palworld 1.0 live world-actor snapshot poller; requires server-side game-data support |
+| `PALHELM_GAME_DATA_INTERVAL` | `30s` | shared game-data snapshot cadence (minimum `15s`; never polled per browser/bot request) |
+| `PALHELM_GAME_DATA_TIMEOUT` | `10s` | large snapshot request deadline (`1s`–`30s`) |
+| `PALHELM_OODLE_LIB` | unset | path to `liboo2corelinux64.so.9` if you provide your own |
+| `PALHELM_INTEGRATION_RATE_LIMIT` | `60` | requests/minute per Integration API key (see below) |
+
 ## Known limits
 
 Honest notes so you know what you are getting:
@@ -85,7 +109,7 @@ Honest notes so you know what you are getting:
 - **Save parsing depends on the game version.** Palhelm decodes the Palworld 1.0 save format (world meta, guilds, players, pals) and skips sections it does not need. If a game update drifts the format, the panel degrades that feature and shows a format-drift badge instead of breaking, but save-derived data goes stale until the parser catches up.
 - **The Oodle decompressor is not bundled.** 1.0 saves are Oodle-compressed and the library is proprietary, so Palhelm downloads it once at first save parse and verifies a pinned SHA-256. Air-gapped hosts can supply the file via `PALHELM_OODLE_LIB`.
 - **Vanilla RCON is limited.** No whisper, and `Broadcast` mangles spaces. Palhelm prefers the REST API for moderation and says so in the UI.
-- **The game's REST API is limited too.** Some data Palhelm would like (live world actor data, for example) is not exposed by the current server build, so features that need it are not built yet.
+- **The Game Data API is optional.** Compatible Palworld builds can expose a live actor snapshot when both the server and `PALHELM_GAME_DATA_ENABLED` opt in. Palhelm polls it once on a bounded cadence, discards credential fields at decode time, and degrades to explicit disabled/unsupported/stale states when unavailable.
 - **Player notes are not a whitelist.** The local player ledger is annotation only. It does not control who can join. Real allow-list enforcement is deferred until a supported mechanism exists.
 - **Restart is external.** Palhelm can schedule and cancel a graceful shutdown countdown, but it cannot start a stopped server. Configure host supervision separately and verify it.
 - **Map tiles and pal icons are fetched, not shipped**, for licensing reasons. Until you run the fetch scripts, those screens show empty states.

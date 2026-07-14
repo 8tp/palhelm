@@ -17,6 +17,9 @@ All config via env (define in `internal/config`, one struct, documented defaults
 - `PALWORLD_RCON_ADDR` (e.g. `palworld:25575`)
 - `PALWORLD_SAVE_DIR` (e.g. `/game/Saved` — the mounted Saved/ dir; world dir discovered under `SaveGames/0/<GUID>`, pick the GUID from REST /info worldguid when available, else newest dir)
 - `PALHELM_METRICS_INTERVAL` (default `5s`), `PALHELM_PLAYERS_INTERVAL` (default `15s`), `PALHELM_SAVE_SYNC_INTERVAL` (default `10m`)
+- Optional Palworld 1.0 live actor polling: `PALHELM_GAME_DATA_ENABLED` (default `false`),
+  `PALHELM_GAME_DATA_INTERVAL` (default `30s`, minimum `15s`), and
+  `PALHELM_GAME_DATA_TIMEOUT` (default `10s`, range `1s`–`30s`).
 
 ## Packages
 - `internal/palworld`: typed client for the official REST API (`/v1/api/info|players|settings|metrics|announce|kick|ban|unban|save|shutdown|stop`), basic auth, 5s timeout, error taxonomy (unreachable vs 401 vs 4xx). Also a minimal Source-RCON client (handshake, auth, exec; handle multi-packet responses; vanilla Palworld RCON quirks: no UTF-16, short responses).

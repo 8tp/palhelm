@@ -15,6 +15,7 @@ import {
 } from "../../app/mapTransform";
 import { formatRelativeToNow, formatWorldGuid } from "../../app/format";
 import { tileZoomForScale } from "../../app/mapTiles";
+import { selectPlayerMarkers } from "../../app/liveWorld";
 import { Card, CardHead } from "../../components/Card";
 import { EmptyState } from "../../components/EmptyState";
 import { ToggleChip } from "../../components/ToggleChip";
@@ -116,6 +117,11 @@ export default function MapRoute() {
   const playersQuery = useQuery({ queryKey: ["players"], queryFn: () => api.players.list(), refetchInterval: 30000 });
   const guildsQuery = useQuery({ queryKey: ["guilds"], queryFn: () => api.guilds.list() });
   const datasetQuery = useQuery({ queryKey: ["map", "dataset"], queryFn: () => api.map.dataset() });
+  const worldSnapshotQuery = useQuery({
+    queryKey: ["world", "snapshot"],
+    queryFn: () => api.world.snapshot(),
+    refetchInterval: 30000,
+  });
 
   const mockTiles = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("mocktiles");
 
@@ -230,7 +236,12 @@ export default function MapRoute() {
     ? tileZoomForScale(view.scale, MAP_SIZE, activeLayer.tileSize, activeLayer.minZoom, activeLayer.maxZoom)
     : 0;
 
-  const onlinePlayers = (playersQuery.data ?? []).filter((p) => p.online && p.location);
+  // TanStack deliberately retains the previous successful data on a refetch failure. Exact
+  // coordinates must fail back to REST instead of presenting that retained `ready` document as
+  // current when Palhelm could not refresh its freshness state.
+  const liveSnapshot = worldSnapshotQuery.isError || worldSnapshotQuery.isRefetchError ? undefined : worldSnapshotQuery.data;
+  const playerMarkerSelection = selectPlayerMarkers(playersQuery.data ?? [], liveSnapshot);
+  const playerMarkers = playerMarkerSelection.markers;
   const bases = (guildsQuery.data ?? []).flatMap((g) => g.bases.map((b) => ({ ...b, guildName: g.name })));
 
   const toScreen = useCallback(
@@ -253,8 +264,12 @@ export default function MapRoute() {
       </div>
 
       <Card className="map-card">
-        <CardHead title="World map" hint="positions from save data · updates on sync">
-          {healthQuery.data && <span className="hint">synced {formatRelativeToNow(healthQuery.data.save.lastSyncAt)}</span>}
+        <CardHead title="World map" hint={playerMarkerSelection.usedLive ? "live positions from Palworld game data" : "positions from REST/save data"}>
+          {playerMarkerSelection.usedLive && liveSnapshot?.capturedAt ? (
+            <span className="hint">live snapshot {formatRelativeToNow(liveSnapshot.capturedAt)}</span>
+          ) : healthQuery.data ? (
+            <span className="hint">synced {formatRelativeToNow(healthQuery.data.save.lastSyncAt)}</span>
+          ) : null}
         </CardHead>
 
         <div
@@ -272,7 +287,7 @@ export default function MapRoute() {
               <ToggleChip
                 pressed={layers.Players ?? false}
                 onClick={() => setLayers((l) => ({ ...l, Players: !l.Players }))}
-                count={onlinePlayers.length}
+                count={playerMarkers.length}
               >
                 Players
               </ToggleChip>
@@ -284,6 +299,11 @@ export default function MapRoute() {
                 Bases
               </ToggleChip>
               {isPreV1 && <span className="stamp stamp-warn stamp-tilt">Map data: pre-1.0</span>}
+              {liveSnapshot?.state === "stale" && <span className="stamp stamp-warn">Live data stale</span>}
+              {liveSnapshot?.state === "unsupported" && <span className="stamp stamp-warn">Game data unavailable</span>}
+              {liveSnapshot?.state === "unauthorized" && <span className="stamp stamp-warn">Game data unauthorized</span>}
+              {liveSnapshot?.state === "unavailable" && <span className="stamp stamp-warn">Game data unavailable</span>}
+              {liveSnapshot?.truncated && <span className="stamp stamp-warn">Live data incomplete</span>}
             </div>
           )}
 
@@ -344,13 +364,13 @@ export default function MapRoute() {
                     );
                   })}
               {layers.Players &&
-                onlinePlayers
-                  .filter((p) => onLayer(activeLayer, p.location!.x, p.location!.y))
+                playerMarkers
+                  .filter((p) => onLayer(activeLayer, p.location.x, p.location.y))
                   .map((p) => {
-                    const m = layerWorldToMap(activeLayer, p.location!.x, p.location!.y);
+                    const m = layerWorldToMap(activeLayer, p.location.x, p.location.y);
                     const s = toScreen(m.x, m.y);
                     return (
-                      <div key={p.uid} className="marker marker-player" style={{ left: s.x, top: s.y }}>
+                      <div key={p.key} className="marker marker-player" style={{ left: s.x, top: s.y }}>
                         <span className="dot" />
                         <span className="chip">{p.name}</span>
                       </div>

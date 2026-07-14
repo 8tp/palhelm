@@ -262,6 +262,7 @@ func TestAuditRedactionSentinelsAcrossPagesErrorsAnd304(t *testing.T) {
 	record("map", integrationRequest(h, "GET", base+"/map", token), 200)
 	record("server", integrationRequest(h, "GET", base+"/server", token), 200)
 	record("metrics", integrationRequest(h, "GET", base+"/metrics/current", token), 200)
+	record("world summary", integrationRequest(h, "GET", base+"/world/summary", token), 200)
 	// Error bodies: 400 (limit), 400 (cursor), 404 (unknown uid), 404 (unknown path),
 	// 405 (POST), 401 (no token) — none may echo data or key names.
 	record("400 limit", integrationRequest(h, "GET", base+"/players?limit=0", token), 400)
@@ -340,6 +341,8 @@ func TestAuditRedactionKeySetsExact(t *testing.T) {
 	auditAssertKeys(t, "server envelope", serverEnv, "data")
 	metricsEnv := get(base + "/metrics/current")
 	auditAssertKeys(t, "metrics envelope", metricsEnv, "data")
+	worldSummaryEnv := get(base + "/world/summary")
+	auditAssertKeys(t, "world summary envelope", worldSummaryEnv, "data")
 	mapEnv := get(base + "/map")
 	auditAssertKeys(t, "map envelope", mapEnv, "data")
 
@@ -395,6 +398,9 @@ func TestAuditRedactionKeySetsExact(t *testing.T) {
 	auditAssertKeys(t, "server save", serverData["save"].(map[string]any), "state", "formatDrift", "lastParseAt", "players", "pals", "guilds")
 	auditAssertKeys(t, "metrics data", metricsEnv["data"].(map[string]any),
 		"fps", "fpsAvg", "frameTimeMs", "players", "maxPlayers", "day", "uptimeSec", "baseCamps")
+	worldSummaryData := worldSummaryEnv["data"].(map[string]any)
+	auditAssertKeys(t, "world summary data", worldSummaryData, "state", "capturedAt", "lastAttemptAt", "fps", "fpsAvg", "counts")
+	auditAssertKeys(t, "world summary counts", worldSummaryData["counts"].(map[string]any), "players", "partyPals", "basePals", "wildPals", "npcs", "palBoxes", "unknown")
 
 	// Integer-typed fields serialize as JSON integers, times as RFC3339 UTC ("Z" suffix,
 	// second granularity — the store persists unix seconds).

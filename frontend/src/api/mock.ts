@@ -22,6 +22,7 @@ import type {
   Guild,
   IntegrationKey,
   IntegrationKeyCreated,
+  LiveWorldSnapshot,
   MapDataset,
   MetricsCurrent,
   MetricsHistory,
@@ -713,6 +714,31 @@ export async function getWorld(): Promise<WorldInfo> {
     parseDurationMs: 1200,
     stats: { players: players.length, pals: 46, guilds: guilds.length, skippedProps: 0 },
     formatDrift: false,
+  };
+}
+
+export async function getWorldSnapshot(): Promise<LiveWorldSnapshot> {
+  requireSession();
+  await latency();
+  const online = players.filter((player) => player.online && player.location);
+  return {
+    state: "ready",
+    capturedAt: new Date(Date.now() - 12_000).toISOString(),
+    lastAttemptAt: new Date(Date.now() - 12_000).toISOString(),
+    sourceTime: "2026-07-14 13:00:00",
+    fps: 57,
+    fpsAvg: 55.4,
+    counts: { players: online.length, partyPals: online.length * 2, basePals: 18, wildPals: 84, npcs: 11, palBoxes: 2, unknown: 0 },
+    actors: online.map((player) => ({
+      kind: "Player",
+      name: player.name,
+      guildName: player.guildName ?? undefined,
+      level: player.level,
+      activity: "idle",
+      active: true,
+      location: { x: player.location!.x, y: player.location!.y, z: 0 },
+    })),
+    truncated: false,
   };
 }
 

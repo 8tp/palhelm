@@ -1,11 +1,11 @@
 ---
 title: Endpoints
-description: All eight Integration API endpoints with example requests and responses, using fictional data.
+description: All nine Integration API endpoints with example requests and responses, using fictional data.
 sidebar:
   order: 3
 ---
 
-This page lists all eight endpoints with an example request and a realistic response for each. Every route is a `GET`, returns JSON, and uses RFC 3339 UTC timestamps. The data below is fictional. For the envelope fields (`data`, `lastParseAt`, `formatDrift`, `nextCursor`) see the [Overview](/integration-api/overview/); for cursors and rate limits see [Pagination and limits](/integration-api/pagination-and-limits/).
+This page lists all nine endpoints with an example request and a realistic response for each. Every route is a `GET`, returns JSON, and uses RFC 3339 UTC timestamps. The data below is fictional. For the envelope fields (`data`, `lastParseAt`, `formatDrift`, `nextCursor`) see the [Overview](/integration-api/overview/); for cursors and rate limits see [Pagination and limits](/integration-api/pagination-and-limits/).
 
 Every request carries the bearer key:
 
@@ -14,7 +14,7 @@ curl -H "Authorization: Bearer phk_a1b2c3d4_..." \
   https://panel.example.com/api/integration/v1/players
 ```
 
-The eight endpoints:
+The nine endpoints:
 
 | Route | Paginated | Save-derived |
 |---|---|---|
@@ -25,6 +25,7 @@ The eight endpoints:
 | `GET /map` | no | no |
 | `GET /server` | no | no |
 | `GET /metrics/current` | no | no |
+| `GET /world/summary` | no | no |
 | `GET /events` | no | no |
 
 ## GET /players
@@ -330,6 +331,38 @@ curl -H "Authorization: Bearer phk_a1b2c3d4_..." \
   }
 }
 ```
+
+## GET /world/summary
+
+Capability, freshness, FPS, and aggregate actor counts from the optional Palworld 1.0
+game-data poller. This route reads Palhelm's one shared cache and never calls the game server
+on demand. It deliberately contains no actor names, IDs, guilds, health, actions, trainer
+links, or locations.
+
+```json
+{
+  "data": {
+    "state": "ready",
+    "capturedAt": "2026-07-14T18:00:00Z",
+    "lastAttemptAt": "2026-07-14T18:00:00Z",
+    "fps": 57.4,
+    "fpsAvg": 55.8,
+    "counts": {
+      "players": 3,
+      "partyPals": 7,
+      "basePals": 31,
+      "wildPals": 86,
+      "npcs": 12,
+      "palBoxes": 3,
+      "unknown": 0
+    }
+  }
+}
+```
+
+`state` is one of `disabled`, `pending`, `ready`, `stale`, `unsupported`,
+`unauthorized`, or `unavailable`. Consumers should display the state and `capturedAt`
+instead of presenting cached observations as current.
 
 ## GET /events
 

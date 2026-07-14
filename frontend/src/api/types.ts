@@ -205,6 +205,45 @@ export interface WorldInfo {
   formatDrift: boolean;
 }
 
+export type GameDataState = "disabled" | "pending" | "ready" | "stale" | "unsupported" | "unauthorized" | "unavailable";
+
+export interface LiveWorldCounts {
+  players: number;
+  partyPals: number;
+  basePals: number;
+  wildPals: number;
+  npcs: number;
+  palBoxes: number;
+  unknown: number;
+}
+
+export interface LiveWorldActor {
+  kind: "Player" | "OtomoPal" | "BaseCampPal" | "PalBox" | string;
+  characterId?: string;
+  isBoss?: boolean;
+  name?: string;
+  trainerName?: string;
+  guildName?: string;
+  level?: number;
+  hpPercent?: number;
+  active?: boolean;
+  activity: "working" | "transporting" | "eating" | "sleeping" | "idle" | "inactive" | "combat" | "incapacitated" | "moving" | "unknown";
+  location: { x: number; y: number; z: number };
+}
+
+/** Sanitized session-only projection of the optional Palworld 1.0 game-data snapshot. */
+export interface LiveWorldSnapshot {
+  state: GameDataState;
+  capturedAt: string | null;
+  lastAttemptAt: string | null;
+  sourceTime?: string;
+  fps: number;
+  fpsAvg: number;
+  counts: LiveWorldCounts;
+  actors: LiveWorldActor[];
+  truncated: boolean;
+}
+
 // ---------- Console ----------
 export interface ConsoleLogEntry {
   at: string;

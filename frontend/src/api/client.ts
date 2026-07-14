@@ -31,6 +31,7 @@ import type {
   SessionInfo,
   WhitelistEntry,
   WorldInfo,
+  LiveWorldSnapshot,
 } from "./types";
 
 export const USE_MOCK =
@@ -150,6 +151,8 @@ export const api = {
   },
   world: {
     get: (): Promise<WorldInfo> => (USE_MOCK ? mock.getWorld() : request("GET", "/world")),
+    snapshot: (): Promise<LiveWorldSnapshot> =>
+      USE_MOCK ? mock.getWorldSnapshot() : request("GET", "/world/snapshot"),
     parse: (): Promise<void> => (USE_MOCK ? mock.parseWorld() : request("POST", "/world/parse")),
   },
   console: {

@@ -18,8 +18,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/8tp/palhelm/internal/store"
+	"github.com/go-chi/chi/v5"
 )
 
 // integrationRouter returns the dedicated GET-only sub-router mounted at
@@ -43,6 +43,7 @@ func (s *Server) integrationRouter() chi.Router {
 	ir.Get("/map", s.integrationMap)
 	ir.Get("/server", s.integrationServer)
 	ir.Get("/metrics/current", s.integrationMetricsCurrent)
+	ir.Get("/world/summary", s.integrationWorldSummary)
 	ir.Get("/events", s.integrationEvents)
 	return ir
 }

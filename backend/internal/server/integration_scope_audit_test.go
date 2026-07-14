@@ -3,7 +3,7 @@ package server
 // Adversarial scope audit for the v0.4.0 Integration API (docs/specs/integration-api.md §1,
 // §12.1). These tests are the flagship proof: they walk the REAL chi router with
 // chi.Walk - never a hand-kept list - and prove that a valid bearer token confers access to
-// exactly the seven integration GETs and nothing else, that no non-GET handler lives inside
+// exactly the nine integration GETs and nothing else, that no non-GET handler lives inside
 // the integration mount, and that a session cookie authenticates nothing on that mount. The
 // suite fails automatically if a future edit adds a route reachable by both principals, adds a
 // non-GET handler under the integration mount, or lets a bearer token cross into a session or
@@ -127,8 +127,8 @@ func TestFullRouterScopeEnumerationBearerConfersNothingOutsideGroup(t *testing.T
 
 	// Sanity: the enumeration actually reached the integration group (guards against a walk
 	// that silently skipped the mount, which would make the GET-only assertions vacuous).
-	if len(integrationSeen) != 8 {
-		t.Fatalf("expected exactly 8 enumerated integration routes, walked %d: %v", len(integrationSeen), integrationSeen)
+	if len(integrationSeen) != 9 {
+		t.Fatalf("expected exactly 9 enumerated integration routes, walked %d: %v", len(integrationSeen), integrationSeen)
 	}
 }
 

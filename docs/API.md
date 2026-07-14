@@ -38,6 +38,7 @@ Operation-specific recovery details, such as Config's `manualCommand`, stay insi
 
 ## World / save data
 | GET | `/world` | `{day, lastParseAt, parseDurationMs, stats: {players, pals, guilds, skippedProps}, formatDrift: bool}` |
+| GET | `/world/snapshot` | optional Palworld 1.0 live snapshot: capability/freshness, FPS, aggregate actor counts, and a sanitized list capped at 2,048 player/party/base-Pal/PalBox locations. Never includes upstream IP, platform userid, raw actor/trainer ids, rotations, or raw action/class strings. Wild Pals and NPCs are counts only; expired/terminal data contains no exact actors. |
 | POST | `/world/parse` | force re-parse now (409 if already running) |
 
 ## Console (RCON)
@@ -120,6 +121,7 @@ and the always-present boolean `formatDrift` appear on save-derived endpoints (`
 | `GET /map` | `{source, gameVersion, fetchedAt, notes, layers: [{id, label, format, tileSize, minZoom, maxZoom, transform: {a,b,c,d}, bounds}]}` — dataset metadata for plotting base coordinates on your own map. **No tile images.** |
 | `GET /server` | `{name, description, version, state, uptimeSec, save: {state, formatDrift, lastParseAt, players, pals, guilds}}` — served from the poller's cached last-successful snapshot, **never** a per-request call to the game server; `state: "unreachable"` with empty/zero live-server fields (never a 5xx) when no snapshot exists. `save.state` is `drift` when `formatDrift` is true, `unknown` before the first completed parse, and `ok` otherwise. |
 | `GET /metrics/current` | `{fps, fpsAvg, frameTimeMs, players, maxPlayers, day, uptimeSec, baseCamps}` |
+| `GET /world/summary` | `{state, capturedAt, lastAttemptAt, fps, fpsAvg, counts: {players, partyPals, basePals, wildPals, npcs, palBoxes, unknown}}` — cached aggregate only; no actor names, IDs, locations, health, guilds, trainer linkage, or raw activity. `state` explicitly reports disabled/pending/ready/stale/unsupported/unauthorized/unavailable. |
 | `GET /events?limit=50` | `[{at, kind: "join"|"leave"|"backup"|"system", message}]` — bounded to 1–100 newest public events. Join/leave names are sanitized, backups are always `Backup completed`, and system text is restricted to REST reachability and save-format-drift transitions. No `meta`, panel/config/audit text, paths, or admin details. |
 
 **Redaction (viewer-minus policy).** Assume every response is pasted into a public Discord

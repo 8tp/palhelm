@@ -254,6 +254,7 @@ func TestIntegrationRedactionIsNonVacuousAndComplete(t *testing.T) {
 		"/api/integration/v1/map",
 		"/api/integration/v1/server",
 		"/api/integration/v1/metrics/current",
+		"/api/integration/v1/world/summary",
 	}
 	var all strings.Builder
 	for _, ep := range endpoints {
@@ -892,7 +893,7 @@ func TestIntegrationSaveStatusFieldsStayOnContractedSurfaces(t *testing.T) {
 			t.Errorf("%s missing formatDrift", ep)
 		}
 	}
-	for _, ep := range []string{"/api/integration/v1/map", "/api/integration/v1/metrics/current"} {
+	for _, ep := range []string{"/api/integration/v1/map", "/api/integration/v1/metrics/current", "/api/integration/v1/world/summary"} {
 		body := integrationRequest(h, "GET", ep, token).Body.String()
 		if strings.Contains(body, `"lastParseAt"`) {
 			t.Errorf("%s unexpectedly carries lastParseAt", ep)

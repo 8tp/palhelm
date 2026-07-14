@@ -1,6 +1,6 @@
 # Palhelm Panel Roadmap
 
-Last updated: 2026-07-11
+Last updated: 2026-07-14
 
 ## Direction
 
@@ -64,6 +64,27 @@ the Discord bot instead of limiting it to player detail dialogs.
   search, shareable coordinates, and mobile controls.
 - [ ] Add automated landmark fixtures across Palpagos and the World Tree so axis,
   offset, layer-boundary, and inverse-coordinate regressions fail in CI.
+
+### Palworld 1.0 live game-data track (development branch; not deployed)
+
+- [x] Document the official `/v1/api/game-data` schema, capability uncertainty,
+  privacy boundary, and the distinction between transient actors and spawn data.
+- [x] Add an opt-in, bounded, memory-only client and one shared cached poller with
+  explicit ready/stale/unsupported/unauthorized states and transient backoff.
+- [x] Add an authenticated panel snapshot projection and an aggregate-only,
+  redacted Integration API summary; IPs and platform user IDs are discarded at
+  the upstream decode boundary.
+- [x] Let the map reconcile sanitized coordinates from a complete `ready`
+  snapshot onto the authoritative REST roster by exact unique active-player
+  name, while retaining REST/save fallback for partial, stale, or ambiguous data.
+- [ ] Verify endpoint support and coordinate semantics against a disposable or
+  explicitly approved server session before enabling it in production.
+- [ ] Join `BaseCampPal.InstanceID` to save-derived Pals and WorkerDirector base
+  IDs, then add clustered live worker status to base/map views.
+- [ ] Add deterministic bot tools for aggregate world health and exact-linked
+  base-worker status; keep raw locations and action strings out of Discord/AI.
+- [ ] Import a separately licensed, versioned 1.0 spawn/POI dataset. Never treat
+  loaded `WildPal` sightings as proof of a spawn zone, schedule, or catch rate.
 
 Exit: live markers, cursor coordinates, and points of interest agree with the
 in-game map across every installed world layer.
