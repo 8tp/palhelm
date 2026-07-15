@@ -31,7 +31,10 @@ type GuildDetailMember struct {
 }
 
 type GuildDetailBase struct {
-	ID       string               `json:"id"`
+	ID string `json:"id"`
+	// Name is null when the base was never renamed (or the save predates name
+	// decoding); consumers fall back to a positional "Base N" label.
+	Name     *string              `json:"name"`
 	Location *GuildDetailLocation `json:"location"`
 	Level    int                  `json:"level"`
 	PalCount int                  `json:"palCount"`
@@ -130,16 +133,20 @@ FROM guild_members gm LEFT JOIN players p ON p.uid=gm.player_uid WHERE gm.guild_
 	}
 	result.MemberCount = len(result.Members)
 
-	baseRows, err := s.db.QueryContext(ctx, `SELECT b.id,b.x,b.y,b.level,COUNT(p.instance_id) FROM bases b LEFT JOIN pals p ON p.base_id=b.id WHERE b.guild_id=? GROUP BY b.id,b.x,b.y,b.level ORDER BY b.id`, guildID)
+	baseRows, err := s.db.QueryContext(ctx, `SELECT b.id,b.name,b.x,b.y,b.level,COUNT(p.instance_id) FROM bases b LEFT JOIN pals p ON p.base_id=b.id WHERE b.guild_id=? GROUP BY b.id,b.name,b.x,b.y,b.level ORDER BY b.id`, guildID)
 	if err != nil {
 		return GuildDetail{}, err
 	}
 	for baseRows.Next() {
 		var base GuildDetailBase
+		var name sql.NullString
 		var x, y sql.NullFloat64
-		if err = baseRows.Scan(&base.ID, &x, &y, &base.Level, &base.PalCount); err != nil {
+		if err = baseRows.Scan(&base.ID, &name, &x, &y, &base.Level, &base.PalCount); err != nil {
 			baseRows.Close()
 			return GuildDetail{}, err
+		}
+		if name.Valid && name.String != "" {
+			base.Name = &name.String
 		}
 		if x.Valid && y.Valid {
 			base.Location = &GuildDetailLocation{X: x.Float64, Y: y.Float64}

@@ -116,10 +116,15 @@ type GuildMember struct {
 	LastOnline int64  `json:"lastOnline,omitempty"`
 }
 
-// BaseCamp describes base information available without decoding its RawData.
+// BaseCamp describes one BaseCampSaveData entry.
 type BaseCamp struct {
-	ID       string  `json:"id"`
-	GuildID  string  `json:"guildId,omitempty"`
+	ID      string `json:"id"`
+	GuildID string `json:"guildId,omitempty"`
+	// Name is the player-chosen base name decoded from RawData, normalized by
+	// normalizeBaseName: empty when the base was never renamed (whitespace-only
+	// names and the engine's placeholder template both count as unnamed). Empty
+	// is served as null by the API, never a synthetic label.
+	Name     string  `json:"name,omitempty"`
 	Position *Vector `json:"position,omitempty"`
 	// WorkerContainerID is decoded from WorkerDirector.RawData and retained only
 	// for internal joins. Public projections expose BaseID, never this raw GUID.

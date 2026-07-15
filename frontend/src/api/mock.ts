@@ -229,17 +229,19 @@ const players: Player[] = [
 
 const guildNames = ["Nightloom", "Driftbone", "Cinderwake", "Palisade", "Thornmere", "Greywatch", "Amberfen"];
 // Base spots in in-game display coords (roughly matching the mockup marker layout).
-const baseSpots: Record<string, { x: number; y: number }[]> = {
+// name mirrors the API: null when the base was never renamed in-game (the
+// common case), so mock mode exercises the "Base N" fallback alongside real names.
+const baseSpots: Record<string, { x: number; y: number; name: string | null }[]> = {
   "g-nightloom": [
-    { x: -660, y: 490 },
-    { x: -80, y: -430 },
+    { x: -660, y: 490, name: "Nightloom HQ" },
+    { x: -80, y: -430, name: null },
   ],
   "g-driftbone": [
-    { x: 430, y: 370 },
-    { x: 610, y: -160 },
+    { x: 430, y: 370, name: null },
+    { x: 610, y: -160, name: "Coal Ridge" },
   ],
-  "g-cinderwake": [{ x: -300, y: -640 }],
-  "g-palisade": [{ x: 250, y: 720 }],
+  "g-cinderwake": [{ x: -300, y: -640, name: null }],
+  "g-palisade": [{ x: 250, y: 720, name: null }],
 };
 const guilds: Guild[] = guildNames.map((name, i) => {
   const id = `g-${name.toLowerCase()}`;
@@ -253,6 +255,7 @@ const guilds: Guild[] = guildNames.map((name, i) => {
     members,
     bases: spots.map((spot, b) => ({
       id: `${id}-base-${b}`,
+      name: spot.name,
       location: gameToWorld(spot.x, spot.y),
       level: 3 + ((i + b) % 5),
     })),

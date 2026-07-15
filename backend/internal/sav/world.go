@@ -133,12 +133,16 @@ func baseFromEntry(e mapEntry, stats *ParseStats) BaseCamp {
 	}
 	if v, ok := asProperties(e.Value); ok {
 		b.GuildID = firstString(v, "GroupIdBelongTo", "GroupID", "GuildId", "GuildID")
-		// The base's world transform lives inside PalBaseCampSaveData.RawData; it is
-		// not exposed as an ordinary Position/Location property, so decode it from the
-		// raw bytes. A pre-1.0 save that instead carries a plain vector property is
+		// The base's name and world transform live inside PalBaseCampSaveData.RawData;
+		// neither is exposed as an ordinary property, so decode them from the raw
+		// bytes. A pre-1.0 save that instead carries a plain vector property is
 		// still honored as a fallback.
 		if raw, ok := propertyBytes(v, "RawData"); ok {
-			if loc, ok := baseLocation(raw, b.ID); ok {
+			name, loc, ok := decodeBaseRaw(raw, b.ID)
+			if ok {
+				b.Name = normalizeBaseName(name)
+			}
+			if loc != nil {
 				b.Position = loc
 			} else {
 				stats.recordSkip("worldSaveData.BaseCampSaveData.Value.RawData.transform", "tolerated")
@@ -158,11 +162,11 @@ func baseFromEntry(e mapEntry, stats *ParseStats) BaseCamp {
 	return b
 }
 
-// baseLocation decodes the world-space translation of a base camp from
-// PalBaseCampSaveData.RawData. The proven retail 1.x prefix is:
+// decodeBaseRaw decodes the name and world-space translation of a base camp
+// from PalBaseCampSaveData.RawData. The proven retail 1.x prefix is:
 //
 //	id                 GUID (16 bytes) — must match the map key
-//	name               fstring
+//	name               fstring (UTF-16 in retail saves)
 //	state              1 byte (EPalBaseCampWorkerStateType)
 //	transform          FTransform: rotation quaternion (4 f64) + translation
 //	                   (3 f64) + scale3d (3 f64); modern 1.x saves store each
@@ -171,40 +175,61 @@ func baseFromEntry(e mapEntry, stats *ParseStats) BaseCamp {
 //	group_id_belong_to GUID
 //	... (worker/module data this decoder ignores)
 //
-// Only the translation is needed. Any structural drift — short buffer, an
-// embedded GUID that does not match the map key, a read error, or a non-finite
-// or implausibly large component — yields (nil,false) so the caller serves a
-// null location rather than a misleading (0,0). Verified against a live 1.0
-// world: all 20 bases decoded to within <1 cm of the guild's in-game PalBox.
-func baseLocation(raw []byte, baseID string) (*Vector, bool) {
+// ok reports whether the structural prefix (GUID + name) decoded; the raw name
+// is returned as stored (normalizeBaseName decides what is displayable). The
+// location is nil — served as null, never a misleading (0,0) — on any
+// structural drift past the name: a short buffer, a read error, or a
+// non-finite/implausibly large component. A GUID that does not match the map
+// key fails the whole decode. Verified against a live 1.0 world: all 20 bases
+// decoded to within <1 cm of the guild's in-game PalBox.
+func decodeBaseRaw(raw []byte, baseID string) (name string, loc *Vector, ok bool) {
 	r := newReader(raw)
 	embedded, err := readGUID(r)
 	if err != nil || (baseID != "" && !strings.EqualFold(embedded, baseID)) {
-		return nil, false
+		return "", nil, false
 	}
-	if _, err = r.fstring(); err != nil { // name
-		return nil, false
+	if name, err = r.fstring(); err != nil {
+		return "", nil, false
 	}
 	// state byte, then the rotation quaternion (4 f64) we do not need.
 	if err = r.skip(1 + 4*8); err != nil {
-		return nil, false
+		return name, nil, true
 	}
 	x, err := r.f64()
 	if err != nil {
-		return nil, false
+		return name, nil, true
 	}
 	y, err := r.f64()
 	if err != nil {
-		return nil, false
+		return name, nil, true
 	}
 	z, err := r.f64()
 	if err != nil {
-		return nil, false
+		return name, nil, true
 	}
 	if !finiteBaseCoord(x) || !finiteBaseCoord(y) || !finiteBaseCoord(z) {
-		return nil, false
+		return name, nil, true
 	}
-	return &Vector{X: x, Y: y, Z: z}, true
+	return name, &Vector{X: x, Y: y, Z: z}, true
+}
+
+// baseNamePlaceholderPrefix is the engine-side default written into every base
+// camp the player never renamed: "新規生成拠点テンプレート名<n>(仮)" — literally
+// "newly generated base template name <n> (tentative)". Palworld writes this
+// placeholder regardless of the server's locale (the in-game UI substitutes a
+// localized label), so it is not a player-chosen name and must not be shown.
+const baseNamePlaceholderPrefix = "新規生成拠点テンプレート名"
+
+// normalizeBaseName maps a raw stored base name to its displayable form: empty
+// when the base is effectively unnamed. Whitespace-only names and the engine's
+// untranslated placeholder template collapse to "" so every downstream surface
+// can apply one rule — empty means absent means null, never a synthetic value.
+func normalizeBaseName(name string) string {
+	name = strings.TrimSpace(name)
+	if strings.HasPrefix(name, baseNamePlaceholderPrefix) {
+		return ""
+	}
+	return name
 }
 
 // finiteBaseCoord rejects NaN, infinities, and coordinates far outside any

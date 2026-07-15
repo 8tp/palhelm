@@ -1012,12 +1012,15 @@ func (s *Store) ReplaceWorld(ctx context.Context, w *sav.World, at time.Time, d 
 		return err
 	}
 	for _, b := range w.Bases {
-		var x, y any
+		var x, y, name any
 		if b.Position != nil {
 			x = b.Position.X
 			y = b.Position.Y
 		}
-		_, err = tx.ExecContext(ctx, "INSERT INTO bases(id,guild_id,x,y) VALUES(?,?,?,?)", NormalizeUID(b.ID), NormalizeUID(b.GuildID), x, y)
+		if b.Name != "" { // unnamed stays NULL, never "" or a synthetic label
+			name = b.Name
+		}
+		_, err = tx.ExecContext(ctx, "INSERT INTO bases(id,guild_id,name,x,y) VALUES(?,?,?,?,?)", NormalizeUID(b.ID), NormalizeUID(b.GuildID), name, x, y)
 		if err != nil {
 			return err
 		}
@@ -1159,15 +1162,16 @@ func (s *Store) GuildJSON(ctx context.Context) ([]map[string]any, error) {
 		}
 		mr.Close()
 		bases := []map[string]any{}
-		br, e := s.db.QueryContext(ctx, "SELECT id,x,y,level FROM bases WHERE guild_id=?", g.id)
+		br, e := s.db.QueryContext(ctx, "SELECT id,name,x,y,level FROM bases WHERE guild_id=?", g.id)
 		if e != nil {
 			return nil, e
 		}
 		for br.Next() {
 			var bid string
+			var baseName sql.NullString
 			var x, y sql.NullFloat64
 			var level int
-			if e = br.Scan(&bid, &x, &y, &level); e != nil {
+			if e = br.Scan(&bid, &baseName, &x, &y, &level); e != nil {
 				br.Close()
 				return nil, e
 			}
@@ -1175,7 +1179,11 @@ func (s *Store) GuildJSON(ctx context.Context) ([]map[string]any, error) {
 			if x.Valid && y.Valid {
 				location = map[string]any{"x": x.Float64, "y": y.Float64}
 			}
-			bases = append(bases, map[string]any{"id": bid, "location": location, "level": level})
+			var name any // null, never "" or a synthetic label, for an unnamed base.
+			if baseName.Valid && baseName.String != "" {
+				name = baseName.String
+			}
+			bases = append(bases, map[string]any{"id": bid, "name": name, "location": location, "level": level})
 		}
 		br.Close()
 		out = append(out, map[string]any{"id": g.id, "name": g.name, "adminUid": g.admin, "memberCount": len(members), "members": members, "bases": bases})
@@ -1199,8 +1207,11 @@ type GuildMember struct{ UID, Name string }
 // GuildBase is one persistent guild-owned base. HasLocation is false when the
 // base transform was never decoded (a pre-decoding save); X and Y are then zero
 // and must be surfaced as a null location rather than a misleading (0,0).
+// Name is empty when the base was never renamed (or the save predates name
+// decoding) and must likewise be surfaced as null, never a synthetic label.
 type GuildBase struct {
 	ID          string
+	Name        string
 	X, Y        float64
 	HasLocation bool
 	Level       int
@@ -1242,17 +1253,19 @@ func (s *Store) Guilds(ctx context.Context) ([]Guild, error) {
 		if e = mr.Close(); e != nil {
 			return nil, e
 		}
-		br, e := s.db.QueryContext(ctx, "SELECT id,x,y,level FROM bases WHERE guild_id=?", g.ID)
+		br, e := s.db.QueryContext(ctx, "SELECT id,name,x,y,level FROM bases WHERE guild_id=?", g.ID)
 		if e != nil {
 			return nil, e
 		}
 		for br.Next() {
 			var b GuildBase
+			var name sql.NullString
 			var x, y sql.NullFloat64
-			if e = br.Scan(&b.ID, &x, &y, &b.Level); e != nil {
+			if e = br.Scan(&b.ID, &name, &x, &y, &b.Level); e != nil {
 				br.Close()
 				return nil, e
 			}
+			b.Name = name.String
 			b.X, b.Y = x.Float64, y.Float64
 			b.HasLocation = x.Valid && y.Valid
 			g.Bases = append(g.Bases, b)

@@ -416,7 +416,9 @@ type integrationLocationView struct {
 	Y float64 `json:"y"`
 }
 type integrationBaseView struct {
-	ID       string                   `json:"id"`
+	ID string `json:"id"`
+	// Name is null when the base was never renamed; never "" or a placeholder.
+	Name     *string                  `json:"name"`
 	Location *integrationLocationView `json:"location"`
 	Level    int                      `json:"level"`
 }
@@ -659,7 +661,11 @@ func (s *Server) integrationGuilds(w http.ResponseWriter, r *http.Request) {
 			if b.HasLocation {
 				location = &integrationLocationView{X: b.X, Y: b.Y}
 			}
-			bases = append(bases, integrationBaseView{ID: b.ID, Location: location, Level: b.Level})
+			var name *string // null, not "", for an unnamed base.
+			if b.Name != "" {
+				name = &b.Name
+			}
+			bases = append(bases, integrationBaseView{ID: b.ID, Name: name, Location: location, Level: b.Level})
 		}
 		views = append(views, integrationGuildView{ID: g.ID, Name: g.Name, AdminUID: g.AdminUID, MemberCount: len(members), Members: members, Bases: bases})
 	}

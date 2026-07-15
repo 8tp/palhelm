@@ -86,7 +86,7 @@ function GuildDetailView({ guild }: { guild: GuildDetail }) {
               <table className="table"><thead><tr><th>Base</th><th>Level</th><th>Pals</th><th>Location</th></tr></thead><tbody>
                 {guild.bases.map((base, index) => {
                   const game = base.location ? worldToGame(base.location.x, base.location.y) : null;
-                  return <tr key={base.id}><td>Base {index + 1}</td><td className="num">{base.level}</td><td className="num">{base.palCount}</td><td>{game ? <Link to={`/map?x=${game.x}&y=${game.y}`}>{game.x}, {game.y}</Link> : <span className="guild-muted">Unavailable</span>}</td></tr>;
+                  return <tr key={base.id}><td>{base.name ?? `Base ${index + 1}`}</td><td className="num">{base.level}</td><td className="num">{base.palCount}</td><td>{game ? <Link to={`/map?x=${game.x}&y=${game.y}`}>{game.x}, {game.y}</Link> : <span className="guild-muted">Unavailable</span>}</td></tr>;
                 })}
               </tbody></table>
             </CardBody>

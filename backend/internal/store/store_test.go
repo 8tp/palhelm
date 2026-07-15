@@ -612,8 +612,8 @@ func TestMigration004AddsNullablePalPlacementColumns(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer st.Close()
-	if v, getErr := st.GetKV(context.Background(), "schema_version"); getErr != nil || v != "10" {
-		t.Fatalf("schema_version = %q, %v; want 10", v, getErr)
+	if v, getErr := st.GetKV(context.Background(), "schema_version"); getErr != nil || v != "11" {
+		t.Fatalf("schema_version = %q, %v; want 11", v, getErr)
 	}
 	pals, err := st.PalsTyped(context.Background(), "owner")
 	if err != nil || len(pals) != 1 {
@@ -672,8 +672,8 @@ func TestFreshDatabaseReachesLatestSchemaAndAPIKeysUsable(t *testing.T) {
 	defer s.Close()
 	ctx := context.Background()
 	v, err := s.GetKV(ctx, "schema_version")
-	if err != nil || v != "10" {
-		t.Fatalf("schema_version = %q, %v; want 10", v, err)
+	if err != nil || v != "11" {
+		t.Fatalf("schema_version = %q, %v; want 11", v, err)
 	}
 	hash := [32]byte{1, 2, 3}
 	created, err := s.CreateAPIKey(ctx, "abcd1234", hash, "fresh-db-key", time.Now())
@@ -739,8 +739,8 @@ func TestUpgradeFromV030SchemaAppliesAPIKeysMigration(t *testing.T) {
 	ctx := context.Background()
 
 	v, err := upgraded.GetKV(ctx, "schema_version")
-	if err != nil || v != "10" {
-		t.Fatalf("schema_version after upgrade = %q, %v; want 10", v, err)
+	if err != nil || v != "11" {
+		t.Fatalf("schema_version after upgrade = %q, %v; want 11", v, err)
 	}
 	if _, err = upgraded.ListAPIKeys(ctx); err != nil {
 		t.Fatalf("api_keys table not usable after upgrade: %v", err)
@@ -769,8 +769,8 @@ func TestUpgradeFromV030SchemaAppliesAPIKeysMigration(t *testing.T) {
 		t.Fatalf("second Open (already at latest version) returned an error: %v", err)
 	}
 	defer reopened.Close()
-	if v, err = reopened.GetKV(ctx, "schema_version"); err != nil || v != "10" {
-		t.Fatalf("schema_version after no-op reopen = %q, %v; want 10", v, err)
+	if v, err = reopened.GetKV(ctx, "schema_version"); err != nil || v != "11" {
+		t.Fatalf("schema_version after no-op reopen = %q, %v; want 11", v, err)
 	}
 }
 

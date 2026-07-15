@@ -389,7 +389,7 @@ func TestAuditRedactionKeySetsExact(t *testing.T) {
 		}
 		for _, b := range guild["bases"].([]any) {
 			bm := b.(map[string]any)
-			auditAssertKeys(t, "guild base", bm, "id", "location", "level")
+			auditAssertKeys(t, "guild base", bm, "id", "name", "location", "level")
 			auditAssertKeys(t, "base location", bm["location"].(map[string]any), "x", "y")
 		}
 	}

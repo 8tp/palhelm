@@ -247,6 +247,9 @@ export interface WhitelistEntry {
 // ---------- Guilds ----------
 export interface GuildBase {
   id: string;
+  // null when the base was never renamed by a player (the game's default
+  // placeholder counts as unnamed); fall back to a positional label.
+  name: string | null;
   // null when the base's world transform was never decoded (a pre-decoding
   // save). Consumers must treat this as "location unavailable", never (0,0).
   location: { x: number; y: number } | null;
@@ -284,6 +287,8 @@ export interface GuildDetailMember {
 
 export interface GuildDetailBase {
   id: string;
+  // null when the base was never renamed; render a positional "Base N" label.
+  name: string | null;
   location: PlayerLocation | null;
   level: number;
   palCount: number;
