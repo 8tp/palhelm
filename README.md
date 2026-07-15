@@ -21,12 +21,12 @@ Full documentation lives at [docs.palhelm.com](https://docs.palhelm.com). The sh
 - **Players.** Online and offline players merged from the live API and save data. Kick, ban, unban. Guild membership, playtime, and per-player pals from the save file, with real Paldeck names and locally fetched pal icons.
 - **Command palette.** Players, actions, navigation, and saved RCON commands from one keystroke. Destructive entries are hidden from read-only viewers.
 - **Console.** A real RCON session with history, saved commands, and an honest note about what vanilla RCON cannot do.
-- **Live map.** Player and base markers on Palworld 1.0 tiles with Palpagos and World Tree layers. Tiles are game-derived art, so they are never shipped; a one-shot script downloads them into your data volume.
+- **Live map.** Player and base markers on Palworld 1.0 tiles with Palpagos and World Tree layers. The optional Game Data capability adds ready-only PalBox and exact-linked base-worker health/activity layers; stale or truncated snapshots are never drawn as current. Tiles are game-derived art, so they are never shipped; a one-shot script downloads them into your data volume.
 - **Backups.** Scheduled and manual snapshots with retention. Browse a snapshot's contents, restore with a dry-run diff and a typed confirmation. Restore refuses to run while the server is up and always takes a pre-restore backup first.
 - **Config editor that tells the truth.** With the popular [thijsvanloef/palworld-server-docker](https://github.com/thijsvanloef/palworld-server-docker) image, `PalWorldSettings.ini` is regenerated from compose env vars on every boot, so editing the ini does nothing. Palhelm edits your compose file's `environment:` block instead, preserving comments and ordering, shows pending vs effective per setting, and gives you the exact host command to apply. One-click apply is intentionally disabled; see the docs for why.
 - **Graceful shutdown.** Staged, cancellable player-facing countdown broadcasts. Palhelm does not claim it can start the server again; restarts belong to your host supervisor or container restart policy.
 - **Roles.** Admin plus an optional read-only viewer login. The game server's admin password never reaches the browser.
-- **API-first.** Everything the UI does goes through Palhelm's own documented REST API (`/api/openapi.json`). There is also a separate read-only Integration API with bearer keys for bots and scripts, with strict redaction so a leaked key cannot expose platform IDs, live positions, or moderation state.
+- **API-first.** Everything the UI does goes through Palhelm's own documented REST API (`/api/openapi.json`). There is also a separate read-only Integration API with bearer keys for bots and scripts, including aggregate world health and exact save-linked workers. Strict structural redaction keeps platform IDs, live positions, raw actor data, and moderation state out of that surface.
 
 | | |
 |---|---|
@@ -100,7 +100,11 @@ scripts/fetch-pal-icons.sh ./palhelm-data/pal-icons   # pal preview icons
 | `PALHELM_GAME_DATA_INTERVAL` | `30s` | shared game-data snapshot cadence (minimum `15s`; never polled per browser/bot request) |
 | `PALHELM_GAME_DATA_TIMEOUT` | `10s` | large snapshot request deadline (`1s`–`30s`) |
 | `PALHELM_OODLE_LIB` | unset | path to `liboo2corelinux64.so.9` if you provide your own |
-| `PALHELM_INTEGRATION_RATE_LIMIT` | `60` | requests/minute per Integration API key (see below) |
+| `PALHELM_INTEGRATION_RATE_LIMIT` | `60` | requests/minute per Integration API key |
+
+Version 0.5.0 adds schema migration 009 for aggregate Game Data activity history. Back up the
+complete `/data` volume before upgrading; rollback to a 0.4.x image requires restoring that
+pre-upgrade backup. See [the v0.5.0 release notes](docs/releases/v0.5.0.md).
 
 ## Known limits
 
