@@ -6,12 +6,14 @@ import { HelmMark } from "../components/icons";
 import Login from "../routes/login/Login";
 import Dashboard from "../routes/dashboard/Dashboard";
 import PlayersRoute from "../routes/players/Players";
+import PalsRoute from "../routes/pals/Pals";
 import ConsoleRoute from "../routes/console/Console";
 import MapRoute from "../routes/map/Map";
 import BackupsRoute from "../routes/backups/Backups";
 import ConfigRoute from "../routes/config/Config";
 import SettingsRoute from "../routes/settings/Settings";
 import EventsRoute from "../routes/events/Events";
+import DiagnosticsRoute from "../routes/diagnostics/Diagnostics";
 
 function FullPageLoader() {
   return (
@@ -41,11 +43,13 @@ export default function App() {
       >
         <Route index element={<Dashboard />} />
         <Route path="players" element={<PlayersRoute />} />
+        <Route path="pals" element={<PalsRoute />} />
         <Route path="map" element={<MapRoute />} />
         <Route path="events" element={<EventsRoute />} />
         <Route path="console" element={<ConsoleRoute />} />
         <Route path="backups" element={<BackupsRoute />} />
         <Route path="config" element={<ConfigRoute />} />
+        <Route path="diagnostics" element={<DiagnosticsRoute />} />
         <Route path="settings" element={<SettingsRoute />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

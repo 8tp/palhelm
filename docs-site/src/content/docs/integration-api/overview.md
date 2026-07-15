@@ -113,6 +113,6 @@ Every response also carries `Cache-Control: no-store`. Do not cache or persist a
 ## Where to go next
 
 - [Keys and redaction](/integration-api/keys-and-redaction/): creating and revoking keys, the key format, and exactly what is hidden from token responses.
-- [Endpoints](/integration-api/endpoints/): all nine routes with example requests and responses.
+- [Endpoints](/integration-api/endpoints/): all ten routes with example requests and responses.
 - [Pagination and limits](/integration-api/pagination-and-limits/): cursors, conditional requests, rate limits, and the uniform 401.
 - [OpenAPI spec](/integration-api/openapi/): the machine-readable contract and how to generate a client.

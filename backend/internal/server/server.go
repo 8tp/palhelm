@@ -175,6 +175,7 @@ func (s *Server) routes() http.Handler {
 			api.Get("/metrics/current", s.metricsCurrent)
 			api.Get("/metrics/history", s.metricsHistory)
 			api.Get("/players", s.players)
+			api.Get("/pals", s.pals)
 			api.Get("/players/{uid}", s.player)
 			api.Get("/players/{uid}/avatar", s.playerAvatar)
 			api.Get("/whitelist", s.whitelist)

@@ -16,6 +16,8 @@ import {
   IconPlayers,
   IconSettings,
   IconEvents,
+  IconInfo,
+  IconPals,
   type IconProps,
 } from "./icons";
 import { Pill } from "./Pill";
@@ -42,11 +44,13 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { to: "/", end: true, label: "Overview", icon: IconOverview },
   { to: "/players", label: "Players", icon: IconPlayers },
+  { to: "/pals", label: "Pal explorer", icon: IconPals },
   { to: "/map", label: "Live map", icon: IconMap },
   { to: "/events", label: "Events", icon: IconEvents },
   { to: "/console", label: "Console", icon: IconConsole },
   { to: "/backups", label: "Backups", icon: IconBackups, group: "World" },
   { to: "/config", label: "Configuration", icon: IconConfig, group: "World" },
+  { to: "/diagnostics", label: "Diagnostics", icon: IconInfo, group: "Panel" },
   { to: "/settings", label: "Settings", icon: IconSettings, group: "Panel" },
 ];
 

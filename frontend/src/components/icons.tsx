@@ -80,6 +80,74 @@ export function IconMap(props: IconProps) {
   );
 }
 
+export function IconMapPlayer(props: IconProps) {
+  return (
+    <svg {...base(props)} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <circle cx="8" cy="5" r="2.25" />
+      <path d="M3.7 13.5c.2-2.5 1.9-4 4.3-4s4.1 1.5 4.3 4" />
+    </svg>
+  );
+}
+
+export function IconPals(props: IconProps) {
+  return (
+    <svg {...base(props)} stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4.2 5.3 2.8 2.2l3.4 1.5M11.8 5.3l1.4-3.1-3.4 1.5" />
+      <path d="M3.6 7.4c0-2.5 1.9-4.2 4.4-4.2s4.4 1.7 4.4 4.2v1.3c0 2.6-1.9 4.5-4.4 4.5s-4.4-1.9-4.4-4.5z" />
+      <path d="M5.8 8.2h.1M10.1 8.2h.1M6.4 10.6c1 .7 2.2.7 3.2 0" />
+    </svg>
+  );
+}
+
+export function IconMapWorker(props: IconProps) {
+  return <IconPals {...props} />;
+}
+
+export function IconMapBase(props: IconProps) {
+  return (
+    <svg {...base(props)} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m2.2 7.2 5.8-5 5.8 5" />
+      <path d="M3.8 6.2v7.3h8.4V6.2M6.5 13.5V9.8h3v3.7" />
+    </svg>
+  );
+}
+
+export function IconMapPalBox(props: IconProps) {
+  return (
+    <svg {...base(props)} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2.2" y="4" width="11.6" height="9.2" rx="1.2" />
+      <path d="M5 4V2.5h6V4M2.2 7.1h11.6M6.4 9.7h3.2" />
+    </svg>
+  );
+}
+
+export function IconZoomIn(props: IconProps) {
+  return (
+    <svg {...base(props)} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <circle cx="7" cy="7" r="4.5" />
+      <path d="m10.3 10.3 3.4 3.4M7 4.8v4.4M4.8 7h4.4" />
+    </svg>
+  );
+}
+
+export function IconZoomOut(props: IconProps) {
+  return (
+    <svg {...base(props)} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+      <circle cx="7" cy="7" r="4.5" />
+      <path d="m10.3 10.3 3.4 3.4M4.8 7h4.4" />
+    </svg>
+  );
+}
+
+export function IconFitView(props: IconProps) {
+  return (
+    <svg {...base(props)} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 2.5H2.5V6M10 2.5h3.5V6M6 13.5H2.5V10M10 13.5h3.5V10" />
+      <circle cx="8" cy="8" r="1.5" />
+    </svg>
+  );
+}
+
 export function IconConsole(props: IconProps) {
   return (
     <svg {...base(props)} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">

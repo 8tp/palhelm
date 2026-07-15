@@ -20,12 +20,17 @@ ambiguous actors never become map markers.
 
 ## Using the map
 
-Drag to pan. Scroll or use the plus and minus buttons to zoom. The panel picks the right tile resolution for the current zoom.
+Drag to pan. Scroll over the map or use its SVG zoom controls to zoom; the fit control returns to the whole active layer. Wheel and trackpad input is contained by the map while the pointer is over it, so zooming does not scroll or zoom the surrounding page. The panel picks the right tile resolution for the current zoom.
 
-Two marker layers can be toggled on or off:
+Marker layers can be toggled on or off:
 
 - **Players.** Online players that have a known position. Each marker shows the player name.
 - **Bases.** Guild bases from the save. Each marker shows the guild name.
+- **Workers.** Pals working at a base, shown only when the optional game-data poller is enabled and has a fresh snapshot. This dense layer starts off and can be enabled from the map. These are exact save-linked workers, so an actor becomes a worker marker only when it uniquely matches a known save instance. When game data is off, unauthorized, or stale, the map shows a badge instead of plotting workers.
+
+Players, bases, workers, and Palboxes have separate SVG marker shapes as well as labels, so marker identity does not depend on color alone.
+
+A **Live base health** panel beside the map summarizes those same exact-linked workers by base, with their current activity. It reads "No exact-linked live base workers are currently loaded" rather than guessing when the data is unavailable.
 
 A coordinate readout in the corner follows the cursor. It always reads in Palworld's own in-game display coordinates, independent of the tile imagery.
 

@@ -107,6 +107,7 @@ These are the ones you set most often. The full table is in the project README.
 | `PALHELM_COMPOSE_FILE` | no | Path to the Compose file inside the container. Enables the config editor. |
 | `PALHELM_GAME_SERVICE` | no | The service name of the game server in that Compose file. Defaults to `palworld`. |
 | `PALHELM_DATA_DIR` | no | The data directory. Defaults to `/data`. |
+| `PALHELM_GAME_DATA_ENABLED` | no | Turns on the optional live game-data poller for live map positions, base workers, and activity diagnostics. Defaults to off. |
 | `PALHELM_ADDR` | no | Listen address. Defaults to `:8080`. |
 | `PALHELM_TRUSTED_PROXIES` | no | Comma-separated proxy CIDRs allowed to supply a forwarded client IP and HTTPS. Headers from other peers are ignored. |
 | `PALHELM_SECURE_COOKIES` | no | Force the session cookie's `Secure` flag behind a TLS-terminating proxy. Defaults to `false`. |

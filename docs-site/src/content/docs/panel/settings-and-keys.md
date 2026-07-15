@@ -27,6 +27,12 @@ The save sync card shows when the save was last parsed, how long the parse took,
 When a game update changes the save format, the panel does not show wrong data. It degrades the affected feature and shows a "format drift" badge on this card instead of breaking. The parser reads players, Pals, guilds, and bases, and skips sections the panel does not need, such as items, foliage, and dungeons.
 :::
 
+## Game Data API diagnostics
+
+When the optional live game-data poller is enabled, this card shows the health of the shared actor snapshot the panel and Integration API read from. It reports the snapshot's freshness and state, how long the last upstream request took, the number of loaded actors, current and average FPS, how many base workers were exactly linked to save instances, any unresolved workers, the last poll result, and when the next attempt is scheduled. A line at the bottom breaks the workers down by activity: working, transporting, eating, sleeping, idle, incapacitated, and unknown.
+
+The card reads aggregates and diagnostics only. It never lists actor identities, names, health, guilds, or locations. When the poller is off, unauthorized, or has no accepted snapshot, the state pill and freshness row say so instead of showing stale numbers as current.
+
 ## Integration API keys
 
 The Integration API is a separate read-only, bearer-token API for bots, dashboards, and scripts. This card manages its keys. It is admin-only. A viewer never sees it, and the underlying API refuses viewer requests.

@@ -23,7 +23,7 @@ Palhelm has two parts. You can run the panel alone, or add the bot later.
 - Shows server FPS and frame-time history, players-online history, and the health of each data channel.
 - Merges online and offline players from the live API and the save files, with real Paldeck names and per-player Pals.
 - Runs a real RCON session with command history and saved commands.
-- Draws a live map of your world with player and base markers.
+- Draws a live map of your world with player and base markers, and, when the optional live game data is enabled, real-time player positions and a base-workers layer.
 - Takes scheduled and manual backups, and restores a snapshot after a dry-run diff and a typed confirmation.
 - Edits your Compose file's `environment:` block for server settings, then shows you the exact host command to apply the change.
 - Offers an admin login and an optional read-only viewer login.

@@ -199,6 +199,19 @@ sidecar provenance plus the union of the canonical roster and actual PNG/WebP fi
 so the frontend can use legitimate supplemental portraits without speculative requests. Both
 routes are 404-safe — an unfetched or unrecognized id means the frontend falls back to initials.
 
+The panel's Pal detail views join save `characterId` values to the checked-in
+`frontend/src/data/palWorkSuitabilities.generated.ts` snapshot for species-level work
+suitability. The artifact embeds its generated timestamp and pinned source commit URLs, so
+standalone panel builds do not depend on the bot tree or a network fetch. Regenerate it only
+from an explicitly selected normalized snapshot:
+
+```sh
+node scripts/generate-panel-pal-work-suitabilities.mjs path/to/pal-knowledge.json
+```
+
+The generator validates positive numeric levels and never derives work suitability from
+nicknames or per-instance save fields. Unknown CharacterIDs remain unavailable.
+
 ## Security posture
 
 - Panel binds wherever the operator publishes it (a private LAN or VPN address is strongly

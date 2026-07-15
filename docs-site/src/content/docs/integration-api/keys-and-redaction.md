@@ -140,6 +140,8 @@ Redacted fields are **absent** from the response, not set to `null`. Omission is
 
 Note the deliberate asymmetry on location: a live player's position is removed, but a guild base location is kept. A base is a fixed, shared structure everyone on the server already knows about, and plotting bases is the stated purpose of the `/map` endpoint. A person's live position is a moving target on a specific human, so it never leaves the authenticated panel.
 
+The same rule governs the live game-data routes added in 0.5.0. `/world/summary` returns aggregates only, and `/world/workers` returns only exact save-linked worker identity with its owner and base. Runtime actor ids, player and platform identifiers, IP addresses, locations, guild and trainer names, and raw actions are structurally excluded from both. See [Endpoints](/integration-api/endpoints/) for their field-level detail.
+
 ### Before and after
 
 Here is the same player as the panel's viewer sees them, then as the Integration API returns them.

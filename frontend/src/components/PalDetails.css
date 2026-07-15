@@ -23,6 +23,7 @@
 }
 .pal-detail-fact strong { display: block; margin-top: 3px; font-size: var(--text-xs); overflow-wrap: anywhere; }
 .pal-detail-section h4 { margin: 0 0 6px; font-size: var(--text-xs); color: var(--ink-2); }
+.pal-detail-section-source { margin-left: 4px; color: var(--ink-3); font-size: 10px; font-weight: 400; }
 .pal-talent-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .pal-talent-box { text-align: center; }
 .pal-talent-box strong { display: block; margin-top: 2px; font-family: var(--font-mono); font-size: var(--text-md); }
@@ -33,6 +34,29 @@
 }
 .pal-detail-muted { color: var(--ink-3); font-size: var(--text-xs); }
 .pal-detail-identity { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; color: var(--ink-3); font-family: var(--font-mono); font-size: 10px; }
+
+.pal-work-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(138px, 1fr)); gap: 6px; }
+.pal-work-badge {
+  --work-color: var(--ink-3);
+  min-width: 0; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 7px;
+  padding: 6px 7px; color: var(--ink-2); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-ctl);
+}
+.pal-work-icon {
+  width: 28px; height: 28px; display: inline-grid; place-items: center; color: var(--work-color);
+  background: color-mix(in srgb, var(--work-color) 11%, var(--surface-2)); border: 1px solid color-mix(in srgb, var(--work-color) 28%, var(--line)); border-radius: 8px;
+}
+.pal-work-name { min-width: 0; font-size: 11px; line-height: 1.15; }
+.pal-work-level { color: var(--work-color); font-family: var(--font-mono); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pal-work-badge.is-kindling { --work-color: #dc6a37; }
+.pal-work-badge.is-watering { --work-color: #3e82c4; }
+.pal-work-badge.is-planting, .pal-work-badge.is-farming { --work-color: #5f8c47; }
+.pal-work-badge.is-electricity { --work-color: #b68a20; }
+.pal-work-badge.is-handiwork, .pal-work-badge.is-transporting { --work-color: #8b6b4c; }
+.pal-work-badge.is-gathering { --work-color: #7d7251; }
+.pal-work-badge.is-lumbering { --work-color: #658052; }
+.pal-work-badge.is-mining { --work-color: #657183; }
+.pal-work-badge.is-medicine { --work-color: #8a5b91; }
+.pal-work-badge.is-cooling { --work-color: #4f8f9f; }
 
 @media (max-width: 520px) {
   .pal-detail-facts { grid-template-columns: 1fr; }
