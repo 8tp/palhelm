@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Playwright smoke-suite screenshots (human review on failure)
+tests/smoke/output/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
