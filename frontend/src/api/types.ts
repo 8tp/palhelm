@@ -37,6 +37,10 @@ export interface ServerInfo {
   state: ServerState;
   uptimeSec: number;
   panelVersion: string;
+  // Panel runtime configuration, reported so Settings shows the values actually in effect
+  // rather than static reference numbers. Optional so older backends still type-check.
+  sessionDays?: number;
+  saveSyncMinutes?: number;
 }
 
 export type HealthState = "ok" | "error";
@@ -441,6 +445,13 @@ export interface BackupSchedule {
   everyMinutes: number;
   keepDays: number;
   nextRunAt: string | null;
+}
+
+// Real disk capacity of the filesystem holding the backup volume. Fields are null when the
+// backend can't stat the filesystem; host paths are never exposed.
+export interface BackupStorage {
+  totalBytes: number | null;
+  freeBytes: number | null;
 }
 
 // ---------- Config ----------

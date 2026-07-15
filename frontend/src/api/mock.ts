@@ -15,6 +15,7 @@ import type {
   BackupContentEntry,
   BackupDryRun,
   BackupSchedule,
+  BackupStorage,
   ConfigDoc,
   ConfigSetting,
   ConfigValue,
@@ -320,6 +321,8 @@ export async function getServer(): Promise<ServerInfo> {
     state: "running",
     uptimeSec: Math.floor((Date.now() - BOOT_AT) / 1000),
     panelVersion: "0.8.0",
+    sessionDays: 7,
+    saveSyncMinutes: 10,
   };
 }
 
@@ -993,6 +996,13 @@ export async function getSchedule(): Promise<BackupSchedule> {
   requireSession();
   await latency();
   return schedule;
+}
+
+export async function getStorage(): Promise<BackupStorage> {
+  requireSession();
+  await latency();
+  // A plausible 500 GB volume; the used total is derived by the caller from the backup list.
+  return { totalBytes: 500_000_000_000, freeBytes: 421_500_000_000 };
 }
 
 export async function setSchedule(next: BackupSchedule): Promise<BackupSchedule> {
