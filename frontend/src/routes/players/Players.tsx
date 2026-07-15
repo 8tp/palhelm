@@ -7,6 +7,7 @@ import { useIsAdmin } from "../../app/AuthProvider";
 import { usePaletteBridge } from "../../app/paletteBridge";
 import { formatDuration, formatRelativeToNow, truncateMiddle } from "../../app/format";
 import { worldToGame } from "../../app/mapTransform";
+import { guildDisplayName } from "../../app/guildDisplay";
 import { Card, CardBody, CardHead } from "../../components/Card";
 import { Tabs } from "../../components/Tabs";
 import { Pill } from "../../components/Pill";
@@ -242,7 +243,9 @@ function PlayersTab({
                               disabled={!p.location}
                               onClick={() => {
                                 onSelect(p.uid);
-                                navigate("/map");
+                                if (!p.location) return;
+                                const spot = worldToGame(p.location.x, p.location.y);
+                                navigate(`/map?x=${spot.x}&y=${spot.y}`);
                               }}
                             >
                               Show on map
@@ -351,7 +354,7 @@ function PlayerDetailPanel({ uid, onAction }: { uid: string | null; onAction: (k
               <span className="val">{d.guildId && d.guildName ? <Link to={`/guilds/${encodeURIComponent(d.guildId)}`}>{d.guildName}</Link> : "—"}</span>
             </div>
             <div>
-              <span className="label">Position</span>
+              <span className="label">Position <span className="label-note">last save</span></span>
               <span className="val">{gamePos ? `${gamePos.x}, ${gamePos.y}` : "—"}</span>
             </div>
             <div>
@@ -423,7 +426,12 @@ function PlayerDetailPanel({ uid, onAction }: { uid: string | null; onAction: (k
                 <button type="button" className="btn btn-sm" onClick={() => setMessageOpen(true)}>
                   Message
                 </button>
-                <button type="button" className="btn btn-sm" disabled={!d.location} onClick={() => navigate("/map")}>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  disabled={!gamePos}
+                  onClick={() => gamePos && navigate(`/map?x=${gamePos.x}&y=${gamePos.y}`)}
+                >
                   Show on map
                 </button>
                 {d.banned ? (
@@ -643,9 +651,9 @@ function GuildsTab() {
                 <tr key={g.id}>
                   <td>
                     <div className="who-cell">
-                      <span className="avatar">{initials(g.name)}</span>
+                      <span className="avatar">{initials(guildDisplayName(g))}</span>
                       <div>
-                        <div className="name"><Link to={`/guilds/${encodeURIComponent(g.id)}`}>{g.name}</Link></div>
+                        <div className="name"><Link to={`/guilds/${encodeURIComponent(g.id)}`}>{guildDisplayName(g)}</Link></div>
                         <div className="id">{g.id}</div>
                       </div>
                     </div>

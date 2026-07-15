@@ -4,6 +4,7 @@ import { api } from "../../api/client";
 import { ApiRequestError, type GuildDetail } from "../../api/types";
 import { formatDuration, formatRelativeToNow } from "../../app/format";
 import { worldToGame } from "../../app/mapTransform";
+import { guildDisplayName } from "../../app/guildDisplay";
 import { Banner } from "../../components/Banner";
 import { Card, CardBody, CardHead } from "../../components/Card";
 import { EmptyState } from "../../components/EmptyState";
@@ -24,7 +25,7 @@ export default function GuildsRoute() {
     <main className="content guilds-page">
       <div className="page-head guilds-head">
         <div>
-          <h1>{guildId ? detailQuery.data?.name || "Guild detail" : "Guilds"}</h1>
+          <h1>{guildId ? (detailQuery.data ? guildDisplayName(detailQuery.data) : "Guild detail") : "Guilds"}</h1>
           <span className="sub">rosters · bases · members from the latest save</span>
         </div>
         {guildId && <Link className="btn btn-sm btn-ghost" to="/guilds">All guilds</Link>}
@@ -44,7 +45,7 @@ export default function GuildsRoute() {
         <div className="guilds-grid">
           {(listQuery.data ?? []).map((item) => (
             <Card key={item.id}>
-              <CardHead title={<Link to={`/guilds/${encodeURIComponent(item.id)}`}>{item.name || "Unnamed guild"}</Link>} hint={`${item.memberCount} members`} />
+              <CardHead title={<Link to={`/guilds/${encodeURIComponent(item.id)}`}>{guildDisplayName(item)}</Link>} hint={`${item.memberCount} members`} />
               <CardBody className="guild-card-body">
                 <span>{item.bases.length} {item.bases.length === 1 ? "base" : "bases"}</span>
                 <span>{item.members.length > 0 ? item.members.map((member) => member.name || "Unknown player").join(", ") : "No known members"}</span>

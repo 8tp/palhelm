@@ -22,6 +22,7 @@
   color: var(--ink-3); display: block;
 }
 .kv .val { font-family: var(--font-mono); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
+.kv .label .label-note { text-transform: none; letter-spacing: normal; color: var(--ink-3); opacity: 0.85; }
 
 .player-activity { border-top: 1px solid var(--line); }
 .player-activity .card-head { border-bottom: 1px solid var(--line); }
