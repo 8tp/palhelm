@@ -18,7 +18,7 @@
 .pal-detail-fact, .pal-talent-box {
   min-width: 0; padding: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-ctl);
 }
-.pal-detail-fact span, .pal-talent-box span {
+.pal-detail-fact > span, .pal-talent-box > span {
   display: block; color: var(--ink-3); font-size: 10px; text-transform: uppercase; letter-spacing: var(--track-caps);
 }
 .pal-detail-fact strong { display: block; margin-top: 3px; font-size: var(--text-xs); overflow-wrap: anywhere; }

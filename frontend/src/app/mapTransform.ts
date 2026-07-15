@@ -77,12 +77,16 @@ export function layerMapToWorld(mapX: number, mapY: number, t: LayerTransform, t
   return { x: (pixelY - t.d) / t.c, y: (pixelX - t.b) / t.a };
 }
 
-/** Whether a world-cm point falls within a layer's published bounds (with a small margin). */
+/** Whether a world-cm point falls within a layer's published bounds.
+ * Bounds arrive as [[dataXmin, dataYmin], [dataXmax, dataYmax]] — the same world data-X/data-Y
+ * axes as the transform. Each layer's bounds equal exactly the world range its transform maps
+ * onto the native pixel canvas (pixelX = a*dataY + b over 0..tileSize ⇒ the dataY range;
+ * pixelY = c*dataX + d ⇒ the dataX range), which is how this ordering was verified. */
 export function worldInBounds(worldX: number, worldY: number, bounds: [[number, number], [number, number]]): boolean {
   const [[x0, y0], [x1, y1]] = bounds;
   const minX = Math.min(x0, x1);
   const maxX = Math.max(x0, x1);
   const minY = Math.min(y0, y1);
   const maxY = Math.max(y0, y1);
-  return worldY >= minX && worldY <= maxX && worldX >= minY && worldX <= maxY;
+  return worldX >= minX && worldX <= maxX && worldY >= minY && worldY <= maxY;
 }

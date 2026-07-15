@@ -117,12 +117,19 @@ export default function SettingsRoute() {
             </div>
             <div className="field">
               <label htmlFor="auth-session">Session duration</label>
-              <select id="auth-session" className="input" style={{ width: 200 }} defaultValue="7" disabled>
-                <option value="1">1 day</option>
-                <option value="7">7 days</option>
-                <option value="30">30 days</option>
-              </select>
-              <span className="field-hint">configured via PALHELM_SESSION_DAYS — shown here for reference</span>
+              <input
+                id="auth-session"
+                className="input"
+                style={{ width: 200 }}
+                type="text"
+                value={
+                  serverQuery.data?.sessionDays != null
+                    ? `${serverQuery.data.sessionDays} day${serverQuery.data.sessionDays === 1 ? "" : "s"}`
+                    : "—"
+                }
+                readOnly
+              />
+              <span className="field-hint">configured via PALHELM_SESSION_DAYS</span>
             </div>
           </CardBody>
         </Card>
@@ -150,16 +157,16 @@ export default function SettingsRoute() {
               <span className="v">Apache-2.0</span>
             </div>
             <div className="about-links">
-              <a href="https://github.com/" target="_blank" rel="noreferrer">
+              <a href="https://docs.palhelm.com" target="_blank" rel="noreferrer">
                 Documentation
               </a>
-              <a href="https://github.com/" target="_blank" rel="noreferrer">
+              <a href="https://github.com/8tp/palhelm" target="_blank" rel="noreferrer">
                 Source
               </a>
-              <a href="https://github.com/" target="_blank" rel="noreferrer">
+              <a href="https://github.com/8tp/palhelm/issues" target="_blank" rel="noreferrer">
                 Report an issue
               </a>
-              <a href="https://github.com/" target="_blank" rel="noreferrer">
+              <a href="https://github.com/8tp/palhelm/releases" target="_blank" rel="noreferrer">
                 Release notes
               </a>
             </div>
@@ -199,13 +206,13 @@ function GameDataDiagnosticsCard() {
                 <div className="kv-row"><span className="k">FPS</span><span className="v mono">{snapshot ? `${snapshot.fps.toFixed(1)} · avg ${snapshot.fpsAvg.toFixed(1)}` : "—"}</span></div>
               </div>
               <div>
-                <div className="kv-row"><span className="k">Exact worker links</span><span className="v mono">{diagnostics ? `${diagnostics.linkedBasePals}/${snapshot?.counts.basePals ?? 0}` : "—"}</span></div>
+                <div className="kv-row"><span className="k">Linked workers</span><span className="v mono">{diagnostics ? `${diagnostics.linkedBasePals}/${snapshot?.counts.basePals ?? 0}` : "—"}</span></div>
                 <div className="kv-row"><span className="k">Unresolved workers</span><span className="v mono">{diagnostics?.unresolvedBasePals ?? "—"}</span></div>
                 <div className="kv-row"><span className="k">Last poll result</span><span className="v">{diagnostics?.lastErrorCategory ?? "—"}</span></div>
                 <div className="kv-row"><span className="k">Next attempt</span><span className="v">{diagnostics?.nextAttemptAt ? formatRelativeToNow(diagnostics.nextAttemptAt) : "not scheduled"}</span></div>
               </div>
             </div>
-            {diagnostics?.linkLookupFailed && <Banner tone="warn">The snapshot loaded, but save-derived worker identity linkage failed.</Banner>}
+            {diagnostics?.linkLookupFailed && <Banner tone="warn">The snapshot loaded, but workers couldn't be matched to their save identities.</Banner>}
             {activity && (
               <p className="field-hint mono" style={{ marginTop: "var(--space-3)" }}>
                 workers · {activity.working} working · {activity.transporting} transporting · {activity.eating} eating · {activity.sleeping} sleeping · {activity.idle} idle · {activity.incapacitated} incapacitated · {activity.unknown} unknown
@@ -225,6 +232,9 @@ function SaveSyncCard() {
   const queryClient = useQueryClient();
   const toast = useToast();
   const worldQuery = useQuery({ queryKey: ["world"], queryFn: () => api.world.get() });
+  // Shares the ["server"] cache with the main Settings query (react-query dedupes by key).
+  const serverQuery = useQuery({ queryKey: ["server"], queryFn: () => api.server.get() });
+  const saveSyncMinutes = serverQuery.data?.saveSyncMinutes;
 
   const parseMutation = useMutation({
     mutationFn: () => api.world.parse(),
@@ -250,13 +260,15 @@ function SaveSyncCard() {
         <CardBody style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)" }}>
           <div className="field">
             <label htmlFor="sync-interval">Interval</label>
-            <select id="sync-interval" className="input" style={{ width: 200 }} defaultValue="10" disabled>
-              <option value="1">1 minute</option>
-              <option value="5">5 minutes</option>
-              <option value="10">10 minutes</option>
-              <option value="30">30 minutes</option>
-            </select>
-            <span className="field-hint">configured via PALHELM_SYNC_MINUTES — shown here for reference</span>
+            <input
+              id="sync-interval"
+              className="input"
+              style={{ width: 200 }}
+              type="text"
+              value={saveSyncMinutes != null ? `${saveSyncMinutes} minute${saveSyncMinutes === 1 ? "" : "s"}` : "—"}
+              readOnly
+            />
+            <span className="field-hint">configured via PALHELM_SAVE_SYNC_INTERVAL</span>
           </div>
           {isAdmin && (
             <div>

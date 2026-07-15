@@ -331,6 +331,7 @@ type integrationPalView struct {
 	BaseID           *string               `json:"baseId"`
 	HP               *float64              `json:"hp"`
 	Gender           string                `json:"gender"`
+	Rank             *int                  `json:"rank"`
 	Talents          integrationPalTalents `json:"talents"`
 	PassiveSkillIDs  []string              `json:"passiveSkillIds"`
 	EquippedSkillIDs []string              `json:"equippedSkillIds"`
@@ -349,7 +350,7 @@ func newIntegrationPalView(p store.Pal) integrationPalView {
 		Level: p.Level, IsAlpha: p.IsAlpha, IsLucky: p.IsLucky,
 		InParty: p.InParty, PartySlot: p.PartySlot, BoxPage: p.BoxPage, BoxSlot: p.BoxSlot,
 		Placement: integrationPalPlacement(p), BaseID: integrationString(p.BaseID),
-		HP: p.HP, Gender: p.Gender,
+		HP: p.HP, Gender: p.Gender, Rank: p.Rank,
 		Talents:         integrationPalTalents{HP: p.TalentHP, Melee: p.TalentMelee, Shot: p.TalentShot, Defense: p.TalentDefense},
 		PassiveSkillIDs: nonnilStrings(p.PassiveSkillIDs), EquippedSkillIDs: nonnilStrings(p.EquippedSkillIDs),
 	}
@@ -382,6 +383,7 @@ type integrationPalListView struct {
 	OwnerResolved    bool                  `json:"ownerResolved"`
 	HP               *float64              `json:"hp"`
 	Gender           string                `json:"gender"`
+	Rank             *int                  `json:"rank"`
 	Talents          integrationPalTalents `json:"talents"`
 	PassiveSkillIDs  []string              `json:"passiveSkillIds"`
 	EquippedSkillIDs []string              `json:"equippedSkillIds"`
@@ -416,9 +418,11 @@ type integrationLocationView struct {
 	Y float64 `json:"y"`
 }
 type integrationBaseView struct {
-	ID       string                  `json:"id"`
-	Location integrationLocationView `json:"location"`
-	Level    int                     `json:"level"`
+	ID string `json:"id"`
+	// Name is null when the base was never renamed; never "" or a placeholder.
+	Name     *string                  `json:"name"`
+	Location *integrationLocationView `json:"location"`
+	Level    int                      `json:"level"`
 }
 type integrationGuildView struct {
 	ID          string                       `json:"id"`
@@ -614,7 +618,7 @@ func (s *Server) integrationPals(w http.ResponseWriter, r *http.Request) {
 			Placement: integrationPalPlacement(row.Pal), BaseID: integrationString(row.BaseID),
 			OwnerUID: row.OwnerUID, OwnerName: row.OwnerName,
 			OwnerSource: row.OwnerSource, OwnerResolved: row.OwnerResolved,
-			HP: row.HP, Gender: row.Gender,
+			HP: row.HP, Gender: row.Gender, Rank: row.Rank,
 			Talents:         integrationPalTalents{HP: row.TalentHP, Melee: row.TalentMelee, Shot: row.TalentShot, Defense: row.TalentDefense},
 			PassiveSkillIDs: nonnilStrings(row.PassiveSkillIDs), EquippedSkillIDs: nonnilStrings(row.EquippedSkillIDs),
 		})
@@ -655,7 +659,15 @@ func (s *Server) integrationGuilds(w http.ResponseWriter, r *http.Request) {
 		}
 		bases := make([]integrationBaseView, 0, len(g.Bases))
 		for _, b := range g.Bases {
-			bases = append(bases, integrationBaseView{ID: b.ID, Location: integrationLocationView{X: b.X, Y: b.Y}, Level: b.Level})
+			var location *integrationLocationView // null, not (0,0), for an undecoded base transform.
+			if b.HasLocation {
+				location = &integrationLocationView{X: b.X, Y: b.Y}
+			}
+			var name *string // null, not "", for an unnamed base.
+			if b.Name != "" {
+				name = &b.Name
+			}
+			bases = append(bases, integrationBaseView{ID: b.ID, Name: name, Location: location, Level: b.Level})
 		}
 		views = append(views, integrationGuildView{ID: g.ID, Name: g.Name, AdminUID: g.AdminUID, MemberCount: len(members), Members: members, Bases: bases})
 	}

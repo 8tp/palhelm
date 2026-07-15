@@ -37,6 +37,10 @@ export interface ServerInfo {
   state: ServerState;
   uptimeSec: number;
   panelVersion: string;
+  // Panel runtime configuration, reported so Settings shows the values actually in effect
+  // rather than static reference numbers. Optional so older backends still type-check.
+  sessionDays?: number;
+  saveSyncMinutes?: number;
 }
 
 export type HealthState = "ok" | "error";
@@ -90,6 +94,10 @@ export interface Player {
   firstSeenAt: string;
   lastSeenAt: string;
   playtimeSec: number;
+  /** Aggregate player-save observations. Omitted by older parsers; absence is not zero. */
+  captureTotal?: number;
+  uniquePalsCaptured?: number;
+  paldeckUnlocked?: number;
   banned: boolean;
   whitelisted: boolean;
 }
@@ -115,6 +123,12 @@ export interface PlayerPal {
   baseId?: string | null;
   /** Individual save observations. Null means unavailable, not zero. */
   hp?: number | null;
+  /**
+   * Pal Condenser rank: 1 (never condensed) through 5 (four stars). Displayed
+   * stars are rank-1. Null/undefined means the save carried no Rank property —
+   * shown as "Unavailable", never as zero stars.
+   */
+  rank?: number | null;
   gender?: "male" | "female" | "unknown" | "";
   talents?: {
     hp: number | null;
@@ -243,7 +257,12 @@ export interface WhitelistEntry {
 // ---------- Guilds ----------
 export interface GuildBase {
   id: string;
-  location: { x: number; y: number };
+  // null when the base was never renamed by a player (the game's default
+  // placeholder counts as unnamed); fall back to a positional label.
+  name: string | null;
+  // null when the base's world transform was never decoded (a pre-decoding
+  // save). Consumers must treat this as "location unavailable", never (0,0).
+  location: { x: number; y: number } | null;
   level: number;
 }
 
@@ -259,6 +278,131 @@ export interface Guild {
   memberCount: number;
   members: GuildMember[];
   bases: GuildBase[];
+}
+
+export interface GuildDetailMember {
+  uid: string;
+  name: string;
+  level: number;
+  online: boolean;
+  lastSeenAt: string | null;
+  playtimeSec: number;
+  captureTotal: number | null;
+  uniquePalsCaptured: number | null;
+  paldeckUnlocked: number | null;
+  observedDurationSec: number;
+  observedSessionCount: number;
+  currentSession: boolean;
+}
+
+export interface GuildDetailBase {
+  id: string;
+  // null when the base was never renamed; render a positional "Base N" label.
+  name: string | null;
+  location: PlayerLocation | null;
+  level: number;
+  palCount: number;
+}
+
+export interface GuildDetailPal {
+  instanceId: string;
+  characterId: string;
+  displayName: string;
+  level: number;
+  /** Pal Condenser rank (1–5, stars = rank-1); null when the save carried no Rank property. */
+  rank?: number | null;
+  isAlpha: boolean;
+  isLucky: boolean;
+  isBoss: boolean;
+  placement: PalPlacement;
+  baseId: string | null;
+  ownerUid: string;
+  ownerName: string;
+  ownerSource: PalOwnerSource;
+  ownerResolved: boolean;
+  association: "guild_base" | "current_member_owner";
+}
+
+export interface GuildDetail {
+  id: string;
+  name: string;
+  adminUid: string;
+  memberCount: number;
+  members: GuildDetailMember[];
+  bases: GuildDetailBase[];
+  palCount: number;
+  palsTruncated: boolean;
+  pals: GuildDetailPal[];
+  activity: {
+    coverage: "panel_observed_sessions";
+    attribution: "current_guild_membership";
+    window: "30d";
+    since: string;
+    through: string;
+    trackingSince: string | null;
+    analysisTruncated: boolean;
+    durationSec: number;
+    sessionCount: number;
+    activePlayers: number;
+  };
+}
+
+// ---------- Paldeck progression ----------
+export interface PaldeckCatalogCoverage {
+  version: "palworld_1.0_pinned";
+  knownSpecies: number;
+  observedUnknownSpecies: number;
+}
+
+export interface ServerPaldeckSpecies {
+  characterId: string;
+  displayName: string;
+  known: boolean;
+  captureCount: number | null;
+  capturedByPlayers: number | null;
+  unlockedByPlayers: number | null;
+}
+
+export interface ServerPaldeck {
+  coverage: {
+    source: "player_save_record_data";
+    playersTotal: number;
+    playersWithCaptureCounts: number;
+    playersWithUnlockFlags: number;
+    captureCountsTruncated: boolean;
+    unlockFlagsTruncated: boolean;
+    oldestObservedAt: string | null;
+    latestObservedAt: string | null;
+  };
+  catalog: PaldeckCatalogCoverage;
+  captureTotal: number | null;
+  uniqueSpeciesCaptured: number | null;
+  speciesUnlocked: number | null;
+  species: ServerPaldeckSpecies[];
+}
+
+export interface PlayerPaldeck {
+  player: { uid: string; name: string };
+  coverage: {
+    source: "player_save_record_data";
+    captureCountsAvailable: boolean;
+    unlockFlagsAvailable: boolean;
+    captureCountsTruncated: boolean;
+    unlockFlagsTruncated: boolean;
+    captureObservedAt: string | null;
+    unlockObservedAt: string | null;
+  };
+  catalog: PaldeckCatalogCoverage;
+  captureTotal: number | null;
+  uniquePalsCaptured: number | null;
+  paldeckUnlocked: number | null;
+  species: Array<{
+    characterId: string;
+    displayName: string;
+    known: boolean;
+    captureCount: number | null;
+    unlocked: boolean | null;
+  }>;
 }
 
 // ---------- Map ----------
@@ -441,6 +585,13 @@ export interface BackupSchedule {
   everyMinutes: number;
   keepDays: number;
   nextRunAt: string | null;
+}
+
+// Real disk capacity of the filesystem holding the backup volume. Fields are null when the
+// backend can't stat the filesystem; host paths are never exposed.
+export interface BackupStorage {
+  totalBytes: number | null;
+  freeBytes: number | null;
 }
 
 // ---------- Config ----------

@@ -57,7 +57,9 @@ Pal data comes from the last save parse, not live memory. It updates when save s
 
 ## Guilds tab
 
-Lists each guild with its member count, base count, and the roster of known members. Guild data is parsed from the save file.
+Lists each guild with its member count, base count, and the roster of known members. Guild names
+link to the [dedicated guild detail](/panel/guilds/) with bases, associated Pals, and bounded
+panel-observed activity. Guild data is parsed from the save file.
 
 ## Player notes tab
 

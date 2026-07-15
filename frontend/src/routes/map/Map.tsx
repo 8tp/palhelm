@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, USE_MOCK } from "../../api/client";
-import type { MapDataset, MapDatasetLayer } from "../../api/types";
+import type { GuildBase, LiveWorldActor, MapDataset, MapDatasetLayer } from "../../api/types";
 import {
   layerMapToWorld,
   MAP_SIZE,
@@ -15,7 +15,9 @@ import {
   type MapPoint,
 } from "../../app/mapTransform";
 import { formatRelativeToNow, formatWorldGuid } from "../../app/format";
+import { guildDisplayName } from "../../app/guildDisplay";
 import { tileZoomForScale } from "../../app/mapTiles";
+import { clusterMapMarkers, type ClusterMarkerGroup } from "../../app/mapClustering";
 import {
   addContainedMapWheelListener,
   buildSharedMapURL,
@@ -28,7 +30,7 @@ import {
   zoomMapView,
   type MapSearchTarget,
 } from "../../app/mapInteraction";
-import { selectLiveMapActors, selectPlayerMarkers } from "../../app/liveWorld";
+import { isWorkerInDanger, selectLiveMapActors, selectPlayerMarkers, summarizeWorkerCluster } from "../../app/liveWorld";
 import { Card, CardBody, CardHead } from "../../components/Card";
 import { EmptyState } from "../../components/EmptyState";
 import { ToggleChip } from "../../components/ToggleChip";
@@ -141,6 +143,7 @@ export default function MapRoute() {
   const [mapSearch, setMapSearch] = useState("");
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [selectedTargetKey, setSelectedTargetKey] = useState<string | null>(null);
+  const [expandedClusterKey, setExpandedClusterKey] = useState<string | null>(null);
   const [activeLayerId, setActiveLayerId] = useState<string | null>(() => initialShared.current?.layerId ?? null);
   const wellRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ startX: number; startY: number; tx: number; ty: number; moved: boolean } | null>(null);
@@ -296,7 +299,13 @@ export default function MapRoute() {
   const liveSnapshot = worldSnapshotQuery.isError || worldSnapshotQuery.isRefetchError ? undefined : worldSnapshotQuery.data;
   const playerMarkerSelection = selectPlayerMarkers(playersQuery.data ?? [], liveSnapshot);
   const playerMarkers = playerMarkerSelection.markers;
-  const bases = (guildsQuery.data ?? []).flatMap((g) => g.bases.map((b) => ({ ...b, guildName: g.name })));
+  // Bases without a decoded location cannot be plotted; drop them so every
+  // downstream base marker has a real (never (0,0)) position. Labels prefer the
+  // base's own save name, then the guild's display label (with the unnamed-guild
+  // member fallback).
+  const bases = (guildsQuery.data ?? [])
+    .flatMap((g) => g.bases.map((b) => ({ ...b, guildName: b.name ?? guildDisplayName(g) })))
+    .filter((b): b is typeof b & { location: NonNullable<GuildBase["location"]> } => b.location !== null);
   const liveMapActors = selectLiveMapActors(liveSnapshot);
   const workers = liveMapActors.workers;
   const palBoxes = liveMapActors.palBoxes;
@@ -368,11 +377,12 @@ export default function MapRoute() {
     setPinnedGame(worldToGame(location.x, location.y));
   }, [activeLayer, availableLayers, scaleBoundsFor, view?.scale]);
 
-  function focusTarget(target: MapSearchTarget) {
+  const focusTarget = useCallback((target: MapSearchTarget) => {
     focusWorldLocation(target.location, target.kind, target.key);
     setMapSearch(target.label);
     setSearchExpanded(false);
-  }
+    setExpandedClusterKey(null);
+  }, [focusWorldLocation]);
 
   function fitLocations(kind: "player" | "base") {
     const locations = kind === "player"
@@ -410,6 +420,64 @@ export default function MapRoute() {
     [view],
   );
 
+  const markerGroups = useMemo(() => {
+    const points = searchTargets
+      .filter((target) => onLayer(activeLayer, target.location.x, target.location.y))
+      .map((target) => {
+        const mapPoint = layerWorldToMap(activeLayer, target.location.x, target.location.y);
+        const screenPoint = toScreen(mapPoint.x, mapPoint.y);
+        return {
+          key: target.key,
+          kind: target.kind,
+          layerId: activeLayer.id,
+          x: screenPoint.x,
+          y: screenPoint.y,
+          value: target,
+        };
+      });
+    return clusterMapMarkers(points, 48, selectedTargetKey);
+  }, [activeLayer, searchTargets, selectedTargetKey, toScreen]);
+  const baseMarkerGroups = markerGroups.filter((group) => markerKind(group) === "base");
+  const playerMarkerGroups = markerGroups.filter((group) => markerKind(group) === "player");
+
+  const focusCluster = useCallback((group: Extract<ClusterMarkerGroup<MapSearchTarget>, { type: "cluster" }>) => {
+    const el = wellRef.current;
+    if (!el) return;
+    const points = group.members.map(({ value: target }) =>
+      layerWorldToMap(activeLayer, target.location.x, target.location.y));
+    const next = fitMapPoints(points, { width: el.clientWidth, height: el.clientHeight }, scaleBoundsFor(activeLayer));
+    // Zoom to the exact member extent first. If the members are still inseparable at the
+    // current/max scale (including identical coordinates), expose the exact-marker chooser.
+    if (next && (!view || next.scale > view.scale * 1.15)) {
+      setExpandedClusterKey(null);
+      setView(next);
+      return;
+    }
+    setExpandedClusterKey((current) => current === group.key ? null : group.key);
+  }, [activeLayer, scaleBoundsFor, view]);
+
+  // Base workers reuse the same screen-space clustering as players and bases so a busy base
+  // (the live server currently loads 200+) collapses into one "N workers" chip instead of a
+  // wall of overlapping labels. Because clustering runs in screen space on every view change,
+  // zooming in separates the members automatically — no separate chooser is needed.
+  const workerMarkerGroups = useMemo(() => {
+    const points = workers
+      .filter((worker) => onLayer(activeLayer, worker.location.x, worker.location.y))
+      .map((worker) => {
+        const mapPoint = layerWorldToMap(activeLayer, worker.location.x, worker.location.y);
+        const screenPoint = toScreen(mapPoint.x, mapPoint.y);
+        return {
+          key: `worker:${worker.instanceId}`,
+          kind: "worker" as const,
+          layerId: activeLayer.id,
+          x: screenPoint.x,
+          y: screenPoint.y,
+          value: worker,
+        };
+      });
+    return clusterMapMarkers(points, 48);
+  }, [activeLayer, workers, toScreen]);
+
   const hasMap = tileState === "tiles" || tileState === "mockgrid";
 
   useEffect(() => {
@@ -444,7 +512,7 @@ export default function MapRoute() {
       </div>
 
       <Card className="map-card">
-        <CardHead title="World map" hint={playerMarkerSelection.usedLive ? "live positions from Palworld game data" : "positions from REST/save data"}>
+        <CardHead title="World map" hint={playerMarkerSelection.usedLive ? "live game data" : "positions from save data"}>
           {playerMarkerSelection.usedLive && liveSnapshot?.capturedAt ? (
             <span className="hint">live snapshot {formatRelativeToNow(liveSnapshot.capturedAt)}</span>
           ) : healthQuery.data ? (
@@ -518,6 +586,7 @@ export default function MapRoute() {
           onPointerLeave={hasMap ? cancelPointer : undefined}
         >
           {hasMap && (
+          <div className="map-overlays">
             <div className="map-toggles" role="group" aria-label="Map layers">
               <ToggleChip
                 pressed={layers.Players ?? false}
@@ -554,31 +623,26 @@ export default function MapRoute() {
               {liveSnapshot?.state === "unavailable" && <span className="stamp stamp-warn">Game data unavailable</span>}
               {liveSnapshot?.truncated && <span className="stamp stamp-warn">Live data incomplete</span>}
             </div>
-          )}
-
-          {hasMap && availableLayers.length > 1 && (
-            <div className="map-toggles map-layer-toggles" role="group" aria-label="Map tile layer">
-              {availableLayers.map((l) => (
-                <ToggleChip key={l.id} pressed={activeLayer.id === l.id} onClick={() => setActiveLayerId(l.id)}>
-                  {l.label}
-                </ToggleChip>
-              ))}
-            </div>
+            {availableLayers.length > 1 && (
+              <div className="map-toggles map-layer-toggles" role="group" aria-label="Map tile layer">
+                {availableLayers.map((l) => (
+                  <ToggleChip key={l.id} pressed={activeLayer.id === l.id} onClick={() => setActiveLayerId(l.id)}>
+                    {l.label}
+                  </ToggleChip>
+                ))}
+              </div>
+            )}
+          </div>
           )}
 
           {tileState === "missing" && (
             <div className="map-empty-fill">
               <EmptyState icon={<IconMapEmpty />} title="Map tiles not installed">
                 <p>
-                  Live map rendering needs terrain tiles derived from the game's own assets. These are copyrighted by
-                  Pocketpair and are not shipped with Palhelm — generate them once from your server's install.
+                  Map tiles come from the game's own assets, which Palhelm can't ship (they're Pocketpair's).
+                  Generate them once from your server's install:
                 </p>
                 <CodeWell>docker exec palhelm palhelm fetch-map-tiles</CodeWell>
-                <div style={{ marginTop: "var(--space-2)" }}>
-                  <button type="button" className="btn btn-ghost btn-sm">
-                    Learn more
-                  </button>
-                </div>
               </EmptyState>
             </div>
           )}
@@ -599,46 +663,29 @@ export default function MapRoute() {
               </div>
 
               {/* screen-space markers (chips stay crisp and unscaled) */}
-              {layers.Bases &&
-                bases
-                  .filter((b) => onLayer(activeLayer, b.location.x, b.location.y))
-                  .map((b) => {
-                    const m = layerWorldToMap(activeLayer, b.location.x, b.location.y);
-                    const s = toScreen(m.x, m.y);
-                    return (
-                      <div key={b.id} className={`marker marker-base${selectedTargetKey === `base:${b.id}` ? " is-selected" : ""}`} style={{ left: s.x, top: s.y }}>
-                        <span className="marker-symbol"><IconMapBase /></span>
-                        <span className="chip">{b.guildName}</span>
-                      </div>
-                    );
-                  })}
-              {layers.Players &&
-                playerMarkers
-                  .filter((p) => onLayer(activeLayer, p.location.x, p.location.y))
-                  .map((p) => {
-                    const m = layerWorldToMap(activeLayer, p.location.x, p.location.y);
-                    const s = toScreen(m.x, m.y);
-                    return (
-                      <div key={p.key} className={`marker marker-player${selectedTargetKey === `player:${p.key}` ? " is-selected" : ""}`} style={{ left: s.x, top: s.y }}>
-                        <span className="marker-symbol"><IconMapPlayer /></span>
-                        <span className="chip">{p.name}</span>
-                      </div>
-                    );
-                  })}
-              {layers.Workers &&
-                workers
-                  .filter((worker) => onLayer(activeLayer, worker.location.x, worker.location.y))
-                  .map((worker) => {
-                    const m = layerWorldToMap(activeLayer, worker.location.x, worker.location.y);
-                    const s = toScreen(m.x, m.y);
-                    const danger = worker.activity === "incapacitated" || (worker.hpPercent !== undefined && worker.hpPercent < 25);
-                    return (
-                      <div key={worker.instanceId} className={`marker marker-worker${danger ? " danger" : ""}`} style={{ left: s.x, top: s.y }}>
-                        <span className="marker-symbol"><IconMapWorker /></span>
-                        <span className="chip">{worker.name || worker.characterId || "Pal"} · {worker.activity}</span>
-                      </div>
-                    );
-                  })}
+              {layers.Bases && baseMarkerGroups.map((group) => (
+                <MapMarkerGroup
+                  key={group.key}
+                  group={group}
+                  selectedTargetKey={selectedTargetKey}
+                  expanded={expandedClusterKey === group.key}
+                  onTarget={focusTarget}
+                  onCluster={focusCluster}
+                />
+              ))}
+              {layers.Players && playerMarkerGroups.map((group) => (
+                <MapMarkerGroup
+                  key={group.key}
+                  group={group}
+                  selectedTargetKey={selectedTargetKey}
+                  expanded={expandedClusterKey === group.key}
+                  onTarget={focusTarget}
+                  onCluster={focusCluster}
+                />
+              ))}
+              {layers.Workers && workerMarkerGroups.map((group) => (
+                <WorkerMarkerGroup key={group.key} group={group} />
+              ))}
               {layers.PalBoxes &&
                 palBoxes
                   .filter((box) => onLayer(activeLayer, box.location.x, box.location.y))
@@ -687,12 +734,12 @@ export default function MapRoute() {
       </Card>
       {liveMapActors.available && liveSnapshot && (
         <Card>
-          <CardHead title="Live base health" hint="exact save-linked workers only">
+          <CardHead title="Live base health" hint="save-linked workers">
             <span className="hint">{liveSnapshot.diagnostics.unresolvedBasePals} unresolved</span>
           </CardHead>
           <CardBody>
             {baseHealth.length === 0 ? (
-              <p className="hint">No exact-linked live base workers are currently loaded.</p>
+              <p className="hint">No live base workers loaded right now.</p>
             ) : (
               <div className="base-health-grid">
                 {baseHealth.map((base) => (
@@ -707,6 +754,106 @@ export default function MapRoute() {
         </Card>
       )}
     </main>
+  );
+}
+
+function markerKind(group: ClusterMarkerGroup<MapSearchTarget>): "player" | "base" {
+  // Read the target's own kind: the cluster point's kind field widened to include
+  // "worker", but MapMarkerGroup only ever receives player/base groups.
+  return group.type === "single" ? group.member.value.kind : group.members[0].value.kind;
+}
+
+function MapMarkerGroup({
+  group,
+  selectedTargetKey,
+  expanded,
+  onTarget,
+  onCluster,
+}: {
+  group: ClusterMarkerGroup<MapSearchTarget>;
+  selectedTargetKey: string | null;
+  expanded: boolean;
+  onTarget: (target: MapSearchTarget) => void;
+  onCluster: (group: Extract<ClusterMarkerGroup<MapSearchTarget>, { type: "cluster" }>) => void;
+}) {
+  const kind = markerKind(group);
+  const Icon = kind === "player" ? IconMapPlayer : IconMapBase;
+  if (group.type === "single") {
+    const target = group.member.value;
+    return (
+      <button
+        type="button"
+        className={`marker marker-action marker-${kind}${selectedTargetKey === target.key ? " is-selected" : ""}`}
+        style={{ left: group.x, top: group.y }}
+        title={`Focus ${target.label}`}
+        onClick={() => onTarget(target)}
+      >
+        <span className="marker-symbol"><Icon /></span>
+        <span className="chip">{target.label}</span>
+      </button>
+    );
+  }
+
+  const noun = kind === "player" ? "online players" : "bases";
+  const names = group.members.map(({ value }) => value.label);
+  return (
+    <>
+      <button
+        type="button"
+        className={`marker marker-action marker-${kind} marker-cluster`}
+        style={{ left: group.x, top: group.y }}
+        aria-label={`${group.members.length} nearby ${noun}: ${names.join(", ")}`}
+        aria-expanded={expanded}
+        title={names.join(", ")}
+        onClick={() => onCluster(group)}
+      >
+        <span className="marker-symbol"><Icon /><span className="marker-count">{group.members.length}</span></span>
+        <span className="chip">{group.members.length} nearby</span>
+      </button>
+      {expanded && (
+        <div className="marker-cluster-menu" style={{ left: group.x, top: group.y }} role="group" aria-label={`Choose one of ${group.members.length} nearby ${noun}`}>
+          {group.members.map(({ value: target }) => {
+            const coordinate = worldToGame(target.location.x, target.location.y);
+            return (
+              <button type="button" key={target.key} onClick={() => onTarget(target)}>
+                <span>{target.label}</span>
+                <small>{coordinate.x}, {coordinate.y}</small>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
+/** Renders one clustered group of live base workers: a lone worker keeps its per-Pal chip
+ * (name · activity), while a cluster shows "N workers" and, when any member is knocked out or
+ * critically hurt, takes the danger accent and spells out how many (e.g. "12 workers · 2 hurt")
+ * so a crowded base never hides one that needs help. Workers are read-only markers, so — unlike
+ * player/base clusters — there is nothing to click; zooming in is what separates them. */
+function WorkerMarkerGroup({ group }: { group: ClusterMarkerGroup<LiveWorldActor> }) {
+  if (group.type === "single") {
+    const worker = group.member.value;
+    const danger = isWorkerInDanger(worker);
+    return (
+      <div className={`marker marker-worker${danger ? " danger" : ""}`} style={{ left: group.x, top: group.y }}>
+        <span className="marker-symbol"><IconMapWorker /></span>
+        <span className="chip">{worker.name || worker.characterId || "Pal"} · {worker.activity}</span>
+      </div>
+    );
+  }
+
+  const { label, danger } = summarizeWorkerCluster(group.members.map(({ value }) => value));
+  return (
+    <div
+      className={`marker marker-worker marker-cluster${danger ? " danger" : ""}`}
+      style={{ left: group.x, top: group.y }}
+      aria-label={label}
+    >
+      <span className="marker-symbol"><IconMapWorker /><span className="marker-count">{group.members.length}</span></span>
+      <span className="chip">{label}</span>
+    </div>
   );
 }
 

@@ -15,13 +15,16 @@ import type {
   BackupContentEntry,
   BackupDryRun,
   BackupSchedule,
+  BackupStorage,
   ConfigDoc,
   ConfigSetting,
   ConfigValue,
   ConsoleLogEntry,
   Guild,
+  GuildDetail,
   IntegrationKey,
   IntegrationKeyCreated,
+  LiveWorldActor,
   LiveWorldSnapshot,
   MapDataset,
   MetricsCurrent,
@@ -31,6 +34,7 @@ import type {
   PalExplorerPal,
   PalExplorerParams,
   PaldeckIconDataset,
+  PlayerPaldeck,
   PalhelmEvent,
   Player,
   PlayerDetail,
@@ -40,6 +44,7 @@ import type {
   ServerActivity,
   ServerActivityWindow,
   ServerHealth,
+  ServerPaldeck,
   ServerInfo,
   SessionInfo,
   WhitelistEntry,
@@ -107,6 +112,9 @@ const players: Player[] = [
     firstSeenAt: "2026-07-04T09:12:00Z",
     lastSeenAt: new Date().toISOString(),
     playtimeSec: 21 * 3600 + 36 * 60,
+    captureTotal: 146,
+    uniquePalsCaptured: 8,
+    paldeckUnlocked: 9,
     banned: false,
     whitelisted: true,
   },
@@ -124,6 +132,9 @@ const players: Player[] = [
     firstSeenAt: "2026-07-04T10:02:00Z",
     lastSeenAt: new Date().toISOString(),
     playtimeSec: 18 * 3600 + 5 * 60,
+    captureTotal: 113,
+    uniquePalsCaptured: 7,
+    paldeckUnlocked: 8,
     banned: false,
     whitelisted: true,
   },
@@ -141,6 +152,9 @@ const players: Player[] = [
     firstSeenAt: "2026-07-05T08:00:00Z",
     lastSeenAt: "2026-07-09T22:18:00Z",
     playtimeSec: 15 * 3600 + 51 * 60,
+    captureTotal: 82,
+    uniquePalsCaptured: 5,
+    paldeckUnlocked: 6,
     banned: false,
     whitelisted: true,
   },
@@ -178,21 +192,57 @@ const players: Player[] = [
     banned: true,
     whitelisted: false,
   },
+  {
+    uid: "7C1B8D22-1234-4B7E-9A11-000000000006",
+    steamId: "76561198044456789",
+    name: "Ferro",
+    accountName: "ferro",
+    online: false,
+    level: 19,
+    guildId: "g-cinderwake",
+    guildName: "Cinderwake",
+    ping: null,
+    location: null,
+    firstSeenAt: "2026-07-06T11:00:00Z",
+    lastSeenAt: "2026-07-08T20:30:00Z",
+    playtimeSec: 9 * 3600 + 3 * 60,
+    banned: false,
+    whitelisted: false,
+  },
+  {
+    uid: "2D8F3A55-1234-4B7E-9A11-000000000007",
+    steamId: "76561198077765432",
+    name: "Wren",
+    accountName: "wren",
+    online: false,
+    level: 22,
+    guildId: "g-palisade",
+    guildName: "Palisade",
+    ping: null,
+    location: null,
+    firstSeenAt: "2026-07-05T16:40:00Z",
+    lastSeenAt: "2026-07-09T18:05:00Z",
+    playtimeSec: 11 * 3600 + 27 * 60,
+    banned: false,
+    whitelisted: false,
+  },
 ];
 
 const guildNames = ["Nightloom", "Driftbone", "Cinderwake", "Palisade", "Thornmere", "Greywatch", "Amberfen"];
 // Base spots in in-game display coords (roughly matching the mockup marker layout).
-const baseSpots: Record<string, { x: number; y: number }[]> = {
+// name mirrors the API: null when the base was never renamed in-game (the
+// common case), so mock mode exercises the "Base N" fallback alongside real names.
+const baseSpots: Record<string, { x: number; y: number; name: string | null }[]> = {
   "g-nightloom": [
-    { x: -660, y: 490 },
-    { x: -80, y: -430 },
+    { x: -660, y: 490, name: "Nightloom HQ" },
+    { x: -80, y: -430, name: null },
   ],
   "g-driftbone": [
-    { x: 430, y: 370 },
-    { x: 610, y: -160 },
+    { x: 430, y: 370, name: null },
+    { x: 610, y: -160, name: "Coal Ridge" },
   ],
-  "g-cinderwake": [{ x: -300, y: -640 }],
-  "g-palisade": [{ x: 250, y: 720 }],
+  "g-cinderwake": [{ x: -300, y: -640, name: null }],
+  "g-palisade": [{ x: 250, y: 720, name: null }],
 };
 const guilds: Guild[] = guildNames.map((name, i) => {
   const id = `g-${name.toLowerCase()}`;
@@ -206,11 +256,26 @@ const guilds: Guild[] = guildNames.map((name, i) => {
     members,
     bases: spots.map((spot, b) => ({
       id: `${id}-base-${b}`,
+      name: spot.name,
       location: gameToWorld(spot.x, spot.y),
       level: 3 + ((i + b) % 5),
     })),
   };
 });
+
+// Palworld's save records a group for more than just player guilds: a solo player's
+// auto-created organization and other non-guild groups show up with no base placed and
+// no confirmed member. The Guilds list hides these, but guildDetail still resolves them
+// so a player row can link through to its guild. This fixture makes that visible in mock
+// mode — it never appears in listGuilds() yet still opens by id.
+const placeholderGuilds: Guild[] = [
+  { id: "g-driftless-org", name: "Driftless (solo org)", adminUid: "synthetic-solo", memberCount: 0, members: [], bases: [] },
+];
+const allGuilds: Guild[] = [...guilds, ...placeholderGuilds];
+
+// A guild is listed only when it has at least one placed base and one confirmed member,
+// mirroring the backend guild-list filter.
+const isListableGuild = (g: Guild): boolean => g.bases.length > 0 && g.members.length > 0;
 
 let whitelist: WhitelistEntry[] = [
   { steamId: "76561198012345678", name: "Kestrel" },
@@ -319,7 +384,9 @@ export async function getServer(): Promise<ServerInfo> {
     worldGuid: "A1B2C3D4E5F6478090ABCDEF12345678",
     state: "running",
     uptimeSec: Math.floor((Date.now() - BOOT_AT) / 1000),
-    panelVersion: "0.8.0",
+    panelVersion: "0.9.0",
+    sessionDays: 7,
+    saveSyncMinutes: 10,
   };
 }
 
@@ -427,13 +494,13 @@ const palsByPlayer: Record<string, MockPalBase[]> = {
   Kestrel: [
     {
       instanceId: "pal-k1", characterId: "Anubis", displayName: "Anubis", level: 34, isAlpha: true, isLucky: false,
-      hp: 1240.5, gender: "male", talents: { hp: 87, melee: 73, shot: 92, defense: 81 },
+      hp: 1240.5, gender: "male", rank: 5, talents: { hp: 87, melee: 73, shot: 92, defense: 81 },
       passiveSkillIds: ["CraftSpeed_up2", "ElementBoost_Earth_2_PAL"], equippedSkillIds: ["RockLance", "StoneShotgun", "GroundWave"],
     },
-    { instanceId: "pal-k2", characterId: "Grizzbolt", displayName: "Grizzbolt", level: 31, isAlpha: false, isLucky: false },
-    { instanceId: "pal-k3", characterId: "Faleris", displayName: "Faleris", level: 30, isAlpha: false, isLucky: false },
+    { instanceId: "pal-k2", characterId: "Grizzbolt", displayName: "Grizzbolt", level: 31, isAlpha: false, isLucky: false, rank: 3 },
+    { instanceId: "pal-k3", characterId: "Faleris", displayName: "Faleris", level: 30, isAlpha: false, isLucky: false, rank: 1 },
     { instanceId: "pal-k4", characterId: "Digtoise", displayName: "Digtoise", level: 27, isAlpha: false, isLucky: false },
-    { instanceId: "pal-k5", characterId: "Penking", displayName: "Penking", level: 25, isAlpha: false, isLucky: true },
+    { instanceId: "pal-k5", characterId: "Penking", displayName: "Penking", level: 25, isAlpha: false, isLucky: true, rank: 2 },
     { instanceId: "pal-k6", characterId: "Rayhound", displayName: "Rayhound", level: 24, isAlpha: false, isLucky: false },
     { instanceId: "pal-k7", characterId: "Tombat", displayName: "Tombat", level: 22, isAlpha: false, isLucky: false },
     { instanceId: "pal-k8", characterId: "Foxparks", displayName: "Foxparks", level: 19, isAlpha: false, isLucky: false },
@@ -443,7 +510,7 @@ const palsByPlayer: Record<string, MockPalBase[]> = {
     { instanceId: "pal-k12", characterId: "Pengullet", displayName: "Pengullet", level: 7, isAlpha: false, isLucky: false },
   ],
   VossR: [
-    { instanceId: "pal-v1", characterId: "Frostallion", displayName: "Frostallion", level: 32, isAlpha: false, isLucky: false },
+    { instanceId: "pal-v1", characterId: "Frostallion", displayName: "Frostallion", level: 32, isAlpha: false, isLucky: false, rank: 4 },
     { instanceId: "pal-v2", characterId: "Ragnahawk", displayName: "Ragnahawk", level: 28, isAlpha: false, isLucky: false },
     { instanceId: "pal-v3", characterId: "Surfent", displayName: "Surfent", level: 26, isAlpha: false, isLucky: false },
     { instanceId: "pal-v4", characterId: "Direhowl", displayName: "Direhowl", level: 20, isAlpha: false, isLucky: false },
@@ -627,7 +694,73 @@ export async function putWhitelist(entries: WhitelistEntry[]): Promise<Whitelist
 export async function listGuilds(): Promise<Guild[]> {
   requireSession();
   await latency();
-  return guilds;
+  return allGuilds.filter(isListableGuild);
+}
+
+export async function guildDetail(id: string): Promise<GuildDetail> {
+  requireSession();
+  await latency();
+  const guild = allGuilds.find((item) => item.id === id);
+  if (!guild) throw new ApiRequestError(404, "not_found", "Guild not found.");
+  const memberPlayers = players.filter((player) => player.guildId === guild.id);
+  const now = new Date();
+  const since = new Date(now.getTime() - 30 * 86_400_000);
+  const guildPals = memberPlayers.flatMap((owner) => withPlacement(palsByPlayer[owner.name] ?? []).map((pal) => ({
+    instanceId: pal.instanceId,
+    characterId: pal.characterId,
+    displayName: pal.displayName,
+    level: pal.level,
+    rank: pal.rank ?? null,
+    isAlpha: pal.isAlpha,
+    isLucky: pal.isLucky,
+    isBoss: pal.characterId.toLowerCase().startsWith("boss_"),
+    placement: pal.placement ?? "unknown",
+    baseId: null,
+    ownerUid: owner.uid,
+    ownerName: owner.name,
+    ownerSource: "personal_container" as const,
+    ownerResolved: true,
+    association: "current_member_owner" as const,
+  })));
+  return {
+    id: guild.id,
+    name: guild.name,
+    adminUid: guild.adminUid,
+    memberCount: guild.memberCount,
+    members: guild.members.map((member) => {
+      const player = players.find((item) => item.uid === member.uid);
+      return {
+        uid: member.uid,
+        name: member.name,
+        level: player?.level ?? 0,
+        online: player?.online ?? false,
+        lastSeenAt: player?.lastSeenAt ?? null,
+        playtimeSec: player?.playtimeSec ?? 0,
+        captureTotal: player?.captureTotal ?? null,
+        uniquePalsCaptured: player?.uniquePalsCaptured ?? null,
+        paldeckUnlocked: player?.paldeckUnlocked ?? null,
+        observedDurationSec: player ? Math.min(player.playtimeSec, 30 * 3600) : 0,
+        observedSessionCount: player ? Math.max(1, Math.ceil(player.playtimeSec / 7200)) : 0,
+        currentSession: player?.online ?? false,
+      };
+    }),
+    bases: guild.bases.map((base) => ({ ...base, palCount: 0 })),
+    palCount: guildPals.length,
+    palsTruncated: false,
+    pals: guildPals,
+    activity: {
+      coverage: "panel_observed_sessions",
+      attribution: "current_guild_membership",
+      window: "30d",
+      since: since.toISOString(),
+      through: now.toISOString(),
+      trackingSince: memberPlayers.map((player) => player.firstSeenAt).sort()[0] ?? null,
+      analysisTruncated: false,
+      durationSec: memberPlayers.reduce((total, player) => total + Math.min(player.playtimeSec, 30 * 3600), 0),
+      sessionCount: memberPlayers.reduce((total, player) => total + Math.max(1, Math.ceil(player.playtimeSec / 7200)), 0),
+      activePlayers: memberPlayers.length,
+    },
+  };
 }
 
 // ---------- integration keys ----------
@@ -736,6 +869,89 @@ export function __seedActiveIntegrationKeysForTests(count: number): IntegrationK
 
 // ---------- paldeck icons ----------
 
+const mockPaldeckSpecies = [
+  ["Anubis", "Anubis"],
+  ["Bristla", "Bristla"],
+  ["Depresso", "Depresso"],
+  ["Eikthyrdeer", "Eikthyrdeer"],
+  ["Fuack", "Fuack"],
+  ["Grizzbolt", "Grizzbolt"],
+  ["Lamball", "Lamball"],
+  ["Mammorest", "Mammorest"],
+  ["Mossanda", "Mossanda"],
+  ["Petallia", "Petallia"],
+  ["Relaxaurus", "Relaxaurus"],
+  ["Shadowbeak", "Shadowbeak"],
+] as const;
+
+function mockCaptureCount(playerIndex: number, characterId: string): number {
+  const owned = new Set((palsByPlayer[players[playerIndex]?.name ?? ""] ?? []).map((pal) => pal.characterId.toLowerCase()));
+  return owned.has(characterId.toLowerCase()) ? playerIndex + 1 : 0;
+}
+
+export async function getServerPaldeck(): Promise<ServerPaldeck> {
+  requireSession();
+  await latency();
+  const observedPlayers = players.slice(0, 3);
+  const species = mockPaldeckSpecies.map(([characterId, displayName]) => {
+    const counts = observedPlayers.map((_, playerIndex) => mockCaptureCount(playerIndex, characterId));
+    return {
+      characterId,
+      displayName,
+      known: true,
+      captureCount: counts.reduce((total, count) => total + count, 0),
+      capturedByPlayers: counts.filter((count) => count > 0).length,
+      unlockedByPlayers: counts.filter((count) => count > 0).length,
+    };
+  });
+  return {
+    coverage: {
+      source: "player_save_record_data",
+      playersTotal: players.length,
+      playersWithCaptureCounts: observedPlayers.length,
+      playersWithUnlockFlags: observedPlayers.length,
+      captureCountsTruncated: false,
+      unlockFlagsTruncated: false,
+      oldestObservedAt: "2026-07-10T08:00:00Z",
+      latestObservedAt: new Date().toISOString(),
+    },
+    catalog: { version: "palworld_1.0_pinned", knownSpecies: mockPaldeckSpecies.length, observedUnknownSpecies: 0 },
+    captureTotal: observedPlayers.reduce((total, player) => total + (player.captureTotal ?? 0), 0),
+    uniqueSpeciesCaptured: species.filter((item) => (item.captureCount ?? 0) > 0).length,
+    speciesUnlocked: species.filter((item) => (item.unlockedByPlayers ?? 0) > 0).length,
+    species,
+  };
+}
+
+export async function getPlayerPaldeck(uid: string): Promise<PlayerPaldeck> {
+  requireSession();
+  await latency();
+  const playerIndex = players.findIndex((item) => item.uid === uid);
+  if (playerIndex < 0) throw new ApiRequestError(404, "not_found", "Player not found.");
+  const player = players[playerIndex];
+  const available = playerIndex < 3;
+  return {
+    player: { uid: player.uid, name: player.name },
+    coverage: {
+      source: "player_save_record_data",
+      captureCountsAvailable: available,
+      unlockFlagsAvailable: available,
+      captureCountsTruncated: false,
+      unlockFlagsTruncated: false,
+      captureObservedAt: available ? new Date().toISOString() : null,
+      unlockObservedAt: available ? new Date().toISOString() : null,
+    },
+    catalog: { version: "palworld_1.0_pinned", knownSpecies: mockPaldeckSpecies.length, observedUnknownSpecies: 0 },
+    captureTotal: player.captureTotal ?? null,
+    uniquePalsCaptured: player.uniquePalsCaptured ?? null,
+    paldeckUnlocked: player.paldeckUnlocked ?? null,
+    species: mockPaldeckSpecies.map(([characterId, displayName]) => {
+      const count = available ? mockCaptureCount(playerIndex, characterId) : null;
+      return { characterId, displayName, known: true, captureCount: count, unlocked: count === null ? null : count > 0 };
+    }),
+  };
+}
+
 // A couple of entries so the "known id" branch in <PalIcon> is exercised in mock mode — the
 // component itself still skips the actual <img> fetch under USE_MOCK (see components/PalIcon.tsx),
 // since no icon files exist without a real fetch-pal-icons.sh run against a backend.
@@ -818,6 +1034,38 @@ export async function getWorld(): Promise<WorldInfo> {
   };
 }
 
+// A realistic single base: one PalBox with ~16 workers packed tightly around it, so mock mode
+// exercises the map's Workers-layer clustering (they collapse to one chip at world zoom and
+// separate as you zoom in). Positions are a fixed ring of small world-cm offsets from the base
+// center, deterministic across renders. A couple are critically hurt and one is knocked out so
+// the cluster's danger accent and "N workers · M hurt" label are visible.
+const mockBaseCenter = guilds[0]?.bases[0]?.location ?? { x: 0, y: 0 };
+const mockBaseId = guilds[0]?.bases[0]?.id;
+const mockWorkerNames = [
+  "Anubis", "Grizzbolt", "Digtoise", "Penking", "Foxparks", "Lamball", "Cattiva", "Chikipi",
+  "Tombat", "Rayhound", "Melpaca", "Vixy", "Tanzee", "Lifmunk", "Fuack", "Depresso",
+];
+const mockBaseWorkers: LiveWorldActor[] = mockWorkerNames.map((name, i) => {
+  const angle = (i / mockWorkerNames.length) * Math.PI * 2;
+  const radius = 2600 + (i % 4) * 1500; // world cm: tight enough to cluster, wide enough to split on zoom
+  const hurt = i === 3 || i === 9; // critically low HP
+  const down = i === 12; // knocked out
+  return {
+    kind: "BaseCampPal",
+    characterId: name,
+    name,
+    level: 8 + ((i * 7) % 28),
+    hpPercent: down ? 0 : hurt ? 14 : 70 + ((i * 13) % 30),
+    active: true,
+    activity: down ? "incapacitated" : i % 5 === 0 ? "transporting" : i % 3 === 0 ? "idle" : "working",
+    linked: true,
+    instanceId: `mock-worker-${i + 1}`,
+    baseId: mockBaseId,
+    ownerName: players[0]?.name,
+    location: { x: mockBaseCenter.x + Math.cos(angle) * radius, y: mockBaseCenter.y + Math.sin(angle) * radius, z: 0 },
+  };
+});
+
 export async function getWorldSnapshot(): Promise<LiveWorldSnapshot> {
   requireSession();
   await latency();
@@ -829,7 +1077,7 @@ export async function getWorldSnapshot(): Promise<LiveWorldSnapshot> {
     sourceTime: "2026-07-14 13:00:00",
     fps: 57,
     fpsAvg: 55.4,
-    counts: { players: online.length, partyPals: online.length * 2, basePals: 18, wildPals: 84, npcs: 11, palBoxes: 2, unknown: 0 },
+    counts: { players: online.length, partyPals: online.length * 2, basePals: mockBaseWorkers.length, wildPals: 84, npcs: 11, palBoxes: 1, unknown: 0 },
     activity: { working: 9, transporting: 2, eating: 1, sleeping: 2, idle: 2, inactive: 1, combat: 0, incapacitated: 1, moving: 0, unknown: 0 },
     actors: [
       ...online.map((player) => ({
@@ -841,7 +1089,8 @@ export async function getWorldSnapshot(): Promise<LiveWorldSnapshot> {
         active: true,
         location: { x: player.location!.x, y: player.location!.y, z: 0 },
       })),
-      { kind: "BaseCampPal", characterId: "Anubis", name: "Anubis", level: 35, hpPercent: 88, active: true, activity: "working", linked: true, instanceId: "mock-pal-1", baseId: guilds[0]?.bases[0]?.id, ownerName: players[0]?.name, location: { x: guilds[0]?.bases[0]?.location.x ?? 0, y: guilds[0]?.bases[0]?.location.y ?? 0, z: 0 } },
+      { kind: "PalBox", guildName: guilds[0]?.name, activity: "unknown", location: { x: mockBaseCenter.x, y: mockBaseCenter.y, z: 0 } },
+      ...mockBaseWorkers,
     ],
     truncated: false,
     diagnostics: { lastRequestDurationMs: 184, lastAcceptedActorCount: 118, lastErrorCategory: "none", linkedBasePals: 18, unresolvedBasePals: 0, linkLookupFailed: false, scheduledDelayMs: 30000, nextAttemptAt: new Date(Date.now() + 18_000).toISOString() },
@@ -993,6 +1242,13 @@ export async function getSchedule(): Promise<BackupSchedule> {
   requireSession();
   await latency();
   return schedule;
+}
+
+export async function getStorage(): Promise<BackupStorage> {
+  requireSession();
+  await latency();
+  // A plausible 500 GB volume; the used total is derived by the caller from the backup list.
+  return { totalBytes: 500_000_000_000, freeBytes: 421_500_000_000 };
 }
 
 export async function setSchedule(next: BackupSchedule): Promise<BackupSchedule> {

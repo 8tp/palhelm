@@ -1,0 +1,73 @@
+{
+  "provenance": "Checked-in THGL 1.0 metadata from scripts/fetch-map-tiles.sh. Surveyed anchors come from real player positions read off a live 1.0 server (2026-07-15); metadata anchors are derived from each layer's own transform: bounds are [[dataXmin, dataYmin], [dataXmax, dataYmax]] and equal exactly the world range the transform maps onto the native pixel canvas.",
+  "layers": [
+    {
+      "id": "default",
+      "label": "Palpagos",
+      "tileSize": 512,
+      "transform": {
+        "a": 0.000353395913859746,
+        "b": 256,
+        "c": -0.000353395913859746,
+        "d": 123.47653230259525
+      },
+      "bounds": [[-1099399, -724399], [349399, 724399]],
+      "anchors": [
+        {
+          "id": "verified-starting-area-live-position",
+          "kind": "surveyed",
+          "world": { "x": -353196.34375, "y": 270687.59375 },
+          "game": { "x": 246, "y": -500 },
+          "nativePixel": { "x": 351.6598895637769, "y": 248.2946769740475 }
+        },
+        {
+          "id": "verified-feybreak-live-position",
+          "kind": "surveyed",
+          "world": { "x": -757845, "y": -61591 },
+          "game": { "x": -478, "y": -1381 },
+          "nativePixel": { "x": 234.23399226946438, "y": 391.2958586416345 }
+        },
+        {
+          "id": "dataset-bounds-center",
+          "kind": "metadata",
+          "world": { "x": -375000, "y": 0 },
+          "game": { "x": -344, "y": -547 },
+          "nativePixel": { "x": 256, "y": 256 }
+        }
+      ]
+    },
+    {
+      "id": "tree",
+      "label": "World Tree",
+      "tileSize": 512,
+      "transform": {
+        "a": 0.0014979651664584533,
+        "b": 1225.6306053008072,
+        "c": -0.0014979651664584533,
+        "d": 1032.3204475170935
+      },
+      "bounds": [[347352.5, -818196], [689147.5, -476401]],
+      "anchors": [
+        {
+          "id": "dataset-bounds-min",
+          "kind": "metadata",
+          "world": { "x": 347352.5, "y": -818196 },
+          "nativePixel": { "x": 0.0014979651666635618, "y": 511.99850203483356 }
+        },
+        {
+          "id": "dataset-bounds-center",
+          "kind": "metadata",
+          "world": { "x": 518250, "y": -647298.5 },
+          "game": { "x": -1754, "y": 1399 },
+          "nativePixel": { "x": 256.0000000000001, "y": 256.0000000000001 }
+        },
+        {
+          "id": "dataset-bounds-max",
+          "kind": "metadata",
+          "world": { "x": 689147.5, "y": -476401 },
+          "nativePixel": { "x": 511.9985020348337, "y": 0.0014979651664361882 }
+        }
+      ]
+    }
+  ]
+}

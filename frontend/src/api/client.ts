@@ -10,10 +10,12 @@ import type {
   BackupContentEntry,
   BackupDryRun,
   BackupSchedule,
+  BackupStorage,
   ConfigDoc,
   ConfigValue,
   ConsoleLogEntry,
   Guild,
+  GuildDetail,
   IntegrationKey,
   IntegrationKeyCreated,
   MapDataset,
@@ -23,6 +25,7 @@ import type {
   PalExplorerPage,
   PalExplorerParams,
   PaldeckIconDataset,
+  PlayerPaldeck,
   PalhelmEvent,
   Player,
   PlayerDetail,
@@ -31,6 +34,7 @@ import type {
   ServerActivity,
   ServerActivityWindow,
   ServerHealth,
+  ServerPaldeck,
   ServerInfo,
   SessionInfo,
   WhitelistEntry,
@@ -153,6 +157,8 @@ export const api = {
   },
   guilds: {
     list: (): Promise<Guild[]> => (USE_MOCK ? mock.listGuilds() : request("GET", "/guilds")),
+    detail: (id: string): Promise<GuildDetail> =>
+      USE_MOCK ? mock.guildDetail(id) : request("GET", `/guilds/${encodeURIComponent(id)}`),
   },
   // Session-authenticated admin key management (docs/specs/integration-api.md §9) — not the
   // bearer-token Integration API surface itself, which this frontend never calls directly.
@@ -165,6 +171,9 @@ export const api = {
       USE_MOCK ? mock.revokeIntegrationKey(id) : request("DELETE", `/integration-keys/${id}`),
   },
   paldeck: {
+    get: (): Promise<ServerPaldeck> => (USE_MOCK ? mock.getServerPaldeck() : request("GET", "/paldeck")),
+    player: (uid: string): Promise<PlayerPaldeck> =>
+      USE_MOCK ? mock.getPlayerPaldeck(uid) : request("GET", `/players/${encodeURIComponent(uid)}/paldeck`),
     iconDataset: (): Promise<PaldeckIconDataset> =>
       USE_MOCK ? mock.getPaldeckIconDataset() : request("GET", "/paldeck/icon-dataset"),
     // Not a JSON call — this builds the <img src> for a pal icon (404 = not installed, handled
@@ -206,6 +215,8 @@ export const api = {
     remove: (id: string): Promise<void> => (USE_MOCK ? mock.deleteBackup(id) : request("DELETE", `/backups/${id}`)),
     schedule: (): Promise<BackupSchedule> =>
       USE_MOCK ? mock.getSchedule() : request("GET", "/backups/schedule"),
+    storage: (): Promise<BackupStorage> =>
+      USE_MOCK ? mock.getStorage() : request("GET", "/backups/storage"),
     setSchedule: (s: BackupSchedule): Promise<BackupSchedule> =>
       USE_MOCK ? mock.setSchedule(s) : request("PUT", "/backups/schedule", s),
   },

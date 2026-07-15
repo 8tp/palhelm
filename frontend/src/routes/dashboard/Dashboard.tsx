@@ -78,7 +78,7 @@ export default function Dashboard() {
     const sorted = [...fps].sort((a, b) => a - b);
     const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
     if (minVal >= median * 0.9) return undefined;
-    return { index: minIdx, text: `${Math.round(minVal)} fps · world save` };
+    return { index: minIdx, text: `${Math.round(minVal)} fps dip` };
   }, [perfHistoryQuery.data]);
 
   const seenLast24h = useMemo(() => {

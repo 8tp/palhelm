@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import { NavLink, Outlet } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "../api/client";
+import { api, USE_MOCK } from "../api/client";
 import { useAuth, useIsAdmin } from "../app/AuthProvider";
 import { useToast } from "./Toast";
 import { usePaletteBridge } from "../app/paletteBridge";
@@ -18,6 +18,8 @@ import {
   IconSettings,
   IconEvents,
   IconInfo,
+  IconGuild,
+  IconPaldeck,
   IconPals,
   type IconProps,
 } from "./icons";
@@ -47,6 +49,8 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/players", label: "Players", icon: IconPlayers },
   { to: "/activity", label: "Activity", icon: IconActivity },
   { to: "/pals", label: "Pal explorer", icon: IconPals },
+  { to: "/paldeck", label: "Paldeck", icon: IconPaldeck },
+  { to: "/guilds", label: "Guilds", icon: IconGuild },
   { to: "/map", label: "Live map", icon: IconMap },
   { to: "/events", label: "Events", icon: IconEvents },
   { to: "/console", label: "Console", icon: IconConsole },
@@ -73,6 +77,9 @@ function LiveQueryBridge() {
   const queryClient = useQueryClient();
   useSSE({
     url: "/api/v1/events/stream",
+    // Mock mode has no backend to serve the stream; connecting only yields a 404 and
+    // a failed EventSource. react-query's refetchInterval polling keeps the mock UI live.
+    enabled: !USE_MOCK,
     onMessage: (eventName, data) => {
       if (eventName === "metrics") {
         queryClient.setQueryData<MetricsCurrent>(["metrics", "current"], data as MetricsCurrent);
@@ -203,14 +210,14 @@ function HelmStrip() {
         </div>
       </div>
 
-      <div className="instrument">
+      <div className="instrument instrument-secondary">
         <div>
           <span className="label">In-game</span>
           <span className="value">Day {metrics ? metrics.day : "—"}</span>
         </div>
       </div>
 
-      <div className="instrument">
+      <div className="instrument instrument-secondary">
         <div>
           <span className="label">Uptime</span>
           <span className="value">{metrics ? formatDuration(metrics.uptimeSec) : "—"}</span>

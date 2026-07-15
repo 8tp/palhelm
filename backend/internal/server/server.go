@@ -45,6 +45,7 @@ type Server struct {
 	gamecfg     *gameconfig.Editor
 	integration *integrationAuth
 	avatars     *steamavatar.Resolver
+	diskStat    diskStatFunc
 	started     time.Time
 	log         *slog.Logger
 }
@@ -67,7 +68,7 @@ func New(cfg config.Config, st *store.Store, log *slog.Logger) (*Server, http.Ha
 		// than taking down session/admin routes too.
 		log.Error("load active integration API keys", "error", err)
 	}
-	s := &Server{cfg: cfg, store: st, pal: pal, rcon: palworld.NewRCONClient(cfg.RCONAddr, cfg.PalworldPassword), poll: p, health: health, hub: hub, auth: newAuth(cfg.SessionSecret, cfg.AdminPassword, cfg.ViewerPassword, cfg.TrustedProxies...), shutdown: newOrchestrator(pal), integration: newIntegrationAuth(st, activeKeys, cfg.IntegrationRateLimit, log), avatars: steamavatar.New(cfg.SteamWebAPIKey), started: time.Now(), log: log}
+	s := &Server{cfg: cfg, store: st, pal: pal, rcon: palworld.NewRCONClient(cfg.RCONAddr, cfg.PalworldPassword), poll: p, health: health, hub: hub, auth: newAuth(cfg.SessionSecret, cfg.AdminPassword, cfg.ViewerPassword, cfg.TrustedProxies...), shutdown: newOrchestrator(pal), integration: newIntegrationAuth(st, activeKeys, cfg.IntegrationRateLimit, log), avatars: steamavatar.New(cfg.SteamWebAPIKey), diskStat: statfsDiskUsage, started: time.Now(), log: log}
 	emitBackup := func(message string, meta any) {
 		e := store.Event{At: time.Now().UTC(), Kind: "backup", Message: message, Meta: meta}
 		_ = st.AddEvent(context.Background(), e)
@@ -178,9 +179,12 @@ func (s *Server) routes() http.Handler {
 			api.Get("/players", s.players)
 			api.Get("/pals", s.pals)
 			api.Get("/players/{uid}", s.player)
+			api.Get("/players/{uid}/paldeck", s.playerPaldeck)
 			api.Get("/players/{uid}/avatar", s.playerAvatar)
 			api.Get("/whitelist", s.whitelist)
 			api.Get("/guilds", s.guilds)
+			api.Get("/guilds/{id}", s.guildDetail)
+			api.Get("/paldeck", s.serverPaldeck)
 			api.Get("/world", s.world)
 			api.Get("/world/snapshot", s.worldSnapshot)
 			api.Get("/world/activity", s.worldActivityHistory)
@@ -196,6 +200,7 @@ func (s *Server) routes() http.Handler {
 			api.Head("/backups/{id}/download", s.downloadBackup)
 			api.Get("/backups/{id}/contents", s.backupContents)
 			api.Get("/backups/schedule", s.backupSchedule)
+			api.Get("/backups/storage", s.backupStorage)
 			api.Get("/config", s.getConfig)
 			api.Group(func(m chi.Router) {
 				m.Use(adminOnly)
@@ -283,14 +288,18 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 401, "invalid_credentials", "The password is incorrect.")
 		return
 	}
-	expires := time.Now().Add(7 * 24 * time.Hour)
+	days := s.cfg.SessionDays
+	if days < 1 {
+		days = 7
+	}
+	expires := time.Now().Add(time.Duration(days) * 24 * time.Hour)
 	token, err := s.auth.token(role, expires)
 	if err != nil {
 		internal(w, err)
 		return
 	}
 	secure := s.cfg.SecureCookies || r.TLS != nil || s.auth.forwardedHTTPS(r)
-	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: token, Path: "/", Expires: expires, MaxAge: 7 * 24 * 3600, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: secure})
+	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: token, Path: "/", Expires: expires, MaxAge: days * 24 * 3600, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: secure})
 	writeJSON(w, 200, map[string]string{"role": role})
 }
 func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
@@ -308,7 +317,11 @@ func (s *Server) serverInfo(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		state = "unreachable"
 	}
-	writeJSON(w, 200, map[string]any{"name": i.ServerName, "description": i.Description, "version": i.Version, "worldGuid": i.WorldGUID, "state": state, "uptimeSec": i.Uptime, "panelVersion": PanelVersion})
+	days := s.cfg.SessionDays
+	if days < 1 {
+		days = 7
+	}
+	writeJSON(w, 200, map[string]any{"name": i.ServerName, "description": i.Description, "version": i.Version, "worldGuid": i.WorldGUID, "state": state, "uptimeSec": i.Uptime, "panelVersion": PanelVersion, "sessionDays": days, "saveSyncMinutes": int(s.cfg.SaveSyncInterval.Minutes())})
 }
 func (s *Server) serverHealth(w http.ResponseWriter, r *http.Request) {
 	rest, rcon, save, at := s.health.Snapshot()

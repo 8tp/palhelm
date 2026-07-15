@@ -9,6 +9,8 @@ const Dashboard = lazy(() => import("../routes/dashboard/Dashboard"));
 const PlayersRoute = lazy(() => import("../routes/players/Players"));
 const ActivityRoute = lazy(() => import("../routes/activity/Activity"));
 const PalsRoute = lazy(() => import("../routes/pals/Pals"));
+const GuildsRoute = lazy(() => import("../routes/guilds/Guilds"));
+const PaldeckRoute = lazy(() => import("../routes/paldeck/Paldeck"));
 const ConsoleRoute = lazy(() => import("../routes/console/Console"));
 const MapRoute = lazy(() => import("../routes/map/Map"));
 const BackupsRoute = lazy(() => import("../routes/backups/Backups"));
@@ -60,6 +62,9 @@ export default function App() {
         <Route path="players" element={lazyRoute(<PlayersRoute />)} />
         <Route path="activity" element={lazyRoute(<ActivityRoute />)} />
         <Route path="pals" element={lazyRoute(<PalsRoute />)} />
+        <Route path="paldeck" element={lazyRoute(<PaldeckRoute />)} />
+        <Route path="guilds" element={lazyRoute(<GuildsRoute />)} />
+        <Route path="guilds/:guildId" element={lazyRoute(<GuildsRoute />)} />
         <Route path="map" element={lazyRoute(<MapRoute />)} />
         <Route path="events" element={lazyRoute(<EventsRoute />)} />
         <Route path="console" element={lazyRoute(<ConsoleRoute />)} />

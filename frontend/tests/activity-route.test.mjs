@@ -14,9 +14,9 @@ test("activity route is authenticated, lazy, navigable, and uses bounded server 
   assert.match(app, /path="activity"/);
   assert.match(shell, /to: "\/activity"/);
   assert.match(shell, /queryKey: \["activity"\]/);
-  assert.match(route, /panel-observed sessions/);
-  assert.match(route, /current membership attribution/);
-  assert.match(route, /not lifetime game history/);
+  assert.match(route, /observed sessions/);
+  assert.match(route, /credited to current membership/);
+  assert.match(route, /Only sessions observed by this panel are counted/);
   assert.match(client, /\/activity\?window=/);
 });
 
@@ -32,6 +32,6 @@ test("peak hours sort by average concurrency without mutating the API order", ()
 
 test("coverage language exposes partial windows and defensive truncation", () => {
   assert.match(activityCoverageNote({ trackingSince: "2026-07-15T12:00:00Z", since: "2026-07-15T00:00:00Z", analysisTruncated: false }), /partway through/);
-  assert.match(activityCoverageNote({ trackingSince: "2026-07-01T00:00:00Z", since: "2026-07-15T00:00:00Z", analysisTruncated: false }), /full selected window/);
-  assert.match(activityCoverageNote({ trackingSince: null, since: "2026-07-15T00:00:00Z", analysisTruncated: true }), /defensive interval cap/);
+  assert.match(activityCoverageNote({ trackingSince: "2026-07-01T00:00:00Z", since: "2026-07-15T00:00:00Z", analysisTruncated: false }), /full window is covered/);
+  assert.match(activityCoverageNote({ trackingSince: null, since: "2026-07-15T00:00:00Z", analysisTruncated: true }), /hit its cap/);
 });

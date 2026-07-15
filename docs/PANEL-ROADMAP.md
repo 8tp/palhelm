@@ -48,11 +48,13 @@ happened without reading container logs.
   guild-attributed activity with explicit tracking coverage and truncation.
 - [x] Add a server-wide Pal explorer with search, owner provenance, party/box/base
   placement, and Alpha/Lucky/Boss and level filters.
-- [ ] Link current and historical records directly into filtered Pal explorer views.
+- [x] Make Pal explorer filters URL-addressable and bounded so current records,
+  history, guild detail, and authenticated integrations can deep-link into a
+  fresh filtered roster without sharing opaque pagination state.
 - [x] Add numeric, version-pinned work-suitability badges with distinct SVGs to
   the shared party and Palbox detail view, without presenting species metadata
   as individual save data.
-- [ ] Add Paldeck/capture progression and dedicated guild detail pages linking
+- [x] Add Paldeck/capture progression and dedicated guild detail pages linking
   members, bases, Pals, activity, and map locations.
 
 Exit: the panel exposes the useful save-derived information already available to
@@ -72,13 +74,15 @@ the Discord bot instead of limiting it to player detail dialogs.
 - [x] Add explicit selected-online-player/base focus, fit-online-players/bases,
   player/base search, privacy-safe shareable Palworld display coordinates, and
   practical touch/mobile controls. Do not guess a "current player" from panel auth.
-- [ ] Add marker clustering for dense same-layer player/base views without hiding
+- [x] Add marker clustering for dense same-layer player/base views without hiding
   exact coordinates or changing the corrected transform.
 - [x] Add contained wheel/trackpad zoom, explicit zoom and fit controls, distinct
   SVG player/base/worker/Palbox markers, and keep dense worker markers off by
   default.
-- [ ] Add automated landmark fixtures across Palpagos and the World Tree so axis,
-  offset, layer-boundary, and inverse-coordinate regressions fail in CI.
+- [x] Add automated transform fixtures across Palpagos and the World Tree so axis,
+  offset, layer-boundary, and inverse-coordinate regressions fail in CI. Palpagos
+  includes the surveyed starting-area position; World Tree is intentionally limited
+  to verified dataset bounds anchors until a licensed, surveyed landmark is available.
 
 ### Palworld 1.0 live game-data track
 

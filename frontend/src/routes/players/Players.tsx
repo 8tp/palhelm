@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { Player, PlayerActivity, PlayerActivityWindow, WhitelistEntry } from "../../api/types";
@@ -7,6 +7,7 @@ import { useIsAdmin } from "../../app/AuthProvider";
 import { usePaletteBridge } from "../../app/paletteBridge";
 import { formatDuration, formatRelativeToNow, truncateMiddle } from "../../app/format";
 import { worldToGame } from "../../app/mapTransform";
+import { guildDisplayName } from "../../app/guildDisplay";
 import { Card, CardBody, CardHead } from "../../components/Card";
 import { Tabs } from "../../components/Tabs";
 import { Pill } from "../../components/Pill";
@@ -52,7 +53,14 @@ function StatusPill({ p }: { p: Player }) {
 
 export default function PlayersRoute() {
   const [tab, setTab] = useState<TabKey>("players");
-  const [selectedUid, setSelectedUid] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedUid = searchParams.get("player");
+  const setSelectedUid = (uid: string | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (uid) next.set("player", uid);
+    else next.delete("player");
+    setSearchParams(next, { replace: true });
+  };
 
   const playersQuery = useQuery({ queryKey: ["players"], queryFn: () => api.players.list(), refetchInterval: 15000 });
   const guildsQuery = useQuery({ queryKey: ["guilds"], queryFn: () => api.guilds.list() });
@@ -69,7 +77,7 @@ export default function PlayersRoute() {
       <div className="page-head">
         <h1>Players</h1>
         <span className="sub">
-          {playersQuery.data ? `${online} online · ${players.length} known from save data` : "loading…"}
+          {playersQuery.data ? `${online} online · ${players.length} known` : "loading…"}
         </span>
       </div>
 
@@ -224,7 +232,7 @@ function PlayersTab({
                         <StatusPill p={p} />
                       </td>
                       <td className="num">{p.level}</td>
-                      <td>{p.guildName ?? "—"}</td>
+                      <td onClick={(event) => event.stopPropagation()}>{p.guildId && p.guildName ? <Link to={`/guilds/${encodeURIComponent(p.guildId)}`}>{p.guildName}</Link> : "—"}</td>
                       <td className="num">{p.ping !== null ? `${p.ping} ms` : "—"}</td>
                       <td className="num">{lastSeenLabel(p)}</td>
                       <td className="actions" onClick={(e) => e.stopPropagation()}>
@@ -235,7 +243,9 @@ function PlayersTab({
                               disabled={!p.location}
                               onClick={() => {
                                 onSelect(p.uid);
-                                navigate("/map");
+                                if (!p.location) return;
+                                const spot = worldToGame(p.location.x, p.location.y);
+                                navigate(`/map?x=${spot.x}&y=${spot.y}`);
                               }}
                             >
                               Show on map
@@ -341,10 +351,10 @@ function PlayerDetailPanel({ uid, onAction }: { uid: string | null; onAction: (k
             </div>
             <div>
               <span className="label">Guild</span>
-              <span className="val">{d.guildName ?? "—"}</span>
+              <span className="val">{d.guildId && d.guildName ? <Link to={`/guilds/${encodeURIComponent(d.guildId)}`}>{d.guildName}</Link> : "—"}</span>
             </div>
             <div>
-              <span className="label">Position</span>
+              <span className="label">Position <span className="label-note">last save</span></span>
               <span className="val">{gamePos ? `${gamePos.x}, ${gamePos.y}` : "—"}</span>
             </div>
             <div>
@@ -368,13 +378,13 @@ function PlayerDetailPanel({ uid, onAction }: { uid: string | null; onAction: (k
           <div className="card-head" style={{ borderTop: "1px solid var(--line)" }}>
             <h2>Pals</h2>
             <span className="hint">
-              {partyPals.length > 0 ? `party of ${partyPals.length} · ${pals.length} owned` : `${pals.length} owned`} · from save data
+              {partyPals.length > 0 ? `party of ${partyPals.length} · ${pals.length} owned` : `${pals.length} owned`}
             </span>
           </div>
           <div>
             {pals.length === 0 && (
               <div className="pal-row" style={{ color: "var(--ink-3)" }}>
-                No pals in the latest save parse.
+                No Pals in the latest save.
               </div>
             )}
             {shownPals.map((pal) => {
@@ -416,7 +426,12 @@ function PlayerDetailPanel({ uid, onAction }: { uid: string | null; onAction: (k
                 <button type="button" className="btn btn-sm" onClick={() => setMessageOpen(true)}>
                   Message
                 </button>
-                <button type="button" className="btn btn-sm" disabled={!d.location} onClick={() => navigate("/map")}>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  disabled={!gamePos}
+                  onClick={() => gamePos && navigate(`/map?x=${gamePos.x}&y=${gamePos.y}`)}
+                >
                   Show on map
                 </button>
                 {d.banned ? (
@@ -452,7 +467,7 @@ function PlayerActivitySummary({ activity }: { activity: PlayerActivity }) {
         <span className="hint">panel tracking only</span>
       </div>
       {activity.trackingSince === null ? (
-        <div className="player-activity-empty">No join or leave session has been observed by this panel yet.</div>
+        <div className="player-activity-empty">No sessions observed yet.</div>
       ) : (
         <>
           <div className="player-activity-current">
@@ -465,8 +480,8 @@ function PlayerActivitySummary({ activity }: { activity: PlayerActivity }) {
             <ActivityWindow label="30 days" value={activity.windows.last30Days} />
           </div>
           <p className="player-activity-coverage">
-            Observed since {new Date(activity.trackingSince).toLocaleString()}.
-            {activity.recentSessionsTruncated ? " Recent-session detail is capped at 20 rows." : " This is not lifetime game history."}
+            Tracked since {new Date(activity.trackingSince).toLocaleString()}.
+            {activity.recentSessionsTruncated ? " Showing the 20 most recent sessions." : ""}
           </p>
         </>
       )}
@@ -636,9 +651,9 @@ function GuildsTab() {
                 <tr key={g.id}>
                   <td>
                     <div className="who-cell">
-                      <span className="avatar">{initials(g.name)}</span>
+                      <span className="avatar">{initials(guildDisplayName(g))}</span>
                       <div>
-                        <div className="name">{g.name}</div>
+                        <div className="name"><Link to={`/guilds/${encodeURIComponent(g.id)}`}>{guildDisplayName(g)}</Link></div>
                         <div className="id">{g.id}</div>
                       </div>
                     </div>
@@ -691,7 +706,7 @@ function WhitelistTab() {
 
   return (
     <Card>
-      <CardHead title="Player notes" hint="Local Steam ID annotations — this list does not control who can join" />
+      <CardHead title="Player notes" hint="local labels only — does not control who can join" />
       {whitelistQuery.isError ? (
         <CardBody>
           <Banner tone="warn">Couldn't load player notes.</Banner>

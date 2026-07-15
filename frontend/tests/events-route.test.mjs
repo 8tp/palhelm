@@ -18,8 +18,8 @@ test("events route replaces the dead hash link and is part of primary navigation
   assert.match(dashboard, /to="\/events"/);
   assert.match(events, /Events & audit/);
   assert.match(events, /PAGE_SIZE = 25/);
-  assert.match(events, /Lane counts cover the newest/);
-  assert.match(events, /Filter exact event kind/);
+  assert.match(events, /Counts cover the newest/);
+  assert.match(events, /Filter event kind/);
   assert.match(events, /api\.events\.list\(FETCH_LIMIT\)/);
 });
 

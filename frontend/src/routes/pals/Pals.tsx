@@ -1,5 +1,6 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router";
 import { api } from "../../api/client";
 import type { PalExplorerPal } from "../../api/types";
 import { Banner } from "../../components/Banner";
@@ -8,29 +9,25 @@ import { Card, CardBody, CardHead } from "../../components/Card";
 import { EmptyState } from "../../components/EmptyState";
 import { PalDetailPanel, PalInfoButton } from "../../components/PalDetails";
 import { PalIcon } from "../../components/PalIcon";
+import { PalStars } from "../../components/PalStars";
 import { palPlacementLabel } from "../../components/palDetails";
 import { SearchField } from "../../components/Field";
 import {
   PAL_EXPLORER_CLIENT_CAP,
   PAL_EXPLORER_PAGE_SIZE,
+  EMPTY_PAL_EXPLORER_FILTERS,
+  palExplorerFiltersFromSearch,
   palExplorerParams,
+  palExplorerSearch,
   palOwnerSummary,
   palSpecimenLabels,
   type PalExplorerFilterState,
 } from "./palExplorer";
 import "./Pals.css";
 
-const initialFilters: PalExplorerFilterState = {
-  q: "",
-  ownerSource: "",
-  placement: "",
-  specimen: "",
-  minLevel: "",
-  maxLevel: "",
-};
-
 export default function PalsRoute() {
-  const [filters, setFilters] = useState(initialFilters);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filters = useMemo(() => palExplorerFiltersFromSearch(searchParams), [searchParams]);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -56,7 +53,7 @@ export default function PalsRoute() {
   const capped = pals.length >= PAL_EXPLORER_CLIENT_CAP && palsQuery.data?.pages.at(-1)?.nextCursor !== null;
 
   function update<K extends keyof PalExplorerFilterState>(key: K, value: PalExplorerFilterState[K]) {
-    setFilters((current) => ({ ...current, [key]: value }));
+    setSearchParams(palExplorerSearch({ ...filters, [key]: value }, searchParams), { replace: true });
     setExpanded(null);
   }
 
@@ -64,11 +61,11 @@ export default function PalsRoute() {
     <main className="content pals-explorer">
       <div className="page-head">
         <h1>Pal explorer</h1>
-        <span className="sub">Search every save-derived Pal without opening players one at a time</span>
+        <span className="sub">every Pal on the server, from parsed saves</span>
       </div>
 
       <Card className="pals-filter-card">
-        <CardHead title="Roster filters" hint="Viewer-safe save data" />
+        <CardHead title="Filters" />
         <CardBody>
           <div className="pals-filter-grid">
             <label className="pals-search-filter">
@@ -94,22 +91,22 @@ export default function PalsRoute() {
               <option value="lucky">Lucky</option>
               <option value="boss">Boss</option>
             </ExplorerSelect>
-            <ExplorerSelect label="Owner evidence" value={filters.ownerSource} onChange={(value) => update("ownerSource", value)}>
-              <option value="">Any evidence</option>
+            <ExplorerSelect label="Owner source" value={filters.ownerSource} onChange={(value) => update("ownerSource", value)}>
+              <option value="">Any source</option>
               <option value="personal_container">Current container</option>
               <option value="save">Save owner</option>
-              <option value="last_observed">Last observed</option>
+              <option value="last_observed">Last known</option>
               <option value="unresolved">Unresolved</option>
             </ExplorerSelect>
             <label>
-              <span>Minimum level</span>
+              <span>Min level</span>
               <input className="input" type="number" min="0" max="999" inputMode="numeric" value={filters.minLevel} onChange={(event) => update("minLevel", event.target.value)} placeholder="0" />
             </label>
             <label>
-              <span>Maximum level</span>
+              <span>Max level</span>
               <input className="input" type="number" min="0" max="999" inputMode="numeric" value={filters.maxLevel} onChange={(event) => update("maxLevel", event.target.value)} placeholder="Any" />
             </label>
-            <Button sm variant="ghost" className="pals-clear" onClick={() => { setFilters(initialFilters); setExpanded(null); }}>
+            <Button sm variant="ghost" className="pals-clear" onClick={() => { setSearchParams(palExplorerSearch(EMPTY_PAL_EXPLORER_FILTERS, searchParams), { replace: true }); setExpanded(null); }}>
               Clear filters
             </Button>
           </div>
@@ -117,18 +114,18 @@ export default function PalsRoute() {
       </Card>
 
       {rangeInvalid ? (
-        <Banner tone="warn">Minimum level cannot be higher than maximum level.</Banner>
+        <Banner tone="warn">Min level cannot be higher than max level.</Banner>
       ) : palsQuery.isError ? (
         <Banner tone="warn">Couldn't load the Pal roster. Save data may not have been parsed yet.</Banner>
       ) : palsQuery.isPending ? (
         <Card><CardBody><span className="skel skel-text" style={{ width: "100%", height: 180 }} /></CardBody></Card>
       ) : pals.length === 0 ? (
-        <Card><CardBody><EmptyState title="No Pals match" description="Try a wider level range or clear one of the roster filters." /></CardBody></Card>
+        <Card><CardBody><EmptyState title="No Pals match" description="Widen the level range or clear a filter." /></CardBody></Card>
       ) : (
         <>
           <div className="pals-results-head">
             <span>{pals.length} loaded</span>
-            <span>Results are ordered by stable save instance</span>
+            <span>ordered by save instance</span>
           </div>
           <div className="pals-card-grid">
             {pals.map((pal) => (
@@ -143,7 +140,7 @@ export default function PalsRoute() {
                 {palsQuery.isFetchingNextPage ? "Loading…" : `Load ${PAL_EXPLORER_PAGE_SIZE} more`}
               </Button>
             ) : (
-              <span>End of matching roster</span>
+              <span>End of results</span>
             )}
           </div>
         </>
@@ -176,6 +173,7 @@ function PalExplorerCard({ pal, expanded, onToggle }: { pal: PalExplorerPal; exp
           <div className="pal-explorer-tags">
             {specimen.map((label) => <span key={label} className={`pal-explorer-tag is-${label.toLowerCase()}`}>{label === "Boss" ? "◆ Boss" : label}</span>)}
             {specimen.length === 0 && <span className="pal-explorer-tag">Standard</span>}
+            {pal.rank != null && pal.rank > 1 && <PalStars rank={pal.rank} />}
           </div>
           <strong className={pal.ownerResolved ? "" : "is-muted"}>{palOwnerSummary(pal)}</strong>
           <span>{palPlacementLabel(pal)}</span>

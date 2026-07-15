@@ -1,0 +1,29 @@
+.paldeck-page { gap: var(--space-4); }
+.paldeck-head { justify-content: space-between; align-items: flex-end; flex-wrap: wrap; row-gap: var(--space-2); }
+.paldeck-head > div:first-child { display: flex; align-items: baseline; gap: var(--space-3); min-width: 0; flex-wrap: wrap; }
+.paldeck-player-select { display: flex; flex-direction: column; gap: 4px; min-width: 220px; color: var(--ink-3); font-size: var(--text-xs); }
+.paldeck-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); }
+.paldeck-stat { display: flex; flex-direction: column; gap: 5px; }
+.paldeck-stat > span { color: var(--ink-3); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: var(--track-caps); }
+.paldeck-stat strong { font: 600 var(--text-xl)/1.2 var(--font-mono); font-variant-numeric: tabular-nums; }
+.paldeck-stat small { color: var(--ink-3); }
+.paldeck-stat progress { width: 100%; height: 7px; accent-color: var(--accent); }
+.paldeck-tools { display: grid; grid-template-columns: minmax(220px, 1fr) 180px; gap: var(--space-2); }
+.paldeck-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); padding-top: 0; }
+.paldeck-species { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 9px; align-items: center; padding: 10px; border: 1px solid var(--line); border-radius: var(--radius-ctl); background: var(--surface-2); }
+.paldeck-species > div:nth-child(2) { min-width: 0; }
+.paldeck-species strong, .paldeck-species small { display: block; }
+.paldeck-species strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.paldeck-species small { margin-top: 2px; color: var(--ink-3); font-size: 10px; line-height: 1.35; }
+.paldeck-species-meta { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center; justify-content: flex-end; color: var(--ink-3); font-size: 10px; }
+.paldeck-species-meta a { margin-left: auto; }
+.paldeck-footnote { color: var(--ink-3); font-size: var(--text-xs); line-height: 1.5; }
+.paldeck-skeleton { width: 100%; height: 190px; }
+@media (max-width: 1000px) { .paldeck-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 800px) { .paldeck-stats { grid-template-columns: 1fr; } }
+@media (max-width: 650px) {
+  .paldeck-head { align-items: stretch; flex-direction: column; }
+  .paldeck-head > div:first-child { align-items: flex-start; flex-direction: column; gap: 2px; }
+  .paldeck-player-select { min-width: 0; }
+  .paldeck-tools, .paldeck-grid { grid-template-columns: 1fr; }
+}

@@ -24,6 +24,18 @@ Results use keyset pagination. The browser loads 48 at a time and stops at 480 v
 narrow the filters to inspect a larger roster. Filtering happens in SQLite before pagination, so
 the page does not download the complete save roster.
 
+## Filtered links
+
+The current filters are stored in the URL, so a record, history entry, guild page, or another
+Palhelm integration can link directly to the matching roster. Supported query fields are `q`,
+`ownerSource`, `placement`, `specimen`, `minLevel`, and `maxLevel`. The page validates every value
+against the same bounded API contract and starts pagination from the beginning; opaque pagination
+cursors are never put into shared links.
+
+For example, `/pals?q=Mammorest&specimen=boss` opens the known Boss Mammorest results. The link is a
+view of the latest parsed save when it is opened, not a frozen historical snapshot and not proof of
+lifetime ownership.
+
 This screen reads the authenticated, viewer-safe `GET /api/v1/pals` endpoint. It never receives raw
 save JSON, Steam ids, account names, or platform identifiers. It is separate from the public
 Integration API used by bots.

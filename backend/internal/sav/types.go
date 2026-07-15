@@ -59,18 +59,33 @@ type Player struct {
 	CaptureTotal       *int64 `json:"captureTotal,omitempty"`
 	UniquePalsCaptured *int   `json:"uniquePalsCaptured,omitempty"`
 	PaldeckUnlocked    *int   `json:"paldeckUnlocked,omitempty"`
+	// PalCaptureCounts and PaldeckUnlockFlags retain the authoritative
+	// CharacterID-keyed RecordData maps for Paldeck progression. A nil map means
+	// unavailable; an empty map is an authoritative zero-entry map. The
+	// Truncated flags are defensive parser bounds and must be surfaced by any
+	// consumer rather than silently treating a partial map as complete.
+	PalCaptureCounts            map[string]int64 `json:"palCaptureCounts,omitempty"`
+	PaldeckUnlockFlags          map[string]bool  `json:"paldeckUnlockFlags,omitempty"`
+	PalCaptureCountsTruncated   bool             `json:"palCaptureCountsTruncated,omitempty"`
+	PaldeckUnlockFlagsTruncated bool             `json:"paldeckUnlockFlagsTruncated,omitempty"`
 }
 
 // Pal describes a non-player character from CharacterSaveParameterMap.
 type Pal struct {
-	InstanceID       string         `json:"instanceId"`
-	CharacterID      string         `json:"characterId,omitempty"`
-	Level            int32          `json:"level,omitempty"`
-	Exp              int64          `json:"exp,omitempty"`
-	HP               float64        `json:"hp,omitempty"`
-	OwnerUID         string         `json:"ownerUid,omitempty"`
-	IsLucky          bool           `json:"isLucky,omitempty"`
-	IsBoss           bool           `json:"isBoss,omitempty"`
+	InstanceID  string  `json:"instanceId"`
+	CharacterID string  `json:"characterId,omitempty"`
+	Level       int32   `json:"level,omitempty"`
+	Exp         int64   `json:"exp,omitempty"`
+	HP          float64 `json:"hp,omitempty"`
+	OwnerUID    string  `json:"ownerUid,omitempty"`
+	IsLucky     bool    `json:"isLucky,omitempty"`
+	IsBoss      bool    `json:"isBoss,omitempty"`
+	// Rank is the pal's Pal Condenser rank (Rank IntProperty). A never-condensed
+	// pal is Rank 1; each condenser star adds 1, up to Rank 5 (4 stars). Displayed
+	// stars are Rank-1. A nil pointer means the save carried no Rank property (an
+	// older parse or a character that predates the field); the API surfaces null so
+	// the UI can stay honest rather than show a misleading zero stars.
+	Rank             *int           `json:"rank,omitempty"`
 	Talents          map[string]int `json:"talents,omitempty"`
 	Gender           string         `json:"gender,omitempty"`
 	PassiveSkillIDs  []string       `json:"passiveSkillIds,omitempty"`
@@ -107,10 +122,15 @@ type GuildMember struct {
 	LastOnline int64  `json:"lastOnline,omitempty"`
 }
 
-// BaseCamp describes base information available without decoding its RawData.
+// BaseCamp describes one BaseCampSaveData entry.
 type BaseCamp struct {
-	ID       string  `json:"id"`
-	GuildID  string  `json:"guildId,omitempty"`
+	ID      string `json:"id"`
+	GuildID string `json:"guildId,omitempty"`
+	// Name is the player-chosen base name decoded from RawData, normalized by
+	// normalizeBaseName: empty when the base was never renamed (whitespace-only
+	// names and the engine's placeholder template both count as unnamed). Empty
+	// is served as null by the API, never a synthetic label.
+	Name     string  `json:"name,omitempty"`
 	Position *Vector `json:"position,omitempty"`
 	// WorkerContainerID is decoded from WorkerDirector.RawData and retained only
 	// for internal joins. Public projections expose BaseID, never this raw GUID.
