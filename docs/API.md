@@ -27,7 +27,7 @@ Operation-specific recovery details, such as Config's `manualCommand`, stay insi
 
 ## Players
 | GET | `/players` | union of live + save-derived: `[{uid, steamId, name, accountName, online, level, guildId, guildName, ping, location: {x,y}\|null, firstSeenAt, lastSeenAt, playtimeSec, banned, whitelisted, captureTotal?, uniquePalsCaptured?, paldeckUnlocked?}]`; optional progression is decoded from the player save |
-| GET | `/players/{uid}` | detail incl. save-derived Pal placement and individual HP, gender, talents, passive IDs, and equipped-skill IDs; `sessions: [...]`. The three placement numbers are nullable. |
+| GET | `/players/{uid}` | detail incl. save-derived Pal placement and individual HP, gender, talents, passive IDs, and equipped-skill IDs. `activity` is a viewer-safe, panel-observed projection with `coverage: "panel_observed_sessions"`, nullable `trackingSince`/`currentSession`, rolling `last24Hours`/`last7Days`/`last30Days` duration and session counts, and at most 20 `recentSessions`; `recentSessionsTruncated` is explicit. The legacy `sessions` field mirrors that bounded recent sample. Activity is not lifetime game history. The three Pal placement numbers are nullable. |
 | GET | `/pals` | Viewer-safe server-wide Pal explorer. Keyset-paginated save-derived instances with display/species identity, level, gender, HP/talents/skills, owner provenance, placement, and Alpha/Lucky/Boss flags. Supports bounded `q`, `ownerSource`, `placement`, `specimen`, `minLevel`, `maxLevel`, `limit`, and opaque `cursor` filters. Never returns raw save JSON or platform account fields. |
 | POST | `/players/{uid}/kick` | `{message?}` |
 | POST | `/players/{uid}/ban` | `{message?}` |

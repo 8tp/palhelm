@@ -28,7 +28,9 @@ panel without relying on an untracked working tree or a mutable `latest` tag.
 
 - [x] Add a real `/events` route; remove the dashboard's dead `#/events` link.
 - [x] Filter and page join/leave, backup, system, panel, and config events.
-- [ ] Distinguish player activity from operator/audit actions and health incidents.
+- [x] Distinguish player activity, operations/audit actions, and health incidents
+  with semantic lanes over one clearly bounded newest-500 event corpus, while
+  retaining exact-kind filtering, search, and paging.
 - [x] Use the existing SSE stream to invalidate query caches for metrics, players,
   events, backups, health, and save state, retaining polling as fallback.
 - [ ] Add export and retention controls only after sensitive event fields have an
@@ -39,7 +41,8 @@ happened without reading container logs.
 
 ## Phase 2 — activity, Pals, and guilds
 
-- [ ] Add current-session duration plus daily/weekly/monthly player activity.
+- [x] Add current-session duration plus rolling 24-hour/7-day/30-day panel-observed
+  player activity, bounded recent sessions, and explicit tracking coverage.
 - [ ] Add concurrency, peak-hours, new/returning-player, and guild-activity views
   with explicit tracking coverage.
 - [x] Add a server-wide Pal explorer with search, owner provenance, party/box/base
@@ -145,8 +148,10 @@ reviewable and reversible.
   upgrade paths.
 - [ ] Add Playwright coverage for login, roles, moderation, backup/restore,
   configuration conflicts, keyboard access, and responsive layouts.
-- [ ] Route-split the frontend bundle; the current production build emits a
-  roughly 677 kB minified entry chunk before gzip.
+- [x] Route-split authenticated frontend pages with shared in-Shell loading UI.
+  The production entry chunk fell from 678.13 kB to 367.98 kB minified before
+  gzip (45.7% smaller); route JavaScript and CSS now load on demand while auth,
+  navigation, and the Shell remain eager and stable.
 - [ ] Consider multi-server/multi-world support only after the single-server
   deployment and migration lifecycle is reproducible.
 

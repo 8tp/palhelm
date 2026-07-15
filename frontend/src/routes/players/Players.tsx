@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
-import type { Player, WhitelistEntry } from "../../api/types";
+import type { Player, PlayerActivity, PlayerActivityWindow, WhitelistEntry } from "../../api/types";
 import { useIsAdmin } from "../../app/AuthProvider";
 import { usePaletteBridge } from "../../app/paletteBridge";
 import { formatDuration, formatRelativeToNow, truncateMiddle } from "../../app/format";
@@ -287,6 +287,7 @@ function PlayerDetailPanel({ uid, onAction }: { uid: string | null; onAction: (k
     queryKey: ["players", uid],
     queryFn: () => api.players.detail(uid!),
     enabled: uid !== null,
+    refetchInterval: 60_000,
   });
 
   if (!uid) {
@@ -357,10 +358,12 @@ function PlayerDetailPanel({ uid, onAction }: { uid: string | null; onAction: (k
               </span>
             </div>
             <div>
-              <span className="label">Playtime</span>
+              <span className="label">Total tracked</span>
               <span className="val">{formatDuration(d.playtimeSec)}</span>
             </div>
           </div>
+
+          <PlayerActivitySummary activity={d.activity} />
 
           <div className="card-head" style={{ borderTop: "1px solid var(--line)" }}>
             <h2>Pals</h2>
@@ -438,6 +441,46 @@ function PlayerDetailPanel({ uid, onAction }: { uid: string | null; onAction: (k
         </>
       )}
     </aside>
+  );
+}
+
+function PlayerActivitySummary({ activity }: { activity: PlayerActivity }) {
+  return (
+    <section className="player-activity" aria-label="Observed player activity">
+      <div className="card-head">
+        <h2>Observed activity</h2>
+        <span className="hint">panel tracking only</span>
+      </div>
+      {activity.trackingSince === null ? (
+        <div className="player-activity-empty">No join or leave session has been observed by this panel yet.</div>
+      ) : (
+        <>
+          <div className="player-activity-current">
+            <span>Current session</span>
+            <strong>{activity.currentSession ? formatDuration(activity.currentSession.durationSec) : "Offline"}</strong>
+          </div>
+          <div className="player-activity-windows">
+            <ActivityWindow label="24 hours" value={activity.windows.last24Hours} />
+            <ActivityWindow label="7 days" value={activity.windows.last7Days} />
+            <ActivityWindow label="30 days" value={activity.windows.last30Days} />
+          </div>
+          <p className="player-activity-coverage">
+            Observed since {new Date(activity.trackingSince).toLocaleString()}.
+            {activity.recentSessionsTruncated ? " Recent-session detail is capped at 20 rows." : " This is not lifetime game history."}
+          </p>
+        </>
+      )}
+    </section>
+  );
+}
+
+function ActivityWindow({ label, value }: { label: string; value: PlayerActivityWindow }) {
+  return (
+    <div>
+      <span>{label}</span>
+      <strong>{formatDuration(value.durationSec)}</strong>
+      <small>{value.sessionCount} {value.sessionCount === 1 ? "session" : "sessions"}</small>
+    </div>
   );
 }
 

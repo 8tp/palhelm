@@ -17,7 +17,13 @@ The table lists each player with an avatar, name, Steam id, status, level, guild
 
 Steam avatars are proxied through the panel on the same origin, so the browser never fetches images from an outside host. The panel ships a built-in Paldeck name roster covering the 1.0 species and variants, so Pals show their real names instead of raw internal ids.
 
-Select a row to open the detail panel on the right. It shows the player level, guild, in-game position, ping, first seen date, and playtime. Under that is the Pal section.
+Select a row to open the detail panel on the right. It shows the player level, guild, in-game position, ping, first seen date, and total tracked playtime. Under that is a compact **Observed activity** section followed by the Pal section.
+
+### Observed activity
+
+The activity section shows the current session duration and rolling totals for the last 24 hours, 7 days, and 30 days. Each window includes both observed duration and the number of sessions that overlap the window. A session crossing a window boundary contributes only the time inside that window.
+
+This data comes from join and leave transitions observed by this Palhelm installation. The panel shows when its tracking began and labels the coverage as **panel tracking only**. It is not a claim about the player's complete Palworld history before the panel began observing them. Recent session detail is capped at 20 rows; the API reports when more rows exist.
 
 ### Moderation actions
 

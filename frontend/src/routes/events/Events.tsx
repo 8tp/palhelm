@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { EventKind } from "../../api/types";
@@ -9,21 +9,28 @@ import { EventMessage } from "../../components/EventMessage";
 import { SearchField } from "../../components/Field";
 import { Pill } from "../../components/Pill";
 import { formatDateTime } from "../../app/format";
+import {
+  countEventLanes,
+  EVENT_LANES,
+  filterEvents,
+  kindsForLane,
+  type EventKindFilter,
+  type EventLane,
+} from "./eventLanes";
 import "./Events.css";
 
 const PAGE_SIZE = 25;
 const FETCH_LIMIT = 500;
-type Filter = "all" | EventKind;
 
-const FILTERS: Array<{ value: Filter; label: string }> = [
-  { value: "all", label: "All events" },
-  { value: "join", label: "Joins" },
-  { value: "leave", label: "Leaves" },
-  { value: "backup", label: "Backups" },
-  { value: "system", label: "System" },
-  { value: "panel", label: "Panel audit" },
-  { value: "config", label: "Configuration" },
-];
+const KIND_LABELS: Record<EventKindFilter, string> = {
+  all: "All kinds",
+  join: "Joins",
+  leave: "Leaves",
+  backup: "Backups",
+  system: "System",
+  panel: "Panel audit",
+  config: "Configuration",
+};
 
 function tone(kind: EventKind): "ok" | "warn" | "idle" | "danger" {
   if (kind === "join") return "ok";
@@ -33,27 +40,31 @@ function tone(kind: EventKind): "ok" | "warn" | "idle" | "danger" {
 }
 
 export default function EventsRoute() {
-  const [filter, setFilter] = useState<Filter>("all");
+  const [lane, setLane] = useState<EventLane>("all");
+  const [kind, setKind] = useState<EventKindFilter>("all");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const eventsQuery = useQuery({
-    queryKey: ["events", FETCH_LIMIT, filter],
-    queryFn: () => api.events.list(FETCH_LIMIT, filter === "all" ? undefined : filter),
+    queryKey: ["events", FETCH_LIMIT],
+    queryFn: () => api.events.list(FETCH_LIMIT),
     refetchInterval: 30_000,
   });
-  const filtered = useMemo(() => {
-    const needle = search.trim().toLocaleLowerCase();
-    if (!needle) return eventsQuery.data ?? [];
-    return (eventsQuery.data ?? []).filter((event) =>
-      event.message.toLocaleLowerCase().includes(needle) || event.kind.includes(needle),
-    );
-  }, [eventsQuery.data, search]);
+  const events = eventsQuery.data ?? [];
+  const laneCounts = countEventLanes(events);
+  const filtered = filterEvents(events, lane, kind, search);
+  const availableKinds = kindsForLane(lane);
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount - 1);
   const shown = filtered.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
 
-  function changeFilter(next: Filter) {
-    setFilter(next);
+  function changeLane(next: EventLane) {
+    setLane(next);
+    setKind("all");
+    setPage(0);
+  }
+
+  function changeKind(next: EventKindFilter) {
+    setKind(next);
     setPage(0);
   }
 
@@ -61,8 +72,27 @@ export default function EventsRoute() {
     <main className="content">
       <div className="page-head">
         <h1>Events & audit</h1>
-        <span className="sub">player activity · operations · panel changes</span>
+        <span className="sub">player activity · operations & audit · health incidents</span>
       </div>
+
+      <div className="event-lanes" role="group" aria-label="Event lanes">
+        {EVENT_LANES.map((item) => (
+          <button
+            type="button"
+            aria-pressed={lane === item.id}
+            className={`event-lane ${lane === item.id ? "is-active" : ""}`}
+            key={item.id}
+            onClick={() => changeLane(item.id)}
+          >
+            <span className="event-lane-name">{item.label}</span>
+            <span className="event-lane-count">{laneCounts[item.id].toLocaleString()}</span>
+            <span className="event-lane-description">{item.description}</span>
+          </button>
+        ))}
+      </div>
+      <p className="events-scope">
+        Lane counts cover the newest {events.length.toLocaleString()} events returned by the panel (bounded to {FETCH_LIMIT}).
+      </p>
 
       <div className="events-toolbar">
         <SearchField
@@ -71,10 +101,11 @@ export default function EventsRoute() {
           placeholder="Search event messages…"
           aria-label="Search events"
         />
-        <select className="input" value={filter} onChange={(event) => changeFilter(event.target.value as Filter)} aria-label="Filter event type">
-          {FILTERS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+        <select className="input" value={kind} onChange={(event) => changeKind(event.target.value as EventKindFilter)} aria-label="Filter exact event kind">
+          <option value="all">{KIND_LABELS.all}</option>
+          {availableKinds.map((item) => <option key={item} value={item}>{KIND_LABELS[item]}</option>)}
         </select>
-        <span className="events-count">{filtered.length} shown · newest {FETCH_LIMIT} scanned</span>
+        <span className="events-count">{filtered.length.toLocaleString()} matching · page {safePage + 1} of {pageCount}</span>
       </div>
 
       <Card>

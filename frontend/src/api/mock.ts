@@ -317,7 +317,7 @@ export async function getServer(): Promise<ServerInfo> {
     worldGuid: "A1B2C3D4E5F6478090ABCDEF12345678",
     state: "running",
     uptimeSec: Math.floor((Date.now() - BOOT_AT) / 1000),
-    panelVersion: "0.6.0",
+    panelVersion: "0.7.0",
   };
 }
 
@@ -496,12 +496,28 @@ export async function playerDetail(uid: string): Promise<PlayerDetail> {
   await latency();
   const p = players.find((x) => x.uid === uid);
   if (!p) throw new ApiRequestError(404, "not_found", "Player not found.");
+  const currentSession = p.online
+    ? { joinedAt: new Date(Date.now() - 104 * 60_000).toISOString(), leftAt: null, durationSec: 104 * 60 }
+    : null;
+  const recentSessions = currentSession
+    ? [currentSession]
+    : [{ joinedAt: p.firstSeenAt, leftAt: p.lastSeenAt, durationSec: Math.min(p.playtimeSec, 9700) }];
   return {
     ...p,
     pals: withPlacement(palsByPlayer[p.name] ?? []),
-    sessions: p.online
-      ? [{ joinedAt: new Date(Date.now() - 104 * 60_000).toISOString(), leftAt: null, durationSec: null }]
-      : [{ joinedAt: p.firstSeenAt, leftAt: p.lastSeenAt, durationSec: 9700 }],
+    sessions: recentSessions,
+    activity: {
+      coverage: "panel_observed_sessions",
+      trackingSince: p.firstSeenAt,
+      currentSession,
+      windows: {
+        last24Hours: { durationSec: currentSession?.durationSec ?? 0, sessionCount: currentSession ? 1 : 0 },
+        last7Days: { durationSec: Math.min(p.playtimeSec, 12 * 3600), sessionCount: Math.min(4, Math.max(1, Math.ceil(p.playtimeSec / 7200))) },
+        last30Days: { durationSec: p.playtimeSec, sessionCount: Math.min(12, Math.max(1, Math.ceil(p.playtimeSec / 7200))) },
+      },
+      recentSessions,
+      recentSessionsTruncated: false,
+    },
   };
 }
 
