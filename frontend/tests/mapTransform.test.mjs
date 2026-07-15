@@ -60,7 +60,7 @@ test("checked-in 1.0 layer anchors lock transform axes, offsets, and inverses", 
   }
 });
 
-test("Palpagos and World Tree bounds use data-Y/data-X order and do not bleed layers", () => {
+test("Palpagos and World Tree bounds use data-X/data-Y order and do not bleed layers", () => {
   const [palpagos, tree] = fixtures.layers;
   const palpagosPoint = palpagos.anchors[0].world;
   const treePoint = tree.anchors.find((anchor) => anchor.id === "dataset-bounds-center").world;
@@ -70,7 +70,7 @@ test("Palpagos and World Tree bounds use data-Y/data-X order and do not bleed la
   assert.equal(worldInBounds(treePoint.x, treePoint.y, palpagos.bounds), false);
 
   for (const layer of fixtures.layers) {
-    const [[minY, minX], [maxY, maxX]] = layer.bounds;
+    const [[minX, minY], [maxX, maxY]] = layer.bounds;
     const centerX = (minX + maxX) / 2;
     const centerY = (minY + maxY) / 2;
     assert.equal(worldInBounds(minX, minY, layer.bounds), true, `${layer.id} inclusive minimum`);
@@ -78,4 +78,22 @@ test("Palpagos and World Tree bounds use data-Y/data-X order and do not bleed la
     assert.equal(worldInBounds(minX - 1, centerY, layer.bounds), false, `${layer.id} world-X minimum`);
     assert.equal(worldInBounds(centerX, minY - 1, layer.bounds), false, `${layer.id} world-Y minimum`);
   }
+});
+
+test("live-server survey positions stay on the layers where the players actually stood", () => {
+  const [palpagos, tree] = fixtures.layers;
+  // Read off the live 1.0 server on 2026-07-15: a player on Feybreak (far southwest,
+  // world X beyond -724k) and a player northeast of the starting area (world Y beyond
+  // +349k). The old axis-swapped bounds check filtered both off the Palpagos layer.
+  const feybreak = { x: -757845, y: -61591 };
+  const northeast = { x: 119362, y: 408511 };
+  assert.equal(worldInBounds(feybreak.x, feybreak.y, palpagos.bounds), true, "Feybreak is on Palpagos");
+  assert.equal(worldInBounds(northeast.x, northeast.y, palpagos.bounds), true, "northeast is on Palpagos");
+  assert.equal(worldInBounds(feybreak.x, feybreak.y, tree.bounds), false);
+  assert.equal(worldInBounds(northeast.x, northeast.y, tree.bounds), false);
+  // A World Tree visitor reads game-x between about -2127 and -1382 on the in-game map
+  // and must resolve to the tree layer, not Palpagos.
+  const treeCenter = tree.anchors.find((anchor) => anchor.id === "dataset-bounds-center");
+  assert.deepEqual(worldToGame(treeCenter.world.x, treeCenter.world.y), treeCenter.game);
+  assert.equal(worldInBounds(treeCenter.world.x, treeCenter.world.y, palpagos.bounds), false);
 });
