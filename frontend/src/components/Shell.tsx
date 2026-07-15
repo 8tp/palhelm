@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import { NavLink, Outlet } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "../api/client";
+import { api, USE_MOCK } from "../api/client";
 import { useAuth, useIsAdmin } from "../app/AuthProvider";
 import { useToast } from "./Toast";
 import { usePaletteBridge } from "../app/paletteBridge";
@@ -73,6 +73,9 @@ function LiveQueryBridge() {
   const queryClient = useQueryClient();
   useSSE({
     url: "/api/v1/events/stream",
+    // Mock mode has no backend to serve the stream; connecting only yields a 404 and
+    // a failed EventSource. react-query's refetchInterval polling keeps the mock UI live.
+    enabled: !USE_MOCK,
     onMessage: (eventName, data) => {
       if (eventName === "metrics") {
         queryClient.setQueryData<MetricsCurrent>(["metrics", "current"], data as MetricsCurrent);
