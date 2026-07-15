@@ -399,8 +399,9 @@ func TestAuditRedactionKeySetsExact(t *testing.T) {
 	auditAssertKeys(t, "metrics data", metricsEnv["data"].(map[string]any),
 		"fps", "fpsAvg", "frameTimeMs", "players", "maxPlayers", "day", "uptimeSec", "baseCamps")
 	worldSummaryData := worldSummaryEnv["data"].(map[string]any)
-	auditAssertKeys(t, "world summary data", worldSummaryData, "state", "capturedAt", "lastAttemptAt", "fps", "fpsAvg", "counts")
+	auditAssertKeys(t, "world summary data", worldSummaryData, "state", "capturedAt", "lastAttemptAt", "fps", "fpsAvg", "counts", "activity", "linkedBasePals")
 	auditAssertKeys(t, "world summary counts", worldSummaryData["counts"].(map[string]any), "players", "partyPals", "basePals", "wildPals", "npcs", "palBoxes", "unknown")
+	auditAssertKeys(t, "world summary activity", worldSummaryData["activity"].(map[string]any), "working", "transporting", "eating", "sleeping", "idle", "inactive", "combat", "incapacitated", "moving", "unknown")
 
 	// Integer-typed fields serialize as JSON integers, times as RFC3339 UTC ("Z" suffix,
 	// second granularity — the store persists unix seconds).

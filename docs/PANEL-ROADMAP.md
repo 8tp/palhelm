@@ -65,7 +65,7 @@ the Discord bot instead of limiting it to player detail dialogs.
 - [ ] Add automated landmark fixtures across Palpagos and the World Tree so axis,
   offset, layer-boundary, and inverse-coordinate regressions fail in CI.
 
-### Palworld 1.0 live game-data track (development branch; not deployed)
+### Palworld 1.0 live game-data track
 
 - [x] Document the official `/v1/api/game-data` schema, capability uncertainty,
   privacy boundary, and the distinction between transient actors and spawn data.
@@ -80,14 +80,18 @@ the Discord bot instead of limiting it to player detail dialogs.
 - [x] Expose session-only rollout diagnostics for request duration, accepted
   actor count, bounded failure category, truncation, and retry schedule without
   extending the public Integration summary.
-- [ ] Verify endpoint support and coordinate semantics against a disposable or
+- [x] Verify endpoint support and coordinate semantics against a disposable or
   explicitly approved server session before enabling it in production.
-- [ ] Join `BaseCampPal.InstanceID` to save-derived Pals and WorkerDirector base
+- [x] Join `BaseCampPal.InstanceID` to save-derived Pals and WorkerDirector base
   IDs, then add clustered live worker status to base/map views.
-- [ ] Add deterministic bot tools for aggregate world health and exact-linked
+- [x] Add deterministic bot tools for aggregate world health and exact-linked
   base-worker status; keep raw locations and action strings out of Discord/AI.
 - [ ] Import a separately licensed, versioned 1.0 spawn/POI dataset. Never treat
   loaded `WildPal` sightings as proof of a spawn zone, schedule, or catch rate.
+- [x] Add an operator diagnostics card for Game Data freshness, upstream latency,
+  actor count, exact worker-link coverage, bounded error category, and retry schedule.
+- [x] Persist 30 days of aggregate worker activity/FPS history without actor identity,
+  names, health, guilds, or locations.
 
 Exit: live markers, cursor coordinates, and points of interest agree with the
 in-game map across every installed world layer.

@@ -1,6 +1,6 @@
 # Spec: Palworld 1.0 game-data integration
 
-Status: development on `feature/game-data-api`; not deployed or enabled on the live server.
+Status: implemented behind the opt-in capability flag; enabled deployments use one shared poller.
 
 ## Upstream contract
 
@@ -50,9 +50,11 @@ The upstream response may contain IP addresses, platform user IDs, internal acto
 names, guilds, exact positions, rotations, health, and raw AI/action state.
 
 Palhelm does not declare `ip` or `userid` in its upstream Go DTO, so both are discarded while
-JSON is decoded. Internal actor/trainer IDs and raw class/action state exist only in the
-short-lived decode result and are discarded during the one-time projection. Raw JSON and raw
-actors are never cached, persisted, returned, or logged.
+JSON is decoded. Runtime actor/trainer IDs and raw class/action state exist only in the
+short-lived decode result. For base workers, Pocketpair's compound
+`runtime actor ID : save Pal ID` is parsed in memory and only its validated 32-hex save-Pal
+component may survive after an exact roster join. The runtime component is discarded. Raw JSON
+and raw actors are never cached, persisted, returned, or logged.
 
 The authenticated session endpoint `/api/v1/world/snapshot` uses a second typed allowlist. It
 shows exact locations only for players, party/base Pals, and PalBoxes; it omits raw IDs,
@@ -64,22 +66,24 @@ game-data snapshot may replace coordinates only for one active actor with an exa
 match. It never adds game-data-only players, hides unmatched REST players, or uses stale,
 truncated, inactive, or ambiguous actors.
 
-The bearer endpoint `/api/integration/v1/world/summary` is aggregate only. It exposes state,
-freshness timestamps, FPS, and actor counts. It contains no actor identities or locations and
-inherits Integration API authentication, ETag, no-store, and per-key rate limits. Poller rollout
-diagnostics remain session-only and are deliberately absent from this public contract.
+The bearer endpoint `/api/integration/v1/world/summary` is aggregate only. The separate
+`/api/integration/v1/world/workers` endpoint contains only exact-linked save Pal identity,
+base/owner provenance, HP percentage, and an allowlisted activity category. It contains no
+locations, runtime IDs, guild/trainer names, or raw actions. Both inherit Integration API
+authentication, ETag, no-store, and per-key rate limits. Poller rollout diagnostics remain
+session-only.
 
-## Follow-on contracts
+## Implemented follow-on contracts
 
-1. Join live `BaseCampPal.InstanceID` to the save-derived Pal roster and carry a `baseId` only
-   through the existing exact WorkerDirector/container relation. Never infer ownership or base
-   membership from proximity.
-2. Add clustered live workers to the panel map/base views, with stale and unresolved evidence
-   shown explicitly.
-3. Expose a separate bounded Integration endpoint only for exact-linked workers, containing
-   save-derived identity plus health percentage and an allowlisted activity category—never raw
-   location, trainer IDs/names, or action strings.
-4. Give the bot deterministic tools over those projections. The AI must distinguish save facts,
-   live observations, and static spawn knowledge in every answer.
-5. Add spawn/catch guidance only from a licensed, versioned static dataset with source revision,
-   game version, map layer, coordinates/areas, and encounter conditions.
+1. Live base workers join by the save-Pal half of Pocketpair's compound ID and carry a base only
+   through the exact WorkerDirector/container relation. No location inference is used.
+2. The panel map has worker/PalBox layers, exact-linked base health, and explicit unresolved data.
+3. The Integration worker endpoint is location-free and excludes unresolved actors.
+4. The bot has deterministic aggregate and exact-linked worker tools.
+5. Aggregate activity/FPS history is retained for 30 days without actor identity, name, health,
+   guild, or location data.
+
+## Remaining external-data contract
+
+Add spawn/catch guidance only from a licensed, versioned static dataset with source revision,
+game version, map layer, coordinates/areas, and encounter conditions.

@@ -97,6 +97,10 @@ export default function SettingsRoute() {
       </div>
 
       <div className="grid cols-2">
+        <GameDataDiagnosticsCard />
+      </div>
+
+      <div className="grid cols-2">
         {/* authentication */}
         <Card>
           <CardHead title="Authentication" />
@@ -163,6 +167,54 @@ export default function SettingsRoute() {
         </Card>
       </div>
     </main>
+  );
+}
+
+function GameDataDiagnosticsCard() {
+  const query = useQuery({
+    queryKey: ["world", "snapshot"],
+    queryFn: () => api.world.snapshot(),
+    refetchInterval: 15000,
+  });
+  const snapshot = query.data;
+  const state = snapshot?.state ?? "pending";
+  const tone = state === "ready" ? "ok" : state === "pending" ? "idle" : "warn";
+  const diagnostics = snapshot?.diagnostics;
+  const activity = snapshot?.activity;
+  return (
+    <Card className="span-2">
+      <CardHead title="Game Data API diagnostics">
+        <Pill tone={tone}>{state}</Pill>
+      </CardHead>
+      <CardBody>
+        {query.isError ? (
+          <Banner tone="warn">Couldn't load Game Data API diagnostics.</Banner>
+        ) : (
+          <>
+            <div className="grid cols-2">
+              <div>
+                <div className="kv-row"><span className="k">Snapshot freshness</span><span className="v">{snapshot?.capturedAt ? formatRelativeToNow(snapshot.capturedAt) : "no accepted snapshot"}</span></div>
+                <div className="kv-row"><span className="k">Upstream request</span><span className="v mono">{diagnostics ? `${diagnostics.lastRequestDurationMs} ms` : "—"}</span></div>
+                <div className="kv-row"><span className="k">Loaded actors</span><span className="v mono">{diagnostics?.lastAcceptedActorCount ?? "—"}</span></div>
+                <div className="kv-row"><span className="k">FPS</span><span className="v mono">{snapshot ? `${snapshot.fps.toFixed(1)} · avg ${snapshot.fpsAvg.toFixed(1)}` : "—"}</span></div>
+              </div>
+              <div>
+                <div className="kv-row"><span className="k">Exact worker links</span><span className="v mono">{diagnostics ? `${diagnostics.linkedBasePals}/${snapshot?.counts.basePals ?? 0}` : "—"}</span></div>
+                <div className="kv-row"><span className="k">Unresolved workers</span><span className="v mono">{diagnostics?.unresolvedBasePals ?? "—"}</span></div>
+                <div className="kv-row"><span className="k">Last poll result</span><span className="v">{diagnostics?.lastErrorCategory ?? "—"}</span></div>
+                <div className="kv-row"><span className="k">Next attempt</span><span className="v">{diagnostics?.nextAttemptAt ? formatRelativeToNow(diagnostics.nextAttemptAt) : "not scheduled"}</span></div>
+              </div>
+            </div>
+            {diagnostics?.linkLookupFailed && <Banner tone="warn">The snapshot loaded, but save-derived worker identity linkage failed.</Banner>}
+            {activity && (
+              <p className="field-hint mono" style={{ marginTop: "var(--space-3)" }}>
+                workers · {activity.working} working · {activity.transporting} transporting · {activity.eating} eating · {activity.sleeping} sleeping · {activity.idle} idle · {activity.incapacitated} incapacitated · {activity.unknown} unknown
+              </p>
+            )}
+          </>
+        )}
+      </CardBody>
+    </Card>
   );
 }
 

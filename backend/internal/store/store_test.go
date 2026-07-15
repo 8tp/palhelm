@@ -560,8 +560,8 @@ func TestMigration004AddsNullablePalPlacementColumns(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer st.Close()
-	if v, getErr := st.GetKV(context.Background(), "schema_version"); getErr != nil || v != "8" {
-		t.Fatalf("schema_version = %q, %v; want 8", v, getErr)
+	if v, getErr := st.GetKV(context.Background(), "schema_version"); getErr != nil || v != "9" {
+		t.Fatalf("schema_version = %q, %v; want 9", v, getErr)
 	}
 	pals, err := st.PalsTyped(context.Background(), "owner")
 	if err != nil || len(pals) != 1 {
@@ -620,8 +620,8 @@ func TestFreshDatabaseReachesLatestSchemaAndAPIKeysUsable(t *testing.T) {
 	defer s.Close()
 	ctx := context.Background()
 	v, err := s.GetKV(ctx, "schema_version")
-	if err != nil || v != "8" {
-		t.Fatalf("schema_version = %q, %v; want 8", v, err)
+	if err != nil || v != "9" {
+		t.Fatalf("schema_version = %q, %v; want 9", v, err)
 	}
 	hash := [32]byte{1, 2, 3}
 	created, err := s.CreateAPIKey(ctx, "abcd1234", hash, "fresh-db-key", time.Now())
@@ -687,8 +687,8 @@ func TestUpgradeFromV030SchemaAppliesAPIKeysMigration(t *testing.T) {
 	ctx := context.Background()
 
 	v, err := upgraded.GetKV(ctx, "schema_version")
-	if err != nil || v != "8" {
-		t.Fatalf("schema_version after upgrade = %q, %v; want 8", v, err)
+	if err != nil || v != "9" {
+		t.Fatalf("schema_version after upgrade = %q, %v; want 9", v, err)
 	}
 	if _, err = upgraded.ListAPIKeys(ctx); err != nil {
 		t.Fatalf("api_keys table not usable after upgrade: %v", err)
@@ -717,8 +717,8 @@ func TestUpgradeFromV030SchemaAppliesAPIKeysMigration(t *testing.T) {
 		t.Fatalf("second Open (already at latest version) returned an error: %v", err)
 	}
 	defer reopened.Close()
-	if v, err = reopened.GetKV(ctx, "schema_version"); err != nil || v != "8" {
-		t.Fatalf("schema_version after no-op reopen = %q, %v; want 8", v, err)
+	if v, err = reopened.GetKV(ctx, "schema_version"); err != nil || v != "9" {
+		t.Fatalf("schema_version after no-op reopen = %q, %v; want 9", v, err)
 	}
 }
 
@@ -1007,5 +1007,44 @@ func TestGuildsTypedIncludesMembersAndBases(t *testing.T) {
 	}
 	if len(g.Bases) != 1 || g.Bases[0].ID != "b1" || g.Bases[0].X != 10 || g.Bases[0].Y != 20 {
 		t.Fatalf("bases = %#v", g.Bases)
+	}
+}
+
+func TestGameDataActivityHistoryDownsamplesAndCapsResponses(t *testing.T) {
+	s, err := Open(filepath.Join(t.TempDir(), "activity.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	ctx := context.Background()
+	now := time.Now().UTC()
+	base := time.Unix(now.Unix()/int64((30*time.Minute)/time.Second)*int64((30*time.Minute)/time.Second), 0).UTC().Add(-12 * time.Hour)
+	for i := 0; i < 510; i++ {
+		at := base.Add(time.Duration(i) * time.Minute)
+		if err = s.AddGameDataActivity(ctx, GameDataActivity{At: at, FPS: float64(i), Players: i % 4}); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	bounded, err := s.GameDataActivityHistory(ctx, base, time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(bounded) != 500 {
+		t.Fatalf("bounded samples = %d, want 500", len(bounded))
+	}
+	if want := base.Add(10 * time.Minute); !bounded[0].At.Equal(want) {
+		t.Fatalf("oldest bounded sample = %s, want %s", bounded[0].At, want)
+	}
+
+	downsampled, err := s.GameDataActivityHistory(ctx, base, 30*time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(downsampled) != 17 {
+		t.Fatalf("downsampled samples = %d, want 17", len(downsampled))
+	}
+	if downsampled[0].FPS != 29 || downsampled[len(downsampled)-1].FPS != 509 {
+		t.Fatalf("buckets did not retain newest samples: first=%v last=%v", downsampled[0].FPS, downsampled[len(downsampled)-1].FPS)
 	}
 }

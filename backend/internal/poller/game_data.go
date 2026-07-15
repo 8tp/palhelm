@@ -8,6 +8,7 @@ import (
 	"unicode"
 
 	"github.com/8tp/palhelm/internal/palworld"
+	"github.com/8tp/palhelm/internal/store"
 )
 
 const maxCachedLiveActors = 2_048
@@ -63,6 +64,21 @@ type GameDataCounts struct {
 	Unknown   int `json:"unknown"`
 }
 
+// GameDataActivityCounts is a bounded classification of currently loaded base workers.
+// Unknown is explicit so future game action strings do not silently disappear.
+type GameDataActivityCounts struct {
+	Working       int `json:"working"`
+	Transporting  int `json:"transporting"`
+	Eating        int `json:"eating"`
+	Sleeping      int `json:"sleeping"`
+	Idle          int `json:"idle"`
+	Inactive      int `json:"inactive"`
+	Combat        int `json:"combat"`
+	Incapacitated int `json:"incapacitated"`
+	Moving        int `json:"moving"`
+	Unknown       int `json:"unknown"`
+}
+
 func (c GameDataCounts) total() int {
 	return c.Players + c.PartyPals + c.BasePals + c.WildPals + c.NPCs + c.PalBoxes + c.Unknown
 }
@@ -70,19 +86,26 @@ func (c GameDataCounts) total() int {
 // LiveWorldActor is the bounded, sanitized projection cached for the authenticated panel. Raw
 // actor/trainer IDs, class/action strings, rotations, Stage, IP, and userid never enter it.
 type LiveWorldActor struct {
-	Kind        string   `json:"kind"`
-	CharacterID string   `json:"characterId,omitempty"`
-	IsBoss      bool     `json:"isBoss,omitempty"`
-	Name        string   `json:"name,omitempty"`
-	TrainerName string   `json:"trainerName,omitempty"`
-	GuildName   string   `json:"guildName,omitempty"`
-	Level       int      `json:"level,omitempty"`
-	HPPercent   *float64 `json:"hpPercent,omitempty"`
-	Active      *bool    `json:"active,omitempty"`
-	Activity    string   `json:"activity"`
-	X           float64  `json:"-"`
-	Y           float64  `json:"-"`
-	Z           float64  `json:"-"`
+	Kind                string   `json:"kind"`
+	CharacterID         string   `json:"characterId,omitempty"`
+	IsBoss              bool     `json:"isBoss,omitempty"`
+	Name                string   `json:"name,omitempty"`
+	TrainerName         string   `json:"trainerName,omitempty"`
+	GuildName           string   `json:"guildName,omitempty"`
+	Level               int      `json:"level,omitempty"`
+	HPPercent           *float64 `json:"hpPercent,omitempty"`
+	Active              *bool    `json:"active,omitempty"`
+	Activity            string   `json:"activity"`
+	InstanceID          string   `json:"instanceId,omitempty"`
+	BaseID              string   `json:"baseId,omitempty"`
+	OwnerUID            string   `json:"ownerUid,omitempty"`
+	OwnerName           string   `json:"ownerName,omitempty"`
+	OwnerSource         string   `json:"ownerSource,omitempty"`
+	Linked              bool     `json:"linked,omitempty"`
+	X                   float64  `json:"-"`
+	Y                   float64  `json:"-"`
+	Z                   float64  `json:"-"`
+	sourcePalInstanceID string
 }
 
 // CachedGameData is a bounded, memory-only panel view of the most recent acceptable snapshot.
@@ -94,6 +117,7 @@ type CachedGameData struct {
 	FPS           float64
 	FPSAvg        float64
 	Counts        GameDataCounts
+	Activity      GameDataActivityCounts
 	Actors        []LiveWorldActor
 	Truncated     bool
 	Diagnostics   GameDataDiagnostics
@@ -105,18 +129,23 @@ type GameDataDiagnostics struct {
 	LastRequestDuration    time.Duration
 	LastAcceptedActorCount int
 	LastErrorCategory      GameDataErrorCategory
+	LinkedBasePals         int
+	UnresolvedBasePals     int
+	LinkLookupFailed       bool
 	ScheduledDelay         time.Duration
 	NextAttemptAt          time.Time
 }
 
 // GameDataSummary is the O(1) aggregate view used by bearer-token requests.
 type GameDataSummary struct {
-	State         GameDataState
-	CapturedAt    time.Time
-	LastAttemptAt time.Time
-	FPS           float64
-	FPSAvg        float64
-	Counts        GameDataCounts
+	State          GameDataState
+	CapturedAt     time.Time
+	LastAttemptAt  time.Time
+	FPS            float64
+	FPSAvg         float64
+	Counts         GameDataCounts
+	Activity       GameDataActivityCounts
+	LinkedBasePals int
 }
 
 // ConfigureGameData enables the optional fourth poller. It is intentionally a separate call
@@ -207,28 +236,56 @@ func (s *Service) pollGameData(ctx context.Context) error {
 	if duration < 0 {
 		duration = 0
 	}
+	var counts GameDataCounts
+	var activity GameDataActivityCounts
+	var actors []LiveWorldActor
+	var truncated bool
+	linked, unresolved := 0, 0
+	linkLookupFailed := false
+	if err == nil {
+		counts, actors, truncated = projectGameData(snapshot.ActorData)
+		if counts.BasePals > 0 {
+			index, indexErr := s.store.LivePalIndex(ctx)
+			if indexErr != nil {
+				linkLookupFailed = true
+				s.log.Warn("game-data worker reconciliation unavailable", "error", indexErr)
+			} else {
+				linked, unresolved = reconcileLiveWorkers(actors, index)
+			}
+		}
+		if linkLookupFailed {
+			unresolved = counts.BasePals
+		}
+		activity = countGameDataActivity(actors)
+	}
 	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.gameDataLastAttempt = completedAt
 	s.gameDataLastRequestDuration = duration
 	if err == nil {
-		counts, actors, truncated := projectGameData(snapshot.ActorData)
 		previousTotal := s.gameDataCounts.total()
 		collapsed := !s.gameDataCapturedAt.IsZero() && previousTotal >= 10 && counts.total()*4 < previousTotal
 		if collapsed && !s.gameDataCollapsePending {
 			s.gameDataCollapsePending = true
 			s.gameDataState = GameDataStale
 			s.gameDataLastErrorCategory = GameDataErrorCollapsed
+			s.mu.Unlock()
 			return ErrGameDataCollapsed
 		}
 		s.gameDataCollapsePending = false
 		s.gameDataSourceTime = boundedClean(snapshot.Time, 32)
 		s.gameDataFPS, s.gameDataFPSAvg = snapshot.FPS, snapshot.AverageFPS
-		s.gameDataCounts, s.gameDataActors, s.gameDataTruncated = counts, actors, truncated
+		s.gameDataCounts, s.gameDataActivity, s.gameDataActors, s.gameDataTruncated = counts, activity, actors, truncated
 		s.gameDataLastAcceptedActorCount = len(snapshot.ActorData)
+		s.gameDataLinkedBasePals, s.gameDataUnresolvedBasePals = linked, unresolved
+		s.gameDataLinkLookupFailed = linkLookupFailed
 		s.gameDataLastErrorCategory = GameDataErrorNone
 		s.gameDataCapturedAt = completedAt
 		s.gameDataState = GameDataReady
+		s.mu.Unlock()
+		metric := gameDataActivityMetric(completedAt, snapshot.FPS, snapshot.AverageFPS, counts, activity, linked)
+		if persistErr := s.store.AddGameDataActivity(ctx, metric); persistErr != nil {
+			s.log.Warn("game-data activity persistence failed", "error", persistErr)
+		}
 		return nil
 	}
 	s.gameDataCollapsePending = false
@@ -247,6 +304,7 @@ func (s *Service) pollGameData(ctx context.Context) error {
 	default:
 		s.gameDataState = GameDataUnavailable
 	}
+	s.mu.Unlock()
 	return err
 }
 
@@ -299,8 +357,12 @@ func (s *Service) clearGameDataLocked() {
 	s.gameDataSourceTime = ""
 	s.gameDataFPS, s.gameDataFPSAvg = 0, 0
 	s.gameDataCounts = GameDataCounts{}
+	s.gameDataActivity = GameDataActivityCounts{}
 	s.gameDataActors = nil
 	s.gameDataTruncated = false
+	s.gameDataLinkedBasePals = 0
+	s.gameDataUnresolvedBasePals = 0
+	s.gameDataLinkLookupFailed = false
 	s.gameDataCollapsePending = false
 }
 
@@ -350,11 +412,12 @@ func (s *Service) GameData() CachedGameData {
 	return CachedGameData{
 		State: state, CapturedAt: s.gameDataCapturedAt, LastAttemptAt: s.gameDataLastAttempt,
 		SourceTime: s.gameDataSourceTime, FPS: s.gameDataFPS, FPSAvg: s.gameDataFPSAvg,
-		Counts: s.gameDataCounts, Actors: actors, Truncated: s.gameDataTruncated,
+		Counts: s.gameDataCounts, Activity: s.gameDataActivity, Actors: actors, Truncated: s.gameDataTruncated,
 		Diagnostics: GameDataDiagnostics{
 			LastRequestDuration: s.gameDataLastRequestDuration, LastAcceptedActorCount: s.gameDataLastAcceptedActorCount,
 			LastErrorCategory: s.gameDataLastErrorCategory, ScheduledDelay: s.gameDataScheduledDelay,
-			NextAttemptAt: s.gameDataNextAttemptAt,
+			NextAttemptAt: s.gameDataNextAttemptAt, LinkedBasePals: s.gameDataLinkedBasePals,
+			UnresolvedBasePals: s.gameDataUnresolvedBasePals, LinkLookupFailed: s.gameDataLinkLookupFailed,
 		},
 	}
 }
@@ -366,6 +429,7 @@ func (s *Service) GameDataSummary() GameDataSummary {
 	return GameDataSummary{
 		State: s.effectiveGameDataStateLocked(time.Now().UTC()), CapturedAt: s.gameDataCapturedAt,
 		LastAttemptAt: s.gameDataLastAttempt, FPS: s.gameDataFPS, FPSAvg: s.gameDataFPSAvg, Counts: s.gameDataCounts,
+		Activity: s.gameDataActivity, LinkedBasePals: s.gameDataLinkedBasePals,
 	}
 }
 
@@ -448,7 +512,87 @@ func projectLiveWorldActor(actor palworld.GameDataActor, kind string) LiveWorldA
 		Name: boundedClean(actor.NickName, 100), TrainerName: boundedClean(actor.TrainerNickName, 100),
 		GuildName: boundedClean(actor.GuildName, 100), Level: actor.Level, HPPercent: hpPercent,
 		Active: actor.Active(), Activity: gameDataActivity(actor), X: actor.LocationX, Y: actor.LocationY, Z: actor.LocationZ,
+		sourcePalInstanceID: extractSavePalInstanceID(actor.InstanceID),
 	}
+}
+
+func extractSavePalInstanceID(value string) string {
+	value = strings.TrimSpace(value)
+	if i := strings.LastIndexByte(value, ':'); i >= 0 {
+		value = strings.TrimSpace(value[i+1:])
+	}
+	if len(value) != 32 {
+		return ""
+	}
+	for _, r := range value {
+		if !((r >= '0' && r <= '9') || (r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')) {
+			return ""
+		}
+	}
+	return strings.ToLower(value)
+}
+
+func reconcileLiveWorkers(actors []LiveWorldActor, index map[string]store.PalWithOwner) (linked, unresolved int) {
+	for i := range actors {
+		actor := &actors[i]
+		if actor.Kind != "BaseCampPal" {
+			continue
+		}
+		pal, ok := index[actor.sourcePalInstanceID]
+		if !ok || pal.BaseID == "" {
+			unresolved++
+			continue
+		}
+		actor.Linked = true
+		actor.InstanceID = pal.InstanceID
+		actor.BaseID = pal.BaseID
+		actor.OwnerUID = pal.OwnerUID
+		actor.OwnerName = pal.OwnerName
+		actor.OwnerSource = pal.OwnerSource
+		actor.CharacterID = pal.CharacterID
+		actor.Name = pal.DisplayName
+		linked++
+	}
+	return linked, unresolved
+}
+
+func countGameDataActivity(actors []LiveWorldActor) GameDataActivityCounts {
+	var out GameDataActivityCounts
+	for _, actor := range actors {
+		if actor.Kind != "BaseCampPal" {
+			continue
+		}
+		switch actor.Activity {
+		case "working":
+			out.Working++
+		case "transporting":
+			out.Transporting++
+		case "eating":
+			out.Eating++
+		case "sleeping":
+			out.Sleeping++
+		case "idle":
+			out.Idle++
+		case "inactive":
+			out.Inactive++
+		case "combat":
+			out.Combat++
+		case "incapacitated":
+			out.Incapacitated++
+		case "moving":
+			out.Moving++
+		default:
+			out.Unknown++
+		}
+	}
+	return out
+}
+
+func gameDataActivityMetric(at time.Time, fps, fpsAvg float64, counts GameDataCounts, activity GameDataActivityCounts, linked int) store.GameDataActivity {
+	return store.GameDataActivity{At: at, FPS: fps, FPSAvg: fpsAvg, Players: counts.Players, BasePals: counts.BasePals, Linked: linked,
+		Working: activity.Working, Transporting: activity.Transporting, Eating: activity.Eating, Sleeping: activity.Sleeping,
+		Idle: activity.Idle, Inactive: activity.Inactive, Combat: activity.Combat, Incapacitated: activity.Incapacitated,
+		Moving: activity.Moving, Unknown: activity.Unknown}
 }
 
 func gameDataActivity(actor palworld.GameDataActor) string {

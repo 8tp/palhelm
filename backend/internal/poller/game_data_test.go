@@ -39,7 +39,7 @@ func TestGameDataCacheReadyDeepCopyAndStaleLastGood(t *testing.T) {
 	s, _, _ := testService(t, palworld.NewClient("", "", ""))
 	s.ConfigureGameData(true, 30*time.Second)
 	source := &fakeGameDataSource{
-		snapshots: []palworld.GameDataSnapshot{{Time: "server-local", FPS: 55, ActorData: []palworld.GameDataActor{{Type: "Character", UnitType: "Player", NickName: "Hunter", IsActive: "true"}}}},
+		snapshots: []palworld.GameDataSnapshot{{Time: "server-local", FPS: 55, ActorData: []palworld.GameDataActor{{Type: "Character", UnitType: "Player", NickName: "Player One", IsActive: "true"}}}},
 		errors:    []error{nil, errors.New("temporary failure")},
 	}
 	s.gameDataSource = source
@@ -53,14 +53,14 @@ func TestGameDataCacheReadyDeepCopyAndStaleLastGood(t *testing.T) {
 	first.Actors[0].Name = "mutated"
 	*first.Actors[0].Active = false
 	second := s.GameData().Actors[0]
-	if second.Name != "Hunter" || second.Active == nil || !*second.Active {
+	if second.Name != "Player One" || second.Active == nil || !*second.Active {
 		t.Fatalf("cache projection was mutable through returned actor: %#v", second)
 	}
 	if err := s.pollGameData(context.Background()); err == nil {
 		t.Fatal("expected transient error")
 	}
 	stale := s.GameData()
-	if stale.State != GameDataStale || stale.Actors[0].Name != "Hunter" || stale.CapturedAt != first.CapturedAt {
+	if stale.State != GameDataStale || stale.Actors[0].Name != "Player One" || stale.CapturedAt != first.CapturedAt {
 		t.Fatalf("stale cache did not retain last good: %#v", stale)
 	}
 	if stale.Diagnostics.LastAcceptedActorCount != 1 || stale.Diagnostics.LastErrorCategory != GameDataErrorUnknown {
@@ -113,7 +113,7 @@ func TestGameDataDisabledByDefault(t *testing.T) {
 func TestGameDataExpiresExactActorsServerSide(t *testing.T) {
 	s, _, _ := testService(t, palworld.NewClient("", "", ""))
 	s.ConfigureGameData(true, 30*time.Second)
-	s.gameDataSource = &fakeGameDataSource{snapshots: []palworld.GameDataSnapshot{{ActorData: []palworld.GameDataActor{{Type: "Character", UnitType: "Player", NickName: "Hunter"}}}}}
+	s.gameDataSource = &fakeGameDataSource{snapshots: []palworld.GameDataSnapshot{{ActorData: []palworld.GameDataActor{{Type: "Character", UnitType: "Player", NickName: "Player One"}}}}}
 	if err := s.pollGameData(context.Background()); err != nil {
 		t.Fatal(err)
 	}
@@ -131,7 +131,7 @@ func TestGameDataCollapsedSnapshotRequiresConfirmation(t *testing.T) {
 	for i := range large {
 		large[i] = palworld.GameDataActor{Type: "Character", UnitType: "WildPal"}
 	}
-	small := palworld.GameDataSnapshot{ActorData: []palworld.GameDataActor{{Type: "Character", UnitType: "Player", NickName: "Hunter"}}}
+	small := palworld.GameDataSnapshot{ActorData: []palworld.GameDataActor{{Type: "Character", UnitType: "Player", NickName: "Player One"}}}
 	s, _, _ := testService(t, palworld.NewClient("", "", ""))
 	s.ConfigureGameData(true, 30*time.Second)
 	s.gameDataSource = &fakeGameDataSource{snapshots: []palworld.GameDataSnapshot{{ActorData: large}, small, small}}
@@ -248,9 +248,9 @@ func TestGameDataProjectionIsBoundedAndPrioritizesPlayers(t *testing.T) {
 	for i := range raw {
 		raw[i] = palworld.GameDataActor{Type: "Character", UnitType: "BaseCampPal", Class: "SheepBall"}
 	}
-	raw[len(raw)-1] = palworld.GameDataActor{Type: "Character", UnitType: "Player", NickName: "Hunter"}
+	raw[len(raw)-1] = palworld.GameDataActor{Type: "Character", UnitType: "Player", NickName: "Player One"}
 	counts, actors, truncated := projectGameData(raw)
-	if !truncated || len(actors) != maxCachedLiveActors || counts.Players != 1 || actors[0].Kind != "Player" || actors[0].Name != "Hunter" {
+	if !truncated || len(actors) != maxCachedLiveActors || counts.Players != 1 || actors[0].Kind != "Player" || actors[0].Name != "Player One" {
 		t.Fatalf("projection counts=%#v len=%d truncated=%v first=%#v", counts, len(actors), truncated, actors[0])
 	}
 }
@@ -265,13 +265,13 @@ func TestGameDataProjectionRejectsRecognizedUnitOnUnknownActorType(t *testing.T)
 func TestGameDataProjectionNormalizesBossAndActivity(t *testing.T) {
 	counts, actors, truncated := projectGameData([]palworld.GameDataActor{{
 		Type: "Character", UnitType: "BaseCampPal", Class: "/Game/Pal/BOSS_Mammorest.BOSS_Mammorest_C",
-		TrainerNickName: "  Hunter\nAdmin\x00 ", HP: 50, MaxHP: 100, AIAction: "TransportItem", IsActive: "true",
+		TrainerNickName: "  Player One\nAdmin\x00 ", HP: 50, MaxHP: 100, AIAction: "TransportItem", IsActive: "true",
 	}})
 	if truncated || counts.BasePals != 1 || len(actors) != 1 {
 		t.Fatalf("projection = %#v %#v truncated=%v", counts, actors, truncated)
 	}
 	got := actors[0]
-	if got.CharacterID != "Mammorest" || !got.IsBoss || got.TrainerName != "Hunter Admin" || got.Activity != "transporting" || got.HPPercent == nil || *got.HPPercent != 50 {
+	if got.CharacterID != "Mammorest" || !got.IsBoss || got.TrainerName != "Player One Admin" || got.Activity != "transporting" || got.HPPercent == nil || *got.HPPercent != 50 {
 		t.Fatalf("actor = %#v", got)
 	}
 }

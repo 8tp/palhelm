@@ -127,8 +127,8 @@ func TestFullRouterScopeEnumerationBearerConfersNothingOutsideGroup(t *testing.T
 
 	// Sanity: the enumeration actually reached the integration group (guards against a walk
 	// that silently skipped the mount, which would make the GET-only assertions vacuous).
-	if len(integrationSeen) != 9 {
-		t.Fatalf("expected exactly 9 enumerated integration routes, walked %d: %v", len(integrationSeen), integrationSeen)
+	if len(integrationSeen) != 10 {
+		t.Fatalf("expected exactly 10 enumerated integration routes, walked %d: %v", len(integrationSeen), integrationSeen)
 	}
 }
 

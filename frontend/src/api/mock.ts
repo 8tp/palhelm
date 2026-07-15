@@ -729,16 +729,21 @@ export async function getWorldSnapshot(): Promise<LiveWorldSnapshot> {
     fps: 57,
     fpsAvg: 55.4,
     counts: { players: online.length, partyPals: online.length * 2, basePals: 18, wildPals: 84, npcs: 11, palBoxes: 2, unknown: 0 },
-    actors: online.map((player) => ({
-      kind: "Player",
-      name: player.name,
-      guildName: player.guildName ?? undefined,
-      level: player.level,
-      activity: "idle",
-      active: true,
-      location: { x: player.location!.x, y: player.location!.y, z: 0 },
-    })),
+    activity: { working: 9, transporting: 2, eating: 1, sleeping: 2, idle: 2, inactive: 1, combat: 0, incapacitated: 1, moving: 0, unknown: 0 },
+    actors: [
+      ...online.map((player) => ({
+        kind: "Player",
+        name: player.name,
+        guildName: player.guildName ?? undefined,
+        level: player.level,
+        activity: "idle" as const,
+        active: true,
+        location: { x: player.location!.x, y: player.location!.y, z: 0 },
+      })),
+      { kind: "BaseCampPal", characterId: "Anubis", name: "Anubis", level: 35, hpPercent: 88, active: true, activity: "working", linked: true, instanceId: "mock-pal-1", baseId: guilds[0]?.bases[0]?.id, ownerName: players[0]?.name, location: { x: guilds[0]?.bases[0]?.location.x ?? 0, y: guilds[0]?.bases[0]?.location.y ?? 0, z: 0 } },
+    ],
     truncated: false,
+    diagnostics: { lastRequestDurationMs: 184, lastAcceptedActorCount: 118, lastErrorCategory: "none", linkedBasePals: 18, unresolvedBasePals: 0, linkLookupFailed: false, scheduledDelayMs: 30000, nextAttemptAt: new Date(Date.now() + 18_000).toISOString() },
   };
 }
 

@@ -88,12 +88,16 @@ type Service struct {
 	gameDataSourceTime                      string
 	gameDataFPS, gameDataFPSAvg             float64
 	gameDataCounts                          GameDataCounts
+	gameDataActivity                        GameDataActivityCounts
 	gameDataActors                          []LiveWorldActor
 	gameDataTruncated                       bool
 	gameDataCollapsePending                 bool
 	gameDataInFlight                        atomic.Bool
 	gameDataLastRequestDuration             time.Duration
 	gameDataLastAcceptedActorCount          int
+	gameDataLinkedBasePals                  int
+	gameDataUnresolvedBasePals              int
+	gameDataLinkLookupFailed                bool
 	gameDataLastErrorCategory               GameDataErrorCategory
 	gameDataScheduledDelay                  time.Duration
 	gameDataNextAttemptAt                   time.Time

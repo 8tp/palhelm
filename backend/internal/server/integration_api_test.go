@@ -70,7 +70,7 @@ func TestIntegrationEventsStrictPublicProjection(t *testing.T) {
 	base := time.Date(2026, 7, 11, 12, 0, 0, 0, time.UTC)
 	events := []store.Event{
 		{At: base.Add(time.Second), Kind: "join", Message: "Hunter\nAdmin joined", Meta: map[string]any{"uid": "PRIVATE-UID"}},
-		{At: base.Add(2 * time.Second), Kind: "leave", Message: "Ryfyshy left", Meta: map[string]any{"steamId": "PRIVATE-STEAM"}},
+		{At: base.Add(2 * time.Second), Kind: "leave", Message: "Player Two left", Meta: map[string]any{"steamId": "PRIVATE-STEAM"}},
 		{At: base.Add(3 * time.Second), Kind: "backup", Message: "backup /private/world.zip completed", Meta: map[string]any{"path": "/private/world.zip"}},
 		{At: base.Add(4 * time.Second), Kind: "system", Message: "Palworld REST API is unreachable", Meta: map[string]any{"detail": "PRIVATE-SYSTEM"}},
 		{At: base.Add(5 * time.Second), Kind: "system", Message: "ran private repair command", Meta: map[string]any{"secret": "PRIVATE-SECRET"}},
@@ -100,7 +100,7 @@ func TestIntegrationEventsStrictPublicProjection(t *testing.T) {
 	want := []struct{ kind, message string }{
 		{"system", "Palworld REST API is unreachable"},
 		{"backup", "Backup completed"},
-		{"leave", "Ryfyshy left"},
+		{"leave", "Player Two left"},
 		{"join", "Hunter Admin joined"},
 	}
 	for i, expected := range want {

@@ -25,8 +25,8 @@ func TestGameDataDecodesDocumentedWireShapeAndDropsPrivateFields(t *testing.T) {
 		_, _ = w.Write([]byte(`{
           "Time":"2026-07-14 12:34:56","FPS":57.5,"AverageFPS":54.25,
           "ActorData":[
-            {"Type":"Character","UnitType":"Player","InstanceID":"player-id","NickName":"Hunter","userid":"steam_private","ip":"192.0.2.10","level":35,"HP":900,"MaxHP":1000,"LocationX":1,"LocationY":2,"LocationZ":3,"IsActive":"true","futureField":"ignored"},
-            {"Type":"PalBox","GuildID":"guild-id","GuildName":"BES Pals","Class":"PalBox","LocationX":4,"LocationY":5,"LocationZ":6}
+            {"Type":"Character","UnitType":"Player","InstanceID":"player-id","NickName":"Player One","userid":"steam_private","ip":"192.0.2.10","level":35,"HP":900,"MaxHP":1000,"LocationX":1,"LocationY":2,"LocationZ":3,"IsActive":"true","futureField":"ignored"},
+            {"Type":"PalBox","GuildID":"guild-id","GuildName":"Example Guild","Class":"PalBox","LocationX":4,"LocationY":5,"LocationZ":6}
           ],"futureRoot":"ignored"
         }`))
 	}))

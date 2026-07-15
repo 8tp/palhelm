@@ -44,6 +44,7 @@ func (s *Server) integrationRouter() chi.Router {
 	ir.Get("/server", s.integrationServer)
 	ir.Get("/metrics/current", s.integrationMetricsCurrent)
 	ir.Get("/world/summary", s.integrationWorldSummary)
+	ir.Get("/world/workers", s.integrationWorldWorkers)
 	ir.Get("/events", s.integrationEvents)
 	return ir
 }

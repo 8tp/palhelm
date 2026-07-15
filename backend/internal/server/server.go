@@ -181,6 +181,7 @@ func (s *Server) routes() http.Handler {
 			api.Get("/guilds", s.guilds)
 			api.Get("/world", s.world)
 			api.Get("/world/snapshot", s.worldSnapshot)
+			api.Get("/world/activity", s.worldActivityHistory)
 			api.Get("/map/dataset", s.mapDataset)
 			api.Get("/paldeck/icon/{characterId}", s.paldeckIcon)
 			api.Get("/paldeck/icon-dataset", s.paldeckIconDataset)

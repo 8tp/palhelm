@@ -1,11 +1,11 @@
 ---
 title: Endpoints
-description: All nine Integration API endpoints with example requests and responses, using fictional data.
+description: All ten Integration API endpoints with example requests and responses, using fictional data.
 sidebar:
   order: 3
 ---
 
-This page lists all nine endpoints with an example request and a realistic response for each. Every route is a `GET`, returns JSON, and uses RFC 3339 UTC timestamps. The data below is fictional. For the envelope fields (`data`, `lastParseAt`, `formatDrift`, `nextCursor`) see the [Overview](/integration-api/overview/); for cursors and rate limits see [Pagination and limits](/integration-api/pagination-and-limits/).
+This page lists all ten endpoints with an example request and a realistic response for each. Every route is a `GET`, returns JSON, and uses RFC 3339 UTC timestamps. The data below is fictional. For the envelope fields (`data`, `lastParseAt`, `formatDrift`, `nextCursor`) see the [Overview](/integration-api/overview/); for cursors and rate limits see [Pagination and limits](/integration-api/pagination-and-limits/).
 
 Every request carries the bearer key:
 
@@ -14,7 +14,7 @@ curl -H "Authorization: Bearer phk_a1b2c3d4_..." \
   https://panel.example.com/api/integration/v1/players
 ```
 
-The nine endpoints:
+The ten endpoints:
 
 | Route | Paginated | Save-derived |
 |---|---|---|
@@ -26,6 +26,7 @@ The nine endpoints:
 | `GET /server` | no | no |
 | `GET /metrics/current` | no | no |
 | `GET /world/summary` | no | no |
+| `GET /world/workers` | no | no |
 | `GET /events` | no | no |
 
 ## GET /players
@@ -355,7 +356,9 @@ links, or locations.
       "npcs": 12,
       "palBoxes": 3,
       "unknown": 0
-    }
+    },
+    "activity": {"working": 18, "transporting": 4, "eating": 2, "sleeping": 1, "idle": 3, "inactive": 0, "combat": 0, "incapacitated": 0, "moving": 3, "unknown": 0},
+    "linkedBasePals": 31
   }
 }
 ```
@@ -363,6 +366,36 @@ links, or locations.
 `state` is one of `disabled`, `pending`, `ready`, `stale`, `unsupported`,
 `unauthorized`, or `unavailable`. Consumers should display the state and `capturedAt`
 instead of presenting cached observations as current.
+
+## GET /world/workers
+
+Exact save-linked base workers from the same shared cache. Unresolved actors are omitted rather
+than guessed. Rows include save Pal identity, base ID, level, HP percentage, allowlisted activity,
+and optional owner provenance. Runtime actor IDs, locations, guild/trainer names, and raw actions
+are structurally absent.
+
+```json
+{
+  "data": {
+    "state": "ready",
+    "capturedAt": "2026-07-14T18:00:00Z",
+    "workers": [{
+      "instanceId": "0af3b1c27d9e4658a10b3f2c4d5e6f78",
+      "characterId": "Depresso",
+      "displayName": "Depresso",
+      "isBoss": false,
+      "level": 22,
+      "hpPercent": 82.5,
+      "active": true,
+      "activity": "working",
+      "baseId": "9f4e2b71",
+      "ownerUid": "c14e7a90d2b34f68b5a1c8e0f3d29b47",
+      "ownerName": "mika_o",
+      "ownerSource": "last_observed"
+    }]
+  }
+}
+```
 
 ## GET /events
 

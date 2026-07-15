@@ -99,4 +99,22 @@
   padding: 2px 7px; white-space: nowrap;
 }
 
+.marker-worker { display: flex; align-items: center; gap: 5px; }
+.marker-worker .dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--ok);
+  border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--ok); flex: none;
+}
+.marker-worker .chip, .marker-palbox .chip {
+  font-size: 10px; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--radius-ctl); padding: 2px 6px; white-space: nowrap;
+}
+.marker-worker.danger .dot { background: var(--danger); box-shadow: 0 0 0 1px var(--danger); }
+.marker-worker.danger .chip { color: var(--danger-ink); border-color: var(--danger); }
+.marker-palbox { display: flex; align-items: center; gap: 5px; }
+.marker-palbox .sq { width: 10px; height: 10px; border: 2px solid var(--accent); background: var(--surface); flex: none; }
+
+.base-health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: var(--space-2); }
+.base-health-item { display: flex; flex-direction: column; gap: 3px; padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-ctl); }
+.base-health-item span { color: var(--ink-2); font-size: var(--text-sm); }
+
 .map-empty-fill { margin: auto; }

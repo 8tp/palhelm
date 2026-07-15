@@ -228,7 +228,37 @@ export interface LiveWorldActor {
   hpPercent?: number;
   active?: boolean;
   activity: "working" | "transporting" | "eating" | "sleeping" | "idle" | "inactive" | "combat" | "incapacitated" | "moving" | "unknown";
+  instanceId?: string;
+  baseId?: string;
+  ownerUid?: string;
+  ownerName?: string;
+  ownerSource?: string;
+  linked?: boolean;
   location: { x: number; y: number; z: number };
+}
+
+export interface LiveWorldActivityCounts {
+  working: number;
+  transporting: number;
+  eating: number;
+  sleeping: number;
+  idle: number;
+  inactive: number;
+  combat: number;
+  incapacitated: number;
+  moving: number;
+  unknown: number;
+}
+
+export interface LiveWorldDiagnostics {
+  lastRequestDurationMs: number;
+  lastAcceptedActorCount: number;
+  lastErrorCategory: string;
+  linkedBasePals: number;
+  unresolvedBasePals: number;
+  linkLookupFailed: boolean;
+  scheduledDelayMs: number;
+  nextAttemptAt: string | null;
 }
 
 /** Sanitized session-only projection of the optional Palworld 1.0 game-data snapshot. */
@@ -240,8 +270,25 @@ export interface LiveWorldSnapshot {
   fps: number;
   fpsAvg: number;
   counts: LiveWorldCounts;
+  activity: LiveWorldActivityCounts;
   actors: LiveWorldActor[];
   truncated: boolean;
+  diagnostics: LiveWorldDiagnostics;
+}
+
+export interface LiveWorldActivitySample extends LiveWorldActivityCounts {
+  at: string;
+  fps: number;
+  fpsAvg: number;
+  players: number;
+  basePals: number;
+  linkedBasePals: number;
+}
+
+export interface LiveWorldActivityHistory {
+  window: "1h" | "24h" | "7d";
+  bucketSec: number;
+  samples: LiveWorldActivitySample[];
 }
 
 // ---------- Console ----------

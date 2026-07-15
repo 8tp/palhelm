@@ -1,4 +1,4 @@
-import type { LiveWorldSnapshot, Player } from "../api/types";
+import type { LiveWorldActor, LiveWorldSnapshot, Player } from "../api/types";
 
 export interface PlayerMarker {
   key: string;
@@ -11,8 +11,40 @@ export interface PlayerMarkerSelection {
   usedLive: boolean;
 }
 
+export interface LiveMapActorSelection {
+  available: boolean;
+  workers: LiveWorldActor[];
+  palBoxes: LiveWorldActor[];
+}
+
 function finiteLocation(location: { x: number; y: number } | null | undefined): location is { x: number; y: number } {
   return location !== null && location !== undefined && Number.isFinite(location.x) && Number.isFinite(location.y);
+}
+
+/**
+ * Selects exact live-only map layers from a complete current snapshot.
+ *
+ * Worker and PalBox positions have no REST/save coordinate fallback, so stale or truncated
+ * snapshots must hide the entire layer instead of presenting partial or retained positions as
+ * current. Workers additionally require the exact save-derived instance/base join.
+ */
+export function selectLiveMapActors(snapshot: LiveWorldSnapshot | undefined): LiveMapActorSelection {
+  if (snapshot?.state !== "ready" || snapshot.truncated) {
+    return { available: false, workers: [], palBoxes: [] };
+  }
+
+  return {
+    available: true,
+    workers: snapshot.actors.filter(
+      (actor) =>
+        actor.kind === "BaseCampPal" &&
+        actor.linked === true &&
+        Boolean(actor.instanceId) &&
+        Boolean(actor.baseId) &&
+        finiteLocation(actor.location),
+    ),
+    palBoxes: snapshot.actors.filter((actor) => actor.kind === "PalBox" && finiteLocation(actor.location)),
+  };
 }
 
 /**
