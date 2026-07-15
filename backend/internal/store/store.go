@@ -1127,13 +1127,17 @@ func (s *Store) WorldState(ctx context.Context) (WorldState, error) {
 // not player guilds — a solo player's auto-created organization and other non-guild
 // group types — and those decode into guild rows with no base placed and no member
 // whose save identity resolves to a known player. Requiring at least one placed base
-// AND at least one member with a confirmed player identity drops those empty records
-// so every panel consumer of the list (guilds page, players "Guilds" tab, dashboard
-// count, map bases) agrees on the same set. The guild detail path deliberately does
-// NOT apply this, so a player row can still open its guild even when the guild is
-// filtered out of the list.
+// AND at least one confirmed player drops those empty records so every panel consumer
+// of the list (guilds page, players "Guilds" tab, dashboard count, map bases) agrees
+// on the same set. Membership evidence counts from either direction: a group-roster
+// member that resolves to a known player, or a known player whose own record points
+// back at the guild — real 1.0 saves carry base-owning guilds with an empty group
+// roster whose players still reference them via guild_id. The guild detail path
+// deliberately does NOT apply this, so a player row can still open its guild even
+// when the guild is filtered out of the list.
 const guildListRealFilter = `WHERE EXISTS (SELECT 1 FROM bases b WHERE b.guild_id=guilds.id)
-	AND EXISTS (SELECT 1 FROM guild_members gm JOIN players p ON p.uid=gm.player_uid WHERE gm.guild_id=guilds.id)`
+	AND (EXISTS (SELECT 1 FROM guild_members gm JOIN players p ON p.uid=gm.player_uid WHERE gm.guild_id=guilds.id)
+		OR EXISTS (SELECT 1 FROM players p WHERE p.guild_id=guilds.id))`
 
 // GuildJSON returns API-ready guild objects including members and bases. Only guilds
 // with at least one placed base and one confirmed player member are listed; see
