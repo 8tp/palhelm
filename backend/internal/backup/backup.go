@@ -158,6 +158,10 @@ func (e *Engine) SetCachedWorldGUID(resolve func() string) { e.cachedWorldGUID =
 
 func (e *Engine) dir() string { return filepath.Join(e.dataDir, "backups") }
 
+// Dir returns the directory that holds backup archives. Callers use it to stat the
+// backing filesystem for capacity reporting; it is never exposed to API clients.
+func (e *Engine) Dir() string { return e.dir() }
+
 // Reconcile imports and prunes archive index rows to match disk.
 func (e *Engine) Reconcile(ctx context.Context) error {
 	if err := os.MkdirAll(e.dir(), 0o700); err != nil {

@@ -27,6 +27,8 @@ type Config struct {
 	MetricsInterval, PlayersInterval, SaveSyncInterval time.Duration
 	GameDataInterval, GameDataTimeout                  time.Duration
 	IntegrationRateLimit                               int
+	// SessionDays is how long a login session cookie stays valid, in whole days.
+	SessionDays int
 }
 
 // Load reads the environment and applies documented defaults.
@@ -75,6 +77,9 @@ func Load() (Config, error) {
 		return c, err
 	}
 	if c.IntegrationRateLimit, err = positiveInt("PALHELM_INTEGRATION_RATE_LIMIT", 60); err != nil {
+		return c, err
+	}
+	if c.SessionDays, err = positiveInt("PALHELM_SESSION_DAYS", 7); err != nil {
 		return c, err
 	}
 	c.SessionSecret = os.Getenv("PALHELM_SESSION_SECRET")

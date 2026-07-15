@@ -63,10 +63,10 @@ export default function Login() {
 
         <div className="login-foot">
           <span>Palhelm server administration</span>
-          <a href="https://github.com/" target="_blank" rel="noreferrer">
+          <a href="https://github.com/8tp/palhelm" target="_blank" rel="noreferrer">
             open source
           </a>
-          <a href="https://github.com/" target="_blank" rel="noreferrer">
+          <a href="https://docs.palhelm.com" target="_blank" rel="noreferrer">
             docs
           </a>
         </div>

@@ -36,6 +36,7 @@ func TestBackupsOpenAPIContract(t *testing.T) {
 		"/api/v1/backups/{id}/restore":         {"post": {"200", "400", "404", "409"}},
 		"/api/v1/backups/{id}":                 {"delete": {"200", "400", "404", "409"}},
 		"/api/v1/backups/schedule":             {"get": {"200"}, "put": {"200", "400"}},
+		"/api/v1/backups/storage":              {"get": {"200"}},
 	}
 	for path, methods := range want {
 		pathItem := object(t, paths, path)
@@ -60,10 +61,11 @@ func TestBackupsOpenAPIContract(t *testing.T) {
 	assertResponseRef(t, paths, "/api/v1/backups", "post", "201", "#/components/schemas/Backup")
 	assertResponseRef(t, paths, "/api/v1/backups/{id}/restore/dry-run", "post", "200", "#/components/schemas/BackupDiff")
 	assertResponseRef(t, paths, "/api/v1/backups/schedule", "get", "200", "#/components/schemas/BackupSchedule")
+	assertResponseRef(t, paths, "/api/v1/backups/storage", "get", "200", "#/components/schemas/BackupStorage")
 
 	components := object(t, doc, "components")
 	schemas := object(t, components, "schemas")
-	for _, name := range []string{"Backup", "BackupEntry", "BackupChange", "BackupDiff", "BackupSchedule", "BackupScheduleUpdate", "RestoreRequest"} {
+	for _, name := range []string{"Backup", "BackupEntry", "BackupChange", "BackupDiff", "BackupSchedule", "BackupScheduleUpdate", "BackupStorage", "RestoreRequest"} {
 		if _, ok := schemas[name]; !ok {
 			t.Errorf("missing backup schema %s", name)
 		}

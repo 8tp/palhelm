@@ -18,10 +18,6 @@ import { useToast } from "../../components/Toast";
 import { IconArchive, IconWarn } from "../../components/icons";
 import "./Backups.css";
 
-// Backup volume capacity isn't exposed by the API (v1); shown as a fixed reference so the
-// meter has a denominator. Revisit when the backend reports disk usage.
-const STORAGE_CAPACITY_BYTES = 50_000_000_000;
-
 const TRIGGER_TONE: Record<BackupTrigger, PillTone> = {
   scheduled: "idle",
   manual: "ok",
@@ -36,6 +32,7 @@ export default function BackupsRoute() {
 
   const backupsQuery = useQuery({ queryKey: ["backups"], queryFn: () => api.backups.list() });
   const scheduleQuery = useQuery({ queryKey: ["backups", "schedule"], queryFn: () => api.backups.schedule() });
+  const storageQuery = useQuery({ queryKey: ["backups", "storage"], queryFn: () => api.backups.storage() });
 
   const [search, setSearch] = useState("");
   const [triggerFilter, setTriggerFilter] = useState<"all" | BackupTrigger>("all");
@@ -188,19 +185,40 @@ export default function BackupsRoute() {
           <Card>
             <CardHead title="Storage" />
             <CardBody>
-              <div className="stat" style={{ padding: 0 }}>
-                <span className="label">Used</span>
-                <div className="value">
-                  {formatBytes(totalBytes)} <small>of {formatBytes(STORAGE_CAPACITY_BYTES)}</small>
-                </div>
-                <div style={{ marginTop: 10 }}>
-                  <Meter value={totalBytes} max={STORAGE_CAPACITY_BYTES} />
-                </div>
-                <div className="delta">
-                  {backups.length} snapshots kept
-                  {oldest ? ` · oldest ${formatDuration((Date.now() - new Date(oldest.createdAt).getTime()) / 1000)} ago` : ""}
-                </div>
-              </div>
+              {(() => {
+                const capacity = storageQuery.data?.totalBytes ?? null;
+                const free = storageQuery.data?.freeBytes ?? null;
+                const kept = `${backups.length} snapshots kept${
+                  oldest ? ` · oldest ${formatDuration((Date.now() - new Date(oldest.createdAt).getTime()) / 1000)} ago` : ""
+                }`;
+                return (
+                  <div className="stat" style={{ padding: 0 }}>
+                    <span className="label">Used by backups</span>
+                    <div className="value">
+                      {formatBytes(totalBytes)}
+                      {capacity !== null && <small> of {formatBytes(capacity)}</small>}
+                    </div>
+                    {capacity !== null ? (
+                      <>
+                        <div style={{ marginTop: 10 }}>
+                          <Meter value={totalBytes} max={capacity} />
+                        </div>
+                        <div className="delta">
+                          {kept}
+                          {free !== null ? ` · ${formatBytes(free)} free on volume` : ""}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="delta">
+                        {kept}
+                        <div style={{ marginTop: 4, color: "var(--ink-3)" }}>
+                          Total volume capacity isn't reported by this panel build.
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </CardBody>
           </Card>
         </aside>

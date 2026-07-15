@@ -33,12 +33,13 @@ export default function DiagnosticsRoute() {
   const snapshotQuery = useQuery({ queryKey: ["world", "snapshot"], queryFn: () => api.world.snapshot(), refetchInterval: FIFTEEN_SECONDS });
   const backupsQuery = useQuery({ queryKey: ["backups"], queryFn: () => api.backups.list(), refetchInterval: 60_000 });
   const scheduleQuery = useQuery({ queryKey: ["backups", "schedule"], queryFn: () => api.backups.schedule(), refetchInterval: 60_000 });
+  const storageQuery = useQuery({ queryKey: ["backups", "storage"], queryFn: () => api.backups.storage(), refetchInterval: 60_000, retry: false });
 
   async function refresh() {
     setRefreshing(true);
     try {
       await Promise.all([
-        healthQuery.refetch(), worldQuery.refetch(), snapshotQuery.refetch(), backupsQuery.refetch(), scheduleQuery.refetch(),
+        healthQuery.refetch(), worldQuery.refetch(), snapshotQuery.refetch(), backupsQuery.refetch(), scheduleQuery.refetch(), storageQuery.refetch(),
       ]);
     } finally {
       setRefreshing(false);
@@ -50,6 +51,7 @@ export default function DiagnosticsRoute() {
   const snapshot = snapshotQuery.data;
   const backups = backupsQuery.data;
   const schedule = scheduleQuery.data;
+  const storage = storageQuery.data;
   const latestBackup = backups?.[0];
   const totalBackupBytes = backups?.reduce((total, item) => total + item.sizeBytes, 0) ?? 0;
   const coverage = snapshot ? linkCoverage(snapshot.diagnostics.linkedBasePals, snapshot.diagnostics.unresolvedBasePals) : null;
@@ -140,8 +142,17 @@ export default function DiagnosticsRoute() {
             <CardBody flush>
               <DiagnosticRows>
                 <DiagnosticRow label="Indexed archives" value={backups ? backups.length.toLocaleString() : "Unavailable"} detail={backups ? `${formatBytes(totalBackupBytes)} indexed in total` : undefined} />
-                <UnavailableDiagnostic label="Filesystem headroom" reason="Disk capacity and host paths are not exposed by the authenticated API." />
-                <UnavailableDiagnostic label="Database schema" reason="The authenticated API does not expose SQLite internals or migration state." />
+                {storage && storage.totalBytes !== null && storage.freeBytes !== null ? (
+                  <DiagnosticRow
+                    label="Filesystem headroom"
+                    value={`${formatBytes(storage.freeBytes)} free`}
+                    tone={storage.freeBytes / storage.totalBytes < 0.1 ? "warn" : "ok"}
+                    detail={`${formatBytes(storage.totalBytes)} volume capacity · host path is not exposed`}
+                  />
+                ) : (
+                  <UnavailableDiagnostic label="Filesystem headroom" reason="This panel build does not report backup-volume disk capacity." />
+                )}
+                <UnavailableDiagnostic label="Database schema" reason="SQLite internals and migration state are not exposed by the authenticated API." />
               </DiagnosticRows>
             </CardBody>
           </QueryCardState>
