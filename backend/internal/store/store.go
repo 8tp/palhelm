@@ -571,6 +571,38 @@ type Session struct {
 	LeaveAt *time.Time `json:"leaveAt"`
 }
 
+// ObservedSession is one bounded, panel-observed connection interval. DurationSec is derived
+// at read time so an open session remains current without mutating the stored row.
+type ObservedSession struct {
+	JoinedAt    time.Time  `json:"joinedAt"`
+	LeftAt      *time.Time `json:"leftAt"`
+	DurationSec int64      `json:"durationSec"`
+}
+
+// ActivityWindow summarizes sessions overlapping a rolling window. Both duration and count are
+// clamped to that window, so a session spanning the boundary contributes only its overlap.
+type ActivityWindow struct {
+	DurationSec  int64 `json:"durationSec"`
+	SessionCount int   `json:"sessionCount"`
+}
+
+type PlayerActivityWindows struct {
+	Last24Hours ActivityWindow `json:"last24Hours"`
+	Last7Days   ActivityWindow `json:"last7Days"`
+	Last30Days  ActivityWindow `json:"last30Days"`
+}
+
+// PlayerActivity is intentionally observation-scoped. It describes only join/leave intervals
+// seen by this panel and must not be presented as lifetime Palworld playtime.
+type PlayerActivity struct {
+	Coverage                string                `json:"coverage"`
+	TrackingSince           *time.Time            `json:"trackingSince"`
+	CurrentSession          *ObservedSession      `json:"currentSession"`
+	Windows                 PlayerActivityWindows `json:"windows"`
+	RecentSessions          []ObservedSession     `json:"recentSessions"`
+	RecentSessionsTruncated bool                  `json:"recentSessionsTruncated"`
+}
+
 // Sessions lists a player's recent sessions.
 func (s *Store) Sessions(ctx context.Context, uid string) ([]Session, error) {
 	rows, err := s.db.QueryContext(ctx, "SELECT join_at,leave_at FROM sessions WHERE player_uid=? ORDER BY join_at DESC", NormalizeUID(uid))
@@ -593,6 +625,89 @@ func (s *Store) Sessions(ctx context.Context, uid string) ([]Session, error) {
 		out = append(out, v)
 	}
 	return out, rows.Err()
+}
+
+// PlayerActivity returns exact rolling aggregates plus a bounded recent sample from the existing
+// sessions table. now is supplied by the caller to make clamping deterministic and testable.
+func (s *Store) PlayerActivity(ctx context.Context, uid string, now time.Time, recentLimit int) (PlayerActivity, error) {
+	uid = NormalizeUID(uid)
+	now = now.UTC().Truncate(time.Second)
+	if recentLimit < 1 || recentLimit > 100 {
+		recentLimit = 20
+	}
+	activity := PlayerActivity{
+		Coverage:       "panel_observed_sessions",
+		RecentSessions: []ObservedSession{},
+	}
+
+	var first, current sql.NullInt64
+	err := s.db.QueryRowContext(ctx, `SELECT MIN(join_at),MAX(CASE WHEN leave_at IS NULL THEN join_at END)
+FROM sessions WHERE player_uid=? AND join_at<=?`, uid, now.Unix()).Scan(&first, &current)
+	if err != nil {
+		return PlayerActivity{}, err
+	}
+	if first.Valid {
+		value := time.Unix(first.Int64, 0).UTC()
+		activity.TrackingSince = &value
+	}
+	if current.Valid {
+		joined := time.Unix(current.Int64, 0).UTC()
+		activity.CurrentSession = &ObservedSession{
+			JoinedAt: joined, DurationSec: max(0, now.Unix()-current.Int64),
+		}
+	}
+
+	if activity.Windows.Last24Hours, err = s.playerActivityWindow(ctx, uid, now, 24*time.Hour); err != nil {
+		return PlayerActivity{}, err
+	}
+	if activity.Windows.Last7Days, err = s.playerActivityWindow(ctx, uid, now, 7*24*time.Hour); err != nil {
+		return PlayerActivity{}, err
+	}
+	if activity.Windows.Last30Days, err = s.playerActivityWindow(ctx, uid, now, 30*24*time.Hour); err != nil {
+		return PlayerActivity{}, err
+	}
+
+	rows, err := s.db.QueryContext(ctx, `SELECT join_at,leave_at FROM sessions
+WHERE player_uid=? AND join_at<=? ORDER BY join_at DESC,id DESC LIMIT ?`, uid, now.Unix(), recentLimit+1)
+	if err != nil {
+		return PlayerActivity{}, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var joined int64
+		var left sql.NullInt64
+		if err = rows.Scan(&joined, &left); err != nil {
+			return PlayerActivity{}, err
+		}
+		if len(activity.RecentSessions) == recentLimit {
+			activity.RecentSessionsTruncated = true
+			break
+		}
+		end := now.Unix()
+		var leftAt *time.Time
+		if left.Valid {
+			end = min(left.Int64, end)
+			value := time.Unix(left.Int64, 0).UTC()
+			leftAt = &value
+		}
+		activity.RecentSessions = append(activity.RecentSessions, ObservedSession{
+			JoinedAt: time.Unix(joined, 0).UTC(), LeftAt: leftAt, DurationSec: max(0, end-joined),
+		})
+	}
+	return activity, rows.Err()
+}
+
+func (s *Store) playerActivityWindow(ctx context.Context, uid string, now time.Time, window time.Duration) (ActivityWindow, error) {
+	nowUnix := now.Unix()
+	since := now.Add(-window).Unix()
+	var result ActivityWindow
+	err := s.db.QueryRowContext(ctx, `SELECT COUNT(*),COALESCE(SUM(
+MAX(0,MIN(COALESCE(leave_at,?),?)-MAX(join_at,?))
+),0) FROM sessions
+WHERE player_uid=? AND join_at<? AND COALESCE(leave_at,?)>?`,
+		nowUnix, nowUnix, since, uid, nowUnix, nowUnix, since,
+	).Scan(&result.SessionCount, &result.DurationSec)
+	return result, err
 }
 
 // Event is an audit or observed activity item.

@@ -129,12 +129,32 @@ export interface PlayerPal {
 export interface PlayerSession {
   joinedAt: string;
   leftAt: string | null;
-  durationSec: number | null;
+  durationSec: number;
+}
+
+export interface PlayerActivityWindow {
+  durationSec: number;
+  sessionCount: number;
+}
+
+export interface PlayerActivity {
+  /** This is deliberately observation-scoped, not a claim about lifetime game history. */
+  coverage: "panel_observed_sessions";
+  trackingSince: string | null;
+  currentSession: PlayerSession | null;
+  windows: {
+    last24Hours: PlayerActivityWindow;
+    last7Days: PlayerActivityWindow;
+    last30Days: PlayerActivityWindow;
+  };
+  recentSessions: PlayerSession[];
+  recentSessionsTruncated: boolean;
 }
 
 export interface PlayerDetail extends Player {
   pals: PlayerPal[];
   sessions: PlayerSession[];
+  activity: PlayerActivity;
 }
 
 export type PalOwnerSource = "save" | "personal_container" | "last_observed" | "unresolved";

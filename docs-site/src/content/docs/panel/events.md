@@ -9,19 +9,27 @@ This page covers the events and audit screen: the combined log of player activit
 
 The events screen is one timeline for three kinds of history: who joined and left, what the server did, and what operators changed through the panel. Every row has a time, a type, the event message, and the actor who caused it when one is known.
 
+The lane cards split that timeline into useful operational views:
+
+- **Player activity** contains joins and leaves.
+- **Operations & audit** contains backups, panel actions, and configuration changes.
+- **Health incidents** contains system health transitions.
+
+Select **All events** to return to the combined timeline. Each card's count is calculated from the same newest-event response; it is not a lifetime total.
+
 ## Event types
 
-Filter the log by type:
+After selecting a lane, the exact-kind menu narrows that lane by type:
 
 - **Joins** and **Leaves.** Players connecting and disconnecting.
 - **Backups.** Snapshots taken, scheduled or manual.
-- **System.** Server operations such as saves and shutdowns.
+- **System.** Health transitions such as REST reachability and save-format coverage changes.
 - **Panel audit.** Actions taken through the panel, for example a kick, a ban, or a console command. The actor column shows which panel user did it.
 - **Configuration.** Changes written to the Compose file through the [configuration editor](/panel/configuration/).
 
 ## Searching and paging
 
-Search filters the visible rows by message text. The screen scans the newest 500 events and pages the matches 25 at a time. Use Previous and Next to move between pages. The count line shows how many events match and how many were scanned.
+Search filters the selected lane and exact kind by message text. The screen fetches one bounded corpus containing at most the newest 500 events, calculates every lane count from that corpus, and pages matches 25 at a time. Use Previous and Next to move between pages. Counts are therefore coverage-qualified newest-window counts, not all-time totals.
 
 The log refreshes on its own about every 30 seconds, and new events also arrive live over the event stream.
 
@@ -31,4 +39,4 @@ The console and the moderation actions on the [players](/panel/players/) screen 
 
 ## Data sources
 
-This screen reads `GET /api/v1/events`, with an optional `kind` filter, and receives live updates over `GET /api/v1/events/stream`.
+This screen reads one newest-500 corpus from `GET /api/v1/events`, applies its lane, exact-kind, and search filters in the browser, and receives live updates over `GET /api/v1/events/stream`.

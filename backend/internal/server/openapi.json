@@ -18,7 +18,7 @@
     "/api/v1/metrics/history": {"get": {"responses": {"200": {"description": "Metric series"}}}},
     "/api/v1/players": {"get": {"responses": {"200": {"description": "Players"}}}},
     "/api/v1/pals": {"get": {"responses": {"200": {"description": "Viewer-safe, filtered and keyset-paginated server-wide Pal roster"}, "400": {"description": "Invalid bounded filter or cursor"}}}},
-    "/api/v1/players/{uid}": {"get": {"parameters": [{"name":"uid","in":"path","required":true,"schema":{"type":"string"}}], "responses": {"200": {"description": "Player detail"}}}},
+    "/api/v1/players/{uid}": {"get": {"parameters": [{"name":"uid","in":"path","required":true,"schema":{"type":"string"}}], "responses": {"200": {"description": "Player detail with save-derived Pals and bounded panel-observed activity: current session, rolling 1/7/30-day duration and count, tracking coverage, and at most 20 recent sessions"}}}},
     "/api/v1/players/{uid}/kick": {"post": {"parameters": [{"name":"uid","in":"path","required":true,"schema":{"type":"string"}}], "responses": {"200": {"description": "Player kicked"}}}},
     "/api/v1/players/{uid}/ban": {"post": {"parameters": [{"name":"uid","in":"path","required":true,"schema":{"type":"string"}}], "responses": {"200": {"description": "Player banned"}}}},
     "/api/v1/players/{uid}/unban": {"post": {"parameters": [{"name":"uid","in":"path","required":true,"schema":{"type":"string"}}], "responses": {"200": {"description": "Player unbanned"}}}},

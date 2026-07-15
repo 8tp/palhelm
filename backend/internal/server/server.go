@@ -363,7 +363,7 @@ func (s *Server) player(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	p.Online = s.poll.Online()[p.UID]
-	sessions, err := s.store.Sessions(r.Context(), p.UID)
+	activity, err := s.store.PlayerActivity(r.Context(), p.UID, time.Now(), 20)
 	if err != nil {
 		internal(w, err)
 		return
@@ -374,7 +374,10 @@ func (s *Server) player(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	v := playerView(p)
-	v["sessions"] = sessions
+	// Keep the legacy sessions field bounded and aligned with the richer activity projection.
+	// Both describe panel-observed connection intervals, not lifetime Palworld playtime.
+	v["sessions"] = activity.RecentSessions
+	v["activity"] = activity
 	v["pals"] = pals
 	writeJSON(w, 200, v)
 }

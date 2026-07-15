@@ -23,6 +23,17 @@
 }
 .kv .val { font-family: var(--font-mono); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
 
+.player-activity { border-top: 1px solid var(--line); }
+.player-activity .card-head { border-bottom: 1px solid var(--line); }
+.player-activity-current { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 10px 16px; color: var(--ink-3); font-size: var(--text-xs); }
+.player-activity-current strong { color: var(--ink-1); font-family: var(--font-mono); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
+.player-activity-windows { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line); border-block: 1px solid var(--line); }
+.player-activity-windows > div { min-width: 0; display: flex; flex-direction: column; gap: 2px; padding: 9px 10px; background: var(--surface-2); }
+.player-activity-windows span { color: var(--ink-3); font-size: 10px; text-transform: uppercase; letter-spacing: var(--track-caps); }
+.player-activity-windows strong { font-family: var(--font-mono); font-size: var(--text-sm); font-variant-numeric: tabular-nums; }
+.player-activity-windows small { color: var(--ink-3); font-size: 10px; }
+.player-activity-coverage, .player-activity-empty { margin: 0; padding: 9px 16px 11px; color: var(--ink-3); font-size: 10px; line-height: 1.45; }
+
 .pal-row { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-bottom: 1px solid var(--line); font-size: var(--text-sm); }
 .pal-row:hover { background: var(--surface-2); }
 .pal-entry:last-child .pal-row { border-bottom: 0; }

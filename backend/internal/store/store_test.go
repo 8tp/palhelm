@@ -95,6 +95,58 @@ func TestPlayerQueriesIncludeCurrentOpenSessionPlaytimeWithoutMutatingIt(t *test
 	}
 }
 
+func TestPlayerActivityClampsRollingWindowsAndCapsRecentRows(t *testing.T) {
+	s, err := Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	now := time.Date(2026, 7, 15, 18, 0, 0, 0, time.UTC)
+	uid := "activity-player"
+	storedUID := NormalizeUID(uid)
+	if err = s.UpsertLivePlayer(context.Background(), Player{UID: uid, Name: "Activity"}, now); err != nil {
+		t.Fatal(err)
+	}
+	seconds := func(d time.Duration) int64 { return now.Add(d).Unix() }
+	for _, args := range [][]any{
+		{storedUID, seconds(-40 * 24 * time.Hour), seconds(-20 * 24 * time.Hour)},
+		{storedUID, seconds(-8 * 24 * time.Hour), seconds(-6 * 24 * time.Hour)},
+		{storedUID, seconds(-12 * time.Hour), nil},
+	} {
+		if _, err = s.db.Exec("INSERT INTO sessions(player_uid,join_at,leave_at) VALUES(?,?,?)", args...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	got, err := s.PlayerActivity(context.Background(), uid, now, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Coverage != "panel_observed_sessions" || got.TrackingSince == nil || !got.TrackingSince.Equal(now.Add(-40*24*time.Hour)) {
+		t.Fatalf("coverage = %#v", got)
+	}
+	if got.CurrentSession == nil || !got.CurrentSession.JoinedAt.Equal(now.Add(-12*time.Hour)) || got.CurrentSession.DurationSec != int64(12*time.Hour/time.Second) {
+		t.Fatalf("current session = %#v", got.CurrentSession)
+	}
+	assertWindow := func(label string, window ActivityWindow, duration time.Duration, sessions int) {
+		t.Helper()
+		if window.DurationSec != int64(duration/time.Second) || window.SessionCount != sessions {
+			t.Errorf("%s = %#v, want duration=%s sessions=%d", label, window, duration, sessions)
+		}
+	}
+	assertWindow("24h", got.Windows.Last24Hours, 12*time.Hour, 1)
+	assertWindow("7d", got.Windows.Last7Days, 36*time.Hour, 2)
+	assertWindow("30d", got.Windows.Last30Days, 300*time.Hour, 3)
+	if len(got.RecentSessions) != 2 || !got.RecentSessionsTruncated || got.RecentSessions[0].LeftAt != nil || got.RecentSessions[1].DurationSec != int64(48*time.Hour/time.Second) {
+		t.Fatalf("recent sessions = %#v truncated=%v", got.RecentSessions, got.RecentSessionsTruncated)
+	}
+
+	empty, err := s.PlayerActivity(context.Background(), "no-sessions", now, 20)
+	if err != nil || empty.TrackingSince != nil || empty.CurrentSession != nil || len(empty.RecentSessions) != 0 || empty.Windows.Last30Days != (ActivityWindow{}) {
+		t.Fatalf("empty activity = %#v, %v", empty, err)
+	}
+}
+
 func TestReplaceWorldPopulatesPaldeckDisplayName(t *testing.T) {
 	s, err := Open(filepath.Join(t.TempDir(), "test.db"))
 	if err != nil {

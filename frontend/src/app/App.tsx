@@ -1,19 +1,20 @@
 import { Navigate, Route, Routes } from "react-router";
-import type { ReactNode } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import { useAuth } from "./AuthProvider";
 import { Shell } from "../components/Shell";
 import { HelmMark } from "../components/icons";
 import Login from "../routes/login/Login";
-import Dashboard from "../routes/dashboard/Dashboard";
-import PlayersRoute from "../routes/players/Players";
-import PalsRoute from "../routes/pals/Pals";
-import ConsoleRoute from "../routes/console/Console";
-import MapRoute from "../routes/map/Map";
-import BackupsRoute from "../routes/backups/Backups";
-import ConfigRoute from "../routes/config/Config";
-import SettingsRoute from "../routes/settings/Settings";
-import EventsRoute from "../routes/events/Events";
-import DiagnosticsRoute from "../routes/diagnostics/Diagnostics";
+
+const Dashboard = lazy(() => import("../routes/dashboard/Dashboard"));
+const PlayersRoute = lazy(() => import("../routes/players/Players"));
+const PalsRoute = lazy(() => import("../routes/pals/Pals"));
+const ConsoleRoute = lazy(() => import("../routes/console/Console"));
+const MapRoute = lazy(() => import("../routes/map/Map"));
+const BackupsRoute = lazy(() => import("../routes/backups/Backups"));
+const ConfigRoute = lazy(() => import("../routes/config/Config"));
+const SettingsRoute = lazy(() => import("../routes/settings/Settings"));
+const EventsRoute = lazy(() => import("../routes/events/Events"));
+const DiagnosticsRoute = lazy(() => import("../routes/diagnostics/Diagnostics"));
 
 function FullPageLoader() {
   return (
@@ -21,6 +22,19 @@ function FullPageLoader() {
       <HelmMark size={48} className="helm-mark" wheelClassName="wheel" />
     </div>
   );
+}
+
+function RouteLoader() {
+  return (
+    <div className="route-loader" role="status" aria-busy="true" aria-label="Loading page">
+      <HelmMark size={40} className="helm-mark" wheelClassName="wheel" />
+      <span>Loading page…</span>
+    </div>
+  );
+}
+
+function lazyRoute(element: ReactNode) {
+  return <Suspense fallback={<RouteLoader />}>{element}</Suspense>;
 }
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -41,16 +55,16 @@ export default function App() {
           </RequireAuth>
         }
       >
-        <Route index element={<Dashboard />} />
-        <Route path="players" element={<PlayersRoute />} />
-        <Route path="pals" element={<PalsRoute />} />
-        <Route path="map" element={<MapRoute />} />
-        <Route path="events" element={<EventsRoute />} />
-        <Route path="console" element={<ConsoleRoute />} />
-        <Route path="backups" element={<BackupsRoute />} />
-        <Route path="config" element={<ConfigRoute />} />
-        <Route path="diagnostics" element={<DiagnosticsRoute />} />
-        <Route path="settings" element={<SettingsRoute />} />
+        <Route index element={lazyRoute(<Dashboard />)} />
+        <Route path="players" element={lazyRoute(<PlayersRoute />)} />
+        <Route path="pals" element={lazyRoute(<PalsRoute />)} />
+        <Route path="map" element={lazyRoute(<MapRoute />)} />
+        <Route path="events" element={lazyRoute(<EventsRoute />)} />
+        <Route path="console" element={lazyRoute(<ConsoleRoute />)} />
+        <Route path="backups" element={lazyRoute(<BackupsRoute />)} />
+        <Route path="config" element={lazyRoute(<ConfigRoute />)} />
+        <Route path="diagnostics" element={lazyRoute(<DiagnosticsRoute />)} />
+        <Route path="settings" element={lazyRoute(<SettingsRoute />)} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
