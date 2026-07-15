@@ -484,17 +484,18 @@ func TestParseSynthetic1_0Fixture(t *testing.T) {
 	if wild.ContainerID != "" || wild.SlotIndex != -1 {
 		t.Fatalf("wild container = %q slot %d, want empty/-1", wild.ContainerID, wild.SlotIndex)
 	}
-	// Condenser rank: Grassmon carries Rank 3 (two stars), Rockmon Rank 1 (never
-	// condensed, zero stars) — both decoded from the IntProperty. Wildmon omits the
-	// property, so its Rank must stay nil (unavailable), never a defaulted 0.
+	// Condenser rank: Grassmon carries Rank 3 (two stars), Rockmon an explicit Rank 1
+	// (never condensed, zero stars). Wildmon omits the property — GVAS drops
+	// default-valued properties, so an absent Rank decodes as the default 1, never nil
+	// and never 0. (nil rank exists only in store rows written before rank decoding.)
 	if grass.Rank == nil || *grass.Rank != 3 {
 		t.Fatalf("grass rank = %v, want 3", grass.Rank)
 	}
 	if rock.Rank == nil || *rock.Rank != 1 {
 		t.Fatalf("rock rank = %v, want 1", rock.Rank)
 	}
-	if wild.Rank != nil {
-		t.Fatalf("wild rank = %v, want nil (absent Rank property)", *wild.Rank)
+	if wild.Rank == nil || *wild.Rank != 1 {
+		t.Fatalf("wild rank = %v, want default 1 (absent Rank property = never condensed)", wild.Rank)
 	}
 	if len(w.Guilds) != 1 {
 		t.Fatalf("guilds=%d, want 1", len(w.Guilds))

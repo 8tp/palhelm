@@ -84,13 +84,17 @@ func characterFromEntry(e mapEntry, stats *ParseStats) (*Player, *Pal, error) {
 		}
 	}
 	// Rank is the Pal Condenser rank (1 = never condensed, up to 5 = 4 stars).
-	// Absent on characters that predate the field, so keep it nil rather than 0 to
-	// preserve the unavailable-vs-zero distinction. Soul-enhancement Rank_HP /
+	// GVAS serialization omits properties at their default value, so an absent Rank
+	// means rank 1, not "unknown" — a real 1.0 server save carried 51 pals with an
+	// explicit Rank of 2–5 and zero with an explicit Rank of 1 across 2,330 pals.
+	// Defaulting here keeps the store/API nil state meaning exactly one thing: a row
+	// written by a parser that predates rank decoding. Soul-enhancement Rank_HP /
 	// Rank_Attack / Rank_Defence are deliberately not read here.
+	rank := 1
 	if v, ok := propertyInt(sp, "Rank"); ok {
-		rank := int(v)
-		pal.Rank = &rank
+		rank = int(v)
 	}
+	pal.Rank = &rank
 	for _, name := range []string{"Talent_HP", "Talent_Melee", "Talent_Shot", "Talent_Defense"} {
 		if v, ok := propertyInt(sp, name); ok {
 			pal.Talents[name] = int(v)

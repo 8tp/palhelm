@@ -16,7 +16,7 @@ COPY backend/ ./
 # swap the placeholder dist for the real build, then embed
 RUN rm -rf internal/webdist/dist
 COPY --from=frontend /src/frontend/dist/ internal/webdist/dist/
-ARG VERSION=0.9.0
+ARG VERSION=0.9.1
 RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /out/palhelm ./cmd/palhelm
 
 # ---- runtime ----
