@@ -7,6 +7,7 @@ import Login from "../routes/login/Login";
 
 const Dashboard = lazy(() => import("../routes/dashboard/Dashboard"));
 const PlayersRoute = lazy(() => import("../routes/players/Players"));
+const ActivityRoute = lazy(() => import("../routes/activity/Activity"));
 const PalsRoute = lazy(() => import("../routes/pals/Pals"));
 const ConsoleRoute = lazy(() => import("../routes/console/Console"));
 const MapRoute = lazy(() => import("../routes/map/Map"));
@@ -57,6 +58,7 @@ export default function App() {
       >
         <Route index element={lazyRoute(<Dashboard />)} />
         <Route path="players" element={lazyRoute(<PlayersRoute />)} />
+        <Route path="activity" element={lazyRoute(<ActivityRoute />)} />
         <Route path="pals" element={lazyRoute(<PalsRoute />)} />
         <Route path="map" element={lazyRoute(<MapRoute />)} />
         <Route path="events" element={lazyRoute(<EventsRoute />)} />

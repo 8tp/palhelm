@@ -174,6 +174,7 @@ func (s *Server) routes() http.Handler {
 			api.Get("/server/health", s.serverHealth)
 			api.Get("/metrics/current", s.metricsCurrent)
 			api.Get("/metrics/history", s.metricsHistory)
+			api.Get("/activity", s.activity)
 			api.Get("/players", s.players)
 			api.Get("/pals", s.pals)
 			api.Get("/players/{uid}", s.player)

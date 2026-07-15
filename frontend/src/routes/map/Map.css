@@ -2,6 +2,53 @@
 
 .map-card { height: 70vh; min-height: 480px; }
 
+.map-actionbar {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 9px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+.map-actionbar .map-action svg { width: 16px; height: 16px; }
+.map-search { position: relative; flex: 1 1 260px; min-width: 180px; }
+.map-search .search { width: 100%; }
+.map-search-results {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  width: min(420px, calc(100vw - 40px));
+  max-height: 280px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-pop);
+}
+.map-search-results button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 9px 11px;
+  text-align: left;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+.map-search-results button:last-child { border-bottom: 0; }
+.map-search-results button:hover { background: var(--surface-2); }
+.map-search-results button > span:last-child { display: flex; flex-direction: column; min-width: 0; }
+.map-search-results strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.map-search-results small { color: var(--ink-3); }
+.map-search-result-icon { width: 24px; height: 24px; flex: none; display: grid; place-items: center; color: var(--accent); }
+.map-search-result-icon svg { width: 18px; height: 18px; }
+.map-search-empty { display: block; padding: 11px; color: var(--ink-3); font-size: var(--text-sm); }
+
 .map-well {
   position: relative; flex: 1; min-height: 0; background: var(--bg);
   overflow: hidden; display: flex; touch-action: none; overscroll-behavior: contain;
@@ -35,8 +82,10 @@
   position: absolute; bottom: 12px; right: 12px; z-index: 2;
   font-family: var(--font-mono); font-size: var(--text-sm); color: var(--ink-2);
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-ctl);
-  padding: 6px 12px; font-variant-numeric: tabular-nums;
+  padding: 7px 12px; font-variant-numeric: tabular-nums; cursor: pointer;
 }
+.map-coord:hover:not(:disabled) { background: var(--surface-2); }
+.map-coord:disabled { cursor: default; color: var(--ink-3); }
 
 .map-zoom {
   position: absolute; bottom: 12px; left: 12px; z-index: 2;
@@ -64,6 +113,9 @@
 .marker-symbol svg { width: 17px; height: 17px; }
 .marker-player .marker-symbol {
   color: var(--accent); border-radius: 50%;
+}
+.marker.is-selected .marker-symbol {
+  box-shadow: 0 0 0 3px var(--accent-soft), 0 0 0 5px var(--accent);
 }
 .marker-player .chip {
   font-size: 11px; font-weight: 500; color: var(--ink);
@@ -109,9 +161,54 @@
 .marker-worker.danger .chip { color: var(--danger-ink); border-color: var(--danger); }
 .marker-palbox { display: flex; align-items: center; gap: 5px; }
 .marker-palbox .marker-symbol { color: var(--accent); }
+.marker-coordinate { display: flex; align-items: center; gap: 6px; z-index: 3; }
+.marker-coordinate .coordinate-crosshair {
+  width: 19px; height: 19px; position: relative; border: 2px solid var(--danger);
+  border-radius: 50%; background: color-mix(in srgb, var(--danger) 12%, var(--surface));
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--ink) 25%, transparent);
+}
+.marker-coordinate .coordinate-crosshair::before,
+.marker-coordinate .coordinate-crosshair::after {
+  content: ""; position: absolute; background: var(--danger);
+}
+.marker-coordinate .coordinate-crosshair::before { width: 1px; height: 25px; left: 7px; top: -5px; }
+.marker-coordinate .coordinate-crosshair::after { width: 25px; height: 1px; left: -5px; top: 7px; }
+.marker-coordinate .chip {
+  font: 600 11px/1.2 var(--font-mono); color: var(--danger-ink); background: var(--surface);
+  border: 1px solid var(--danger); border-radius: var(--radius-ctl); padding: 3px 6px; white-space: nowrap;
+}
 
 .base-health-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: var(--space-2); }
 .base-health-item { display: flex; flex-direction: column; gap: 3px; padding: var(--space-2); border: 1px solid var(--line); border-radius: var(--radius-ctl); }
 .base-health-item span { color: var(--ink-2); font-size: var(--text-sm); }
 
 .map-empty-fill { margin: auto; }
+
+@media (max-width: 900px) {
+  .map-card { height: 75dvh; min-height: 560px; }
+  .map-actionbar { flex-wrap: wrap; }
+  .map-search { flex-basis: 100%; }
+  .map-action { flex: 1 1 auto; justify-content: center; }
+}
+
+@media (max-width: 600px) {
+  .map-card { height: 78dvh; min-height: 600px; }
+  .map-actionbar { padding: 8px; gap: 6px; }
+  .map-action { min-height: 40px; padding-inline: 9px; font-size: var(--text-sm); }
+  .map-toggles {
+    flex-wrap: nowrap;
+    max-width: calc(100% - 16px);
+    left: 8px;
+    top: 8px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    padding-bottom: 3px;
+  }
+  .map-layer-toggles { top: 48px; }
+  .map-zoom { left: 8px; bottom: 8px; flex-direction: row; }
+  .map-zoom button { width: 44px; height: 44px; }
+  .map-zoom button + button { border-top: 0; border-left: 1px solid var(--line); }
+  .map-coord { left: 8px; right: 8px; bottom: 60px; min-height: 40px; text-align: center; }
+  .marker-player .chip, .marker-base .chip { max-width: 125px; overflow: hidden; text-overflow: ellipsis; }
+}

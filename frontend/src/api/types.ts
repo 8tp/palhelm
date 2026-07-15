@@ -157,6 +157,55 @@ export interface PlayerDetail extends Player {
   activity: PlayerActivity;
 }
 
+export type ServerActivityWindow = "24h" | "7d" | "30d";
+
+export interface ActivityConcurrencyBucket {
+  at: string;
+  peakPlayers: number;
+  averagePlayers: number;
+}
+
+export interface ActivityPlayerRank {
+  uid: string;
+  name: string;
+  guildId: string;
+  guildName: string;
+  durationSec: number;
+  sessionCount: number;
+  currentSession: boolean;
+  /** First observed by this panel inside the selected window, not necessarily new to Palworld. */
+  firstObserved: boolean;
+}
+
+export interface ActivityGuildRank {
+  guildId: string;
+  guildName: string;
+  durationSec: number;
+  sessionCount: number;
+  activePlayers: number;
+}
+
+export interface ServerActivity {
+  coverage: "panel_observed_sessions";
+  trackingSince: string | null;
+  window: ServerActivityWindow;
+  since: string;
+  through: string;
+  bucketSec: number;
+  analysisTruncated: boolean;
+  activePlayers: number;
+  newPlayers: number;
+  returningPlayers: number;
+  peakConcurrency: number;
+  peakAt: string | null;
+  concurrency: ActivityConcurrencyBucket[];
+  players: ActivityPlayerRank[];
+  guilds: ActivityGuildRank[];
+  guildAttribution: "current_player_guild";
+  unattributedPlayers: number;
+  unattributedDurationSec: number;
+}
+
 export type PalOwnerSource = "save" | "personal_container" | "last_observed" | "unresolved";
 export type PalPlacement = "party" | "box" | "base" | "unknown";
 export type PalSpecimenFilter = "standard" | "alpha" | "lucky" | "boss";

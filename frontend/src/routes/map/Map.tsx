@@ -5,6 +5,7 @@ import type { MapDataset, MapDatasetLayer } from "../../api/types";
 import {
   layerMapToWorld,
   MAP_SIZE,
+  gameToWorld,
   mapToWorld,
   worldInBounds,
   worldToGame,
@@ -15,13 +16,26 @@ import {
 } from "../../app/mapTransform";
 import { formatRelativeToNow, formatWorldGuid } from "../../app/format";
 import { tileZoomForScale } from "../../app/mapTiles";
-import { addContainedMapWheelListener, DEFAULT_MAP_LAYERS, wheelZoomFactor, zoomMapView } from "../../app/mapInteraction";
+import {
+  addContainedMapWheelListener,
+  buildSharedMapURL,
+  centerMapPoint,
+  DEFAULT_MAP_LAYERS,
+  filterMapSearchTargets,
+  fitMapPoints,
+  parseSharedMapCoordinates,
+  wheelZoomFactor,
+  zoomMapView,
+  type MapSearchTarget,
+} from "../../app/mapInteraction";
 import { selectLiveMapActors, selectPlayerMarkers } from "../../app/liveWorld";
 import { Card, CardBody, CardHead } from "../../components/Card";
 import { EmptyState } from "../../components/EmptyState";
 import { ToggleChip } from "../../components/ToggleChip";
 import { CodeWell } from "../../components/CodeWell";
 import { Tooltip } from "../../components/Tooltip";
+import { SearchField } from "../../components/Field";
+import { useToast } from "../../components/Toast";
 import {
   IconFitView,
   IconMapBase,
@@ -111,13 +125,25 @@ interface View {
 }
 
 export default function MapRoute() {
+  const toast = useToast();
+  const initialShared = useRef(
+    typeof window === "undefined" ? null : parseSharedMapCoordinates(window.location.search),
+  );
+  const sharedFocusApplied = useRef(false);
   const [layers, setLayers] = useState<Record<string, boolean>>(() => ({ ...DEFAULT_MAP_LAYERS }));
   const [tileState, setTileState] = useState<TileState>("checking");
   const [view, setView] = useState<View | null>(null);
   const [cursorGame, setCursorGame] = useState<{ x: number; y: number } | null>(null);
-  const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
+  const [pinnedGame, setPinnedGame] = useState<{ x: number; y: number } | null>(() => {
+    const shared = initialShared.current;
+    return shared ? { x: shared.x, y: shared.y } : null;
+  });
+  const [mapSearch, setMapSearch] = useState("");
+  const [searchExpanded, setSearchExpanded] = useState(false);
+  const [selectedTargetKey, setSelectedTargetKey] = useState<string | null>(null);
+  const [activeLayerId, setActiveLayerId] = useState<string | null>(() => initialShared.current?.layerId ?? null);
   const wellRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{ startX: number; startY: number; tx: number; ty: number } | null>(null);
+  const dragRef = useRef<{ startX: number; startY: number; tx: number; ty: number; moved: boolean } | null>(null);
 
   const serverQuery = useQuery({ queryKey: ["server"], queryFn: () => api.server.get() });
   const healthQuery = useQuery({ queryKey: ["server", "health"], queryFn: () => api.server.health() });
@@ -186,11 +212,13 @@ export default function MapRoute() {
     }
   }, [tileState, view, fitView]);
 
-  const scaleBounds = useCallback((): { min: number; max: number } => {
+  const scaleBoundsFor = useCallback((layer: ResolvedLayer): { min: number; max: number } => {
     const el = wellRef.current;
-    const min = el ? (Math.min(el.clientWidth, el.clientHeight) / MAP_SIZE) * Math.pow(2, activeLayer.minZoom) : 1;
-    return { min, max: min * Math.pow(2, activeLayer.maxZoom) };
-  }, [activeLayer.minZoom, activeLayer.maxZoom]);
+    const min = el ? (Math.min(el.clientWidth, el.clientHeight) / MAP_SIZE) * Math.pow(2, layer.minZoom) : 1;
+    return { min, max: min * Math.pow(2, layer.maxZoom) };
+  }, []);
+
+  const scaleBounds = useCallback(() => scaleBoundsFor(activeLayer), [activeLayer, scaleBoundsFor]);
 
   const zoomAt = useCallback((factor: number, cx?: number, cy?: number) => {
     setView((v) => {
@@ -217,32 +245,44 @@ export default function MapRoute() {
     });
   }, [tileState, zoomAt]);
 
+  const gameAtClient = useCallback((clientX: number, clientY: number) => {
+    const el = wellRef.current;
+    if (!el || !view) return null;
+    const rect = el.getBoundingClientRect();
+    const mapX = (clientX - rect.left - view.tx) / view.scale;
+    const mapY = (clientY - rect.top - view.ty) / view.scale;
+    if (mapX < 0 || mapY < 0 || mapX > MAP_SIZE || mapY > MAP_SIZE) return null;
+    const world = layerMapToWorldFor(activeLayer, mapX, mapY);
+    return worldToGame(world.x, world.y);
+  }, [activeLayer, view]);
+
   function onPointerDown(e: React.PointerEvent) {
     if (!view) return;
     if ((e.target as Element).closest("button, a, input, select, textarea")) return;
     (e.target as Element).setPointerCapture?.(e.pointerId);
-    dragRef.current = { startX: e.clientX, startY: e.clientY, tx: view.tx, ty: view.ty };
+    dragRef.current = { startX: e.clientX, startY: e.clientY, tx: view.tx, ty: view.ty, moved: false };
   }
   function onPointerMove(e: React.PointerEvent) {
-    const el = wellRef.current;
-    if (el && view) {
-      const rect = el.getBoundingClientRect();
-      const mx = (e.clientX - rect.left - view.tx) / view.scale;
-      const my = (e.clientY - rect.top - view.ty) / view.scale;
-      if (mx >= 0 && my >= 0 && mx <= MAP_SIZE && my <= MAP_SIZE) {
-        // Cursor readout is always Palworld's own in-game display coordinate (tile-imagery
-        // independent), reached by inverting whichever transform placed this pixel — legacy or
-        // per-layer — into UE world cm and then applying the fixed world->game-display formula.
-        const w = layerMapToWorldFor(activeLayer, mx, my);
-        setCursorGame(worldToGame(w.x, w.y));
-      }
-    }
+    const game = gameAtClient(e.clientX, e.clientY);
+    if (game) setCursorGame(game);
     const d = dragRef.current;
     if (d) {
+      if (Math.abs(e.clientX - d.startX) > 4 || Math.abs(e.clientY - d.startY) > 4) d.moved = true;
       setView((v) => (v ? { ...v, tx: d.tx + (e.clientX - d.startX), ty: d.ty + (e.clientY - d.startY) } : v));
     }
   }
-  function onPointerUp() {
+  function onPointerUp(e: React.PointerEvent) {
+    const d = dragRef.current;
+    if (d && !d.moved) {
+      const game = gameAtClient(e.clientX, e.clientY);
+      if (game) {
+        setPinnedGame(game);
+        setCursorGame(game);
+      }
+    }
+    dragRef.current = null;
+  }
+  function cancelPointer() {
     dragRef.current = null;
   }
   // Tile zoom level for the current scale: enough resolution that one tile pixel ≥ one screen pixel.
@@ -277,6 +317,91 @@ export default function MapRoute() {
     }));
   }, [workers, bases]);
 
+  const searchTargets = useMemo<MapSearchTarget[]>(() => [
+    ...playerMarkers.map((player) => ({
+      key: `player:${player.key}`,
+      kind: "player" as const,
+      label: player.name,
+      detail: "Online player",
+      location: player.location,
+    })),
+    ...bases.map((base) => {
+      const game = worldToGame(base.location.x, base.location.y);
+      return {
+        key: `base:${base.id}`,
+        kind: "base" as const,
+        label: base.guildName,
+        detail: `Base · ${game.x}, ${game.y}`,
+        location: base.location,
+      };
+    }),
+  ], [playerMarkers, bases]);
+  const searchResults = useMemo(() => filterMapSearchTargets(searchTargets, mapSearch), [searchTargets, mapSearch]);
+  const selectedTarget = searchTargets.find((target) => target.key === selectedTargetKey) ?? null;
+
+  const focusWorldLocation = useCallback((
+    location: { x: number; y: number },
+    kind?: "player" | "base",
+    key?: string,
+    requestedLayer?: ResolvedLayer,
+  ) => {
+    const el = wellRef.current;
+    if (!el) return;
+    const layer = requestedLayer && onLayer(requestedLayer, location.x, location.y)
+      ? requestedLayer
+      : onLayer(activeLayer, location.x, location.y)
+        ? activeLayer
+        : availableLayers.find((candidate) => onLayer(candidate, location.x, location.y));
+    if (!layer) return;
+    const bounds = scaleBoundsFor(layer);
+    const currentScale = layer.id === activeLayer.id ? view?.scale ?? bounds.min : bounds.min;
+    const point = layerWorldToMap(layer, location.x, location.y);
+    setActiveLayerId(layer.id);
+    setView(centerMapPoint(
+      point,
+      { width: el.clientWidth, height: el.clientHeight },
+      Math.max(currentScale, bounds.min * 3),
+      bounds,
+    ));
+    if (kind) setLayers((current) => ({ ...current, [kind === "player" ? "Players" : "Bases"]: true }));
+    if (key) setSelectedTargetKey(key);
+    setPinnedGame(worldToGame(location.x, location.y));
+  }, [activeLayer, availableLayers, scaleBoundsFor, view?.scale]);
+
+  function focusTarget(target: MapSearchTarget) {
+    focusWorldLocation(target.location, target.kind, target.key);
+    setMapSearch(target.label);
+    setSearchExpanded(false);
+  }
+
+  function fitLocations(kind: "player" | "base") {
+    const locations = kind === "player"
+      ? playerMarkers.map((player) => player.location)
+      : bases.map((base) => base.location);
+    const points = locations
+      .filter((location) => onLayer(activeLayer, location.x, location.y))
+      .map((location) => layerWorldToMap(activeLayer, location.x, location.y));
+    const el = wellRef.current;
+    if (!el) return;
+    const next = fitMapPoints(points, { width: el.clientWidth, height: el.clientHeight }, scaleBoundsFor(activeLayer));
+    if (next) setView(next);
+    setLayers((current) => ({ ...current, [kind === "player" ? "Players" : "Bases"]: true }));
+  }
+
+  async function copyCoordinateLink() {
+    const coordinates = pinnedGame ?? cursorGame;
+    if (!coordinates || typeof window === "undefined") return;
+    const url = buildSharedMapURL(window.location.href, coordinates, activeLayer.id);
+    window.history.replaceState(null, "", url);
+    try {
+      if (!navigator.clipboard) throw new Error("clipboard unavailable");
+      await navigator.clipboard.writeText(url);
+      toast.push(`Map link copied for ${coordinates.x}, ${coordinates.y}.`, "ok");
+    } catch {
+      toast.push("Coordinates were added to the address bar; copy the link from your browser.");
+    }
+  }
+
   const toScreen = useCallback(
     (mapX: number, mapY: number) => {
       if (!view) return { x: 0, y: 0 };
@@ -286,6 +411,28 @@ export default function MapRoute() {
   );
 
   const hasMap = tileState === "tiles" || tileState === "mockgrid";
+
+  useEffect(() => {
+    const shared = initialShared.current;
+    if (!shared || sharedFocusApplied.current || !hasMap || !view) return;
+    const location = gameToWorld(shared.x, shared.y);
+    const requestedLayer = shared.layerId
+      ? availableLayers.find((layer) => layer.id === shared.layerId)
+      : undefined;
+    focusWorldLocation(location, undefined, undefined, requestedLayer);
+    sharedFocusApplied.current = true;
+  }, [availableLayers, focusWorldLocation, hasMap, view]);
+
+  const activePlayerCount = playerMarkers.filter((player) => onLayer(activeLayer, player.location.x, player.location.y)).length;
+  const activeBaseCount = bases.filter((base) => onLayer(activeLayer, base.location.x, base.location.y)).length;
+  const shareCoordinates = pinnedGame ?? cursorGame;
+  const pinnedWorld = pinnedGame ? gameToWorld(pinnedGame.x, pinnedGame.y) : null;
+  const pinnedScreen = pinnedWorld && onLayer(activeLayer, pinnedWorld.x, pinnedWorld.y)
+    ? (() => {
+        const point = layerWorldToMap(activeLayer, pinnedWorld.x, pinnedWorld.y);
+        return toScreen(point.x, point.y);
+      })()
+    : null;
 
   return (
     <main className="content">
@@ -305,6 +452,61 @@ export default function MapRoute() {
           ) : null}
         </CardHead>
 
+        <div className="map-actionbar">
+          <form
+            className="map-search"
+            role="search"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const first = searchResults[0];
+              if (first) focusTarget(first);
+            }}
+            onBlur={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setSearchExpanded(false);
+            }}
+          >
+            <SearchField
+              value={mapSearch}
+              onChange={(event) => {
+                setMapSearch(event.target.value);
+                setSearchExpanded(true);
+              }}
+              onFocus={() => setSearchExpanded(true)}
+              placeholder="Search online players or bases…"
+              aria-label="Search online players or bases"
+              aria-expanded={searchExpanded && mapSearch.trim().length > 0}
+              aria-controls="map-search-results"
+              autoComplete="off"
+            />
+            {searchExpanded && mapSearch.trim() && (
+              <div className="map-search-results" id="map-search-results">
+                {searchResults.length === 0 ? (
+                  <span className="map-search-empty">No matching online player or base</span>
+                ) : searchResults.map((target) => (
+                  <button type="button" key={target.key} onClick={() => focusTarget(target)}>
+                    <span className="map-search-result-icon">
+                      {target.kind === "player" ? <IconMapPlayer /> : <IconMapBase />}
+                    </span>
+                    <span><strong>{target.label}</strong><small>{target.detail}</small></span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </form>
+          <button type="button" className="btn btn-sm map-action" disabled={!selectedTarget} onClick={() => selectedTarget && focusTarget(selectedTarget)}>
+            <IconFitView /> Focus selected
+          </button>
+          <button type="button" className="btn btn-sm map-action" disabled={activePlayerCount === 0} onClick={() => fitLocations("player")}>
+            <IconMapPlayer /> Fit online ({activePlayerCount})
+          </button>
+          <button type="button" className="btn btn-sm map-action" disabled={activeBaseCount === 0} onClick={() => fitLocations("base")}>
+            <IconMapBase /> Fit bases ({activeBaseCount})
+          </button>
+          <button type="button" className="btn btn-sm map-action" disabled={!shareCoordinates} onClick={copyCoordinateLink}>
+            Copy coordinate link
+          </button>
+        </div>
+
         <div
           ref={wellRef}
           className={`map-well${hasMap ? " pannable" : ""}`}
@@ -312,7 +514,8 @@ export default function MapRoute() {
           onPointerDown={hasMap ? onPointerDown : undefined}
           onPointerMove={hasMap ? onPointerMove : undefined}
           onPointerUp={hasMap ? onPointerUp : undefined}
-          onPointerLeave={hasMap ? onPointerUp : undefined}
+          onPointerCancel={hasMap ? cancelPointer : undefined}
+          onPointerLeave={hasMap ? cancelPointer : undefined}
         >
           {hasMap && (
             <div className="map-toggles" role="group" aria-label="Map layers">
@@ -403,7 +606,7 @@ export default function MapRoute() {
                     const m = layerWorldToMap(activeLayer, b.location.x, b.location.y);
                     const s = toScreen(m.x, m.y);
                     return (
-                      <div key={b.id} className="marker marker-base" style={{ left: s.x, top: s.y }}>
+                      <div key={b.id} className={`marker marker-base${selectedTargetKey === `base:${b.id}` ? " is-selected" : ""}`} style={{ left: s.x, top: s.y }}>
                         <span className="marker-symbol"><IconMapBase /></span>
                         <span className="chip">{b.guildName}</span>
                       </div>
@@ -416,7 +619,7 @@ export default function MapRoute() {
                     const m = layerWorldToMap(activeLayer, p.location.x, p.location.y);
                     const s = toScreen(m.x, m.y);
                     return (
-                      <div key={p.key} className="marker marker-player" style={{ left: s.x, top: s.y }}>
+                      <div key={p.key} className={`marker marker-player${selectedTargetKey === `player:${p.key}` ? " is-selected" : ""}`} style={{ left: s.x, top: s.y }}>
                         <span className="marker-symbol"><IconMapPlayer /></span>
                         <span className="chip">{p.name}</span>
                       </div>
@@ -450,6 +653,13 @@ export default function MapRoute() {
                     );
                   })}
 
+              {pinnedGame && pinnedScreen && (
+                <div className="marker marker-coordinate" style={{ left: pinnedScreen.x, top: pinnedScreen.y }}>
+                  <span className="coordinate-crosshair" aria-hidden="true" />
+                  <span className="chip">{pinnedGame.x}, {pinnedGame.y}</span>
+                </div>
+              )}
+
               <div className="map-zoom">
                 <Tooltip label="Zoom in" side="right">
                   <button type="button" aria-label="Zoom in" onClick={() => zoomAt(1.5)}>
@@ -468,7 +678,9 @@ export default function MapRoute() {
                 </Tooltip>
               </div>
 
-              <div className="map-coord">{cursorGame ? `${cursorGame.x}, ${cursorGame.y}` : "—, —"}</div>
+              <button type="button" className="map-coord" disabled={!shareCoordinates} onClick={copyCoordinateLink}>
+                {shareCoordinates ? `${pinnedGame ? "Pinned" : "Cursor"} ${shareCoordinates.x}, ${shareCoordinates.y} · Copy link` : "Tap map to pin coordinates"}
+              </button>
             </>
           )}
         </div>

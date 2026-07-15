@@ -16,6 +16,7 @@
     "/api/v1/server/shutdown/cancel": {"post": {"responses": {"200": {"description": "Countdown cancelled"}}}},
     "/api/v1/metrics/current": {"get": {"responses": {"200": {"description": "Current metrics"}}}},
     "/api/v1/metrics/history": {"get": {"responses": {"200": {"description": "Metric series"}}}},
+    "/api/v1/activity": {"get": {"responses": {"200": {"description": "Viewer-safe panel-observed 24h/7d/30d session analytics: bounded concurrency buckets, active-player and current-guild rankings, and first-observed versus returning counts"}, "400": {"description": "Invalid window"}}}},
     "/api/v1/players": {"get": {"responses": {"200": {"description": "Players"}}}},
     "/api/v1/pals": {"get": {"responses": {"200": {"description": "Viewer-safe, filtered and keyset-paginated server-wide Pal roster"}, "400": {"description": "Invalid bounded filter or cursor"}}}},
     "/api/v1/players/{uid}": {"get": {"parameters": [{"name":"uid","in":"path","required":true,"schema":{"type":"string"}}], "responses": {"200": {"description": "Player detail with save-derived Pals and bounded panel-observed activity: current session, rolling 1/7/30-day duration and count, tracking coverage, and at most 20 recent sessions"}}}},

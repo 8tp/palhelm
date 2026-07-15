@@ -43,8 +43,9 @@ happened without reading container logs.
 
 - [x] Add current-session duration plus rolling 24-hour/7-day/30-day panel-observed
   player activity, bounded recent sessions, and explicit tracking coverage.
-- [ ] Add concurrency, peak-hours, new/returning-player, and guild-activity views
-  with explicit tracking coverage.
+- [x] Add bounded 24-hour/7-day/30-day concurrency and local peak-hour views,
+  first-observed versus returning players, active-player rankings, and current-
+  guild-attributed activity with explicit tracking coverage and truncation.
 - [x] Add a server-wide Pal explorer with search, owner provenance, party/box/base
   placement, and Alpha/Lucky/Boss and level filters.
 - [ ] Link current and historical records directly into filtered Pal explorer views.
@@ -68,8 +69,11 @@ the Discord bot instead of limiting it to player detail dialogs.
   rollback point; do not mutate the currently served dataset in place.
 - [ ] Import versioned, licensed 1.0 points of interest with provenance, validation,
   and graceful version mismatch handling.
-- [ ] Add focus-current-player, fit-online-players/bases, marker clustering, map
-  search, shareable coordinates, and mobile controls.
+- [x] Add explicit selected-online-player/base focus, fit-online-players/bases,
+  player/base search, privacy-safe shareable Palworld display coordinates, and
+  practical touch/mobile controls. Do not guess a "current player" from panel auth.
+- [ ] Add marker clustering for dense same-layer player/base views without hiding
+  exact coordinates or changing the corrected transform.
 - [x] Add contained wheel/trackpad zoom, explicit zoom and fit controls, distinct
   SVG player/base/worker/Palbox markers, and keep dense worker markers off by
   default.

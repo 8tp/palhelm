@@ -8,6 +8,7 @@ test("authenticated routes are lazy while auth and Shell stay eager", () => {
   const authenticatedModules = [
     "dashboard/Dashboard",
     "players/Players",
+    "activity/Activity",
     "pals/Pals",
     "map/Map",
     "events/Events",

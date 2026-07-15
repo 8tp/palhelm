@@ -71,6 +71,19 @@ export function IconPlayers(props: IconProps) {
   );
 }
 
+export function IconActivity(props: IconProps) {
+  return (
+    <svg {...base(props)} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 13.5V2.5M2 13.5h12" />
+      <path d="m4 10 2.5-3 2.2 1.8L12.5 4" />
+      <circle cx="4" cy="10" r=".7" fill="currentColor" stroke="none" />
+      <circle cx="6.5" cy="7" r=".7" fill="currentColor" stroke="none" />
+      <circle cx="8.7" cy="8.8" r=".7" fill="currentColor" stroke="none" />
+      <circle cx="12.5" cy="4" r=".7" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 export function IconMap(props: IconProps) {
   return (
     <svg {...base(props)} stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round">
