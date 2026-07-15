@@ -1,11 +1,11 @@
 # Palhelm Discord Bot Roadmap
 
-Last updated: 2026-07-12
+Last updated: 2026-07-15
 
 ## Product direction
 
 Palhelm is now a broad Discord companion rather than a small command add-on. The
-bot has 29 registered slash commands, a shared snapshot/history layer, scheduled
+bot has 32 registered slash commands, a shared snapshot/history layer, scheduled
 social features, Palworld 1.0 knowledge and breeding tools, and an optional
 read-only AI guide. The next releases should consolidate reliability, accuracy,
 discoverability, and deeper workflows before adding more standalone commands.
@@ -42,7 +42,8 @@ The current command surface is:
 `/status`, `/players`, `/player`, `/guilds`, `/metrics`, `/map`, `/pals`, `/box`,
 `/leaderboard`, `/compare`, `/whohas`, `/records`, `/collection`, `/dex`, `/breed`,
 `/breedpath`, `/workers`, `/team`, `/rare`, `/goal`, `/progress`, `/trends`,
-`/history`, `/ask`, `/help`, `/diagnostics`, `/backup`, `/backups`, and `/announce`.
+`/history`, `/ask`, `/help`, `/diagnostics`, `/profile`, `/profileadmin`, `/pal`,
+`/backup`, `/backups`, and `/announce`.
 
 ## Prioritized implementation plan
 
@@ -81,8 +82,9 @@ Goal: make the existing command surface easy to find and support.
   logging questions, provider bodies, credentials, or `.env` data.
 - [x] Add separate provider/thinking, deterministic-tool, and web-search stage
   timings without logging prompts or tool payloads.
-- [ ] Apply Discord `default_member_permissions` to admin commands in addition to
-  the existing runtime admin-role gate.
+- [x] Keep admin authorization on the configured `ADMIN_ROLE_ID` runtime gate.
+  Do not apply Discord's built-in Administrator default permission, which would
+  hide commands from trusted members who hold the configured custom role.
 
 Exit criteria: users can discover every command and an administrator can diagnose
 staleness, knowledge, search, or provider failures without reading sensitive logs.
@@ -102,18 +104,22 @@ Goal: answer ordinary questions quickly, cheaply, and with visible provenance.
   corpus for common questions such as meteorite uses, with web search as fallback.
 - [x] Add a dependency-free local section index and a polite, resumable MediaWiki
   API importer with revision/license/source metadata and atomic last-good writes.
-- [ ] Complete the initial text-only ingestion after a bounded API smoke test;
+- [x] Complete the initial text-only ingestion after a bounded API smoke test;
   audit excluded namespaces/templates and corpus size before enabling it live.
-- [ ] Add official 1.0 patch notes as separately attributed, version-explicit
+- [x] Add official 1.0 and 1.0.1 patch notes as separately attributed, version-explicit
   documents and tag wiki claims only when the source itself establishes a version.
-- [ ] Render deterministic bot-built citations separately from model prose so a
+- [x] Render deterministic bot-built citations separately from model prose so a
   provider cannot omit or truncate the provenance returned by retrieval tools.
 - [ ] Evaluate `x-ai/grok-4.5` against a fixed question set as an opt-in synthesis
   model; keep retrieval local and do not spend its context window on whole pages.
-- [ ] Build a 30–50 question retrieval benchmark from representative, sanitized
+- [x] Build a 30–50 question retrieval benchmark from representative, sanitized
   `/ask` questions and measure whether the relevant corpus section appears in the
   top results before adding more retrieval infrastructure.
-- [ ] If lexical retrieval misses meaningfully phrased questions, add a small
+- [x] Evaluate whether embeddings are justified before adding one. The current
+  9,974-section BM25 corpus passed 30/30 representative local retrieval cases, so
+  a paid embedding API, external vector database, and local embedding dependency
+  are intentionally not added yet. Revisit only when benchmark misses appear.
+- [ ] If lexical retrieval later misses meaningfully phrased questions, add a small
   local embedding model and combine vector similarity with exact-name/BM25
   ranking. Keep embeddings optional, generated offline, dependency-light, and
   backed by the same attributed source sections; do not introduce a paid embedding
@@ -132,7 +138,9 @@ Goal: deepen the best workflows without multiplying commands.
 
 - [x] Add requester-only `/dex` section navigation for overview, stats/work,
   combat/skills, and breeding/data coverage.
-- [ ] Add an explicitly web-backed drops/locations section with cached citations.
+- [x] Add an explicitly web-backed drops/locations section with cached citations,
+  plus a polite local CC BY-SA Cargo encounter cache for exact habitats and map
+  coordinates.
 - [x] Add requester-only previous/next controls, boundaries, expiry, and clear
   ownership scope to breeding results.
 - [x] Support button-based Pal box page navigation.
@@ -140,9 +148,11 @@ Goal: deepen the best workflows without multiplying commands.
   safe-event projection with generic backup text and allowlisted system events.
 - [x] Link the first missing `/collection` entry into exact `/dex` and `/breed`
   follow-up actions.
-- [ ] Add record-category navigation and historical record-holder changes.
-- [ ] Persist component state minimally and reject stale/foreign interactions
-  cleanly after a bot restart.
+- [x] Add record-category navigation and bounded, restart-safe historical
+  record-holder changes.
+- [ ] Persist component state minimally after a bot restart. Foreign interactions,
+  normal expiry, and post-restart stale controls now receive explicit clean
+  rejection instead of timing out; full view reconstruction remains follow-up.
 
 Exit criteria: the most common exploration flows can be completed from one command
 reply without repeatedly retyping names and options.
@@ -153,14 +163,14 @@ Goal: move from mathematically valid suggestions to actionable player plans.
 
 - [ ] Extend breeding paths beyond fewest generations: owned count, known gender,
   incubation/attempt cost, scarce-parent protection, and alternative routes.
-- [ ] Allow a desired passive/trait target when the public API exposes sufficient
+- [x] Allow a desired passive/trait target when the public API exposes sufficient
   safe data; explicitly report when inheritance feasibility is unknown.
-- [ ] Save a selected breeding plan as a `/goal` and resume it from current roster
+- [x] Save a selected breeding plan as a player-scoped `/goal` and resume it from current roster
   changes.
 - [ ] Improve combat suggestions only when safe public fields support them (IVs or
   talents, passives, active moves, and elemental matchups). Keep the existing
   heuristic visibly labeled until then.
-- [ ] Add focused tests for gender feasibility, duplicate parents, boss/variant
+- [x] Add focused tests for gender feasibility, duplicate parents, boss/variant
   normalization, raw save identifiers, and unavailable ownership.
 
 Exit criteria: recommendations explain their assumptions and never present a
@@ -170,7 +180,7 @@ base-stat heuristic as a fully optimized build.
 
 Goal: turn observations into trustworthy long-term server stories.
 
-- [ ] Prefer lifetime capture counters and instance provenance over roster deltas;
+- [x] Prefer lifetime capture counters and exact instance provenance over roster deltas;
   do not count ownership transfers as catches or gains.
 - [x] Persist globally observed Pal instance IDs in goal state so transfers,
   temporary disappearance/reappearance, and newly resolved owners cannot be
@@ -178,7 +188,7 @@ Goal: turn observations into trustworthy long-term server stories.
 - [x] Durably record holder changes for highest player level, longest playtime,
   and highest-level Pal with observed-since coverage/confidence labels and digest
   integration. Additional first-achievement categories can build on this state.
-- [ ] Add compact weekly recap cards for new species, level milestones, captures,
+- [x] Add compact weekly recap cards for new species, level milestones, captures,
   rare finds, record changes, playtime, backups, and sampled health.
 - [x] Add per-milestone visual cards for new species, first Alpha/Lucky finds,
   player levels, playtime badges, and observed records. Keep weekly multi-stat
@@ -188,11 +198,30 @@ Goal: turn observations into trustworthy long-term server stories.
   and uptime, and expose safe coverage/summary data through `/diagnostics`.
 - [x] Add a strictly redacted, bounded Integration API event-history contract,
   client support, OpenAPI/spec coverage, and adversarial leakage tests.
-- [ ] Cut `/history` over from its compatible sanitized Session fallback after the
+- [x] Cut `/history` over from its compatible sanitized Session fallback after the
   new panel contract is deliberately deployed and read-only smoke-tested.
 
 Exit criteria: historical claims distinguish exact facts from observations, and
 bot restarts neither duplicate alerts nor lose active incident state.
+
+### Phase 6 — Game Data activity and attributed exploration
+
+Goal: use the official live Game Data surface without exposing sensitive actor
+or location data through public bot replies.
+
+- [x] Add a redacted Integration `/world/workers` contract joined by exact save
+  instance identity, with guild-base grouping, owner provenance, health/activity,
+  OpenAPI coverage, and one shared bot snapshot consumer.
+- [x] Add `get_live_base_workers` for exact current-base questions and a
+  deterministic timeout fallback so provider failures do not discard live data.
+- [x] Add operator-facing panel diagnostics and bounded 30-day aggregate activity
+  samples without raw actor-location history.
+- [x] Import the Palworld Wiki `LocationEntity` Cargo table politely into a local,
+  attributed cache and expose it through `/dex`, `/map pal:`, and
+  `get_pal_locations`.
+- [ ] Add general POI overlays only after a current, redistributable 1.0 POI schema
+  is identified. Do not project wiki map coordinates onto tile pixels until the
+  coordinate transform is verified with known landmarks.
 
 ## Features to defer
 
