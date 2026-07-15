@@ -314,7 +314,7 @@ export async function getServer(): Promise<ServerInfo> {
     worldGuid: "A1B2C3D4E5F6478090ABCDEF12345678",
     state: "running",
     uptimeSec: Math.floor((Date.now() - BOOT_AT) / 1000),
-    panelVersion: "0.3.0",
+    panelVersion: "0.5.0",
   };
 }
 

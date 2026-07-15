@@ -1,4 +1,4 @@
-VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+VERSION ?= $(shell tr -d '[:space:]' < VERSION 2>/dev/null || echo dev)
 
 .PHONY: all frontend backend build docker test clean dev-backend dev-frontend
 
