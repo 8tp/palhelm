@@ -1,6 +1,6 @@
 # Palhelm Panel Roadmap
 
-Last updated: 2026-07-11
+Last updated: 2026-07-14
 
 ## Direction
 
@@ -65,6 +65,34 @@ the Discord bot instead of limiting it to player detail dialogs.
 - [ ] Add automated landmark fixtures across Palpagos and the World Tree so axis,
   offset, layer-boundary, and inverse-coordinate regressions fail in CI.
 
+### Palworld 1.0 live game-data track
+
+- [x] Document the official `/v1/api/game-data` schema, capability uncertainty,
+  privacy boundary, and the distinction between transient actors and spawn data.
+- [x] Add an opt-in, bounded, memory-only client and one shared cached poller with
+  explicit ready/stale/unsupported/unauthorized states and transient backoff.
+- [x] Add an authenticated panel snapshot projection and an aggregate-only,
+  redacted Integration API summary; IPs and platform user IDs are discarded at
+  the upstream decode boundary.
+- [x] Let the map reconcile sanitized coordinates from a complete `ready`
+  snapshot onto the authoritative REST roster by exact unique active-player
+  name, while retaining REST/save fallback for partial, stale, or ambiguous data.
+- [x] Expose session-only rollout diagnostics for request duration, accepted
+  actor count, bounded failure category, truncation, and retry schedule without
+  extending the public Integration summary.
+- [x] Verify endpoint support and coordinate semantics against a disposable or
+  explicitly approved server session before enabling it in production.
+- [x] Join `BaseCampPal.InstanceID` to save-derived Pals and WorkerDirector base
+  IDs, then add clustered live worker status to base/map views.
+- [x] Add deterministic bot tools for aggregate world health and exact-linked
+  base-worker status; keep raw locations and action strings out of Discord/AI.
+- [ ] Import a separately licensed, versioned 1.0 spawn/POI dataset. Never treat
+  loaded `WildPal` sightings as proof of a spawn zone, schedule, or catch rate.
+- [x] Add an operator diagnostics card for Game Data freshness, upstream latency,
+  actor count, exact worker-link coverage, bounded error category, and retry schedule.
+- [x] Persist 30 days of aggregate worker activity/FPS history without actor identity,
+  names, health, guilds, or locations.
+
 Exit: live markers, cursor coordinates, and points of interest agree with the
 in-game map across every installed world layer.
 
@@ -83,6 +111,9 @@ or granting an integration administrator credentials.
 
 ## Phase 4 — backup and configuration maturity
 
+- [x] Exclude the game wrapper's direct per-world `backup/` subtree from Palhelm
+  archives so scheduled backups do not recursively embed redundant restore
+  points; retain active world, player, option, and configuration files.
 - [ ] Add optional encrypted offsite replication through an operator-configured
   S3-compatible/restic/rclone adapter.
 - [ ] Verify manifests/checksums and support scheduled restore drills into a

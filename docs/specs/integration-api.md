@@ -65,7 +65,7 @@ therefore already applies to the mounted integration group. **Verified in code, 
 CSP, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, and `Permissions-Policy`
 reach every integration response with no new wiring. A test asserts this (§12).
 
-The token surface consists of exactly eight routes (§4). Everything else — `/config`,
+The token surface consists of exactly nine routes (§4). Everything else — `/config`,
 `/config/raw`, `/console/*`, `/backups/*`, `/whitelist`, `/auth/*`, the raw session
 `/api/v1/events` feed, `/events/stream`,
 `/world`, `/world/parse`, `/map-tiles/*`, `/paldeck/*` (including read-only icon serving —
@@ -226,6 +226,8 @@ argument is structural redaction, and it is sufficient.)
 | `GET /map` | `{source, gameVersion, fetchedAt, notes, layers: [{id, label, format, tileSize, minZoom, maxZoom, transform: {a,b,c,d}, bounds}]}` — dataset metadata sufficient to plot base coordinates on a client's own map. camelCase (a deliberate re-shape of the sidecar-mirroring `/api/v1/map/dataset`); the `path` field is omitted (it only serves session tile-URL construction). **No tile images** |
 | `GET /server` | `{name, description, version, state, uptimeSec}` — `worldGuid` and `panelVersion` are redacted (§6). **Data source: the poller's cached last-successful `Info` snapshot** (the poller already round-trips Palworld REST on `PALHELM_METRICS_INTERVAL`; extend it to retain the last successful `Info` result if it does not already). The handler **never** makes a per-request upstream REST call — the session `serverInfo` does, and copying that here would hand token holders up to 100 keys × 60 req/min = 6,000 upstream calls/min against the process running the game. **Unreachable shape:** when no successful snapshot exists or the poller currently reports REST unreachable, respond `200` with `state: "unreachable"` and empty-string/zero remaining fields — never a 500, never an upstream error message |
 | `GET /metrics/current` | `{fps, fpsAvg, frameTimeMs, players, maxPlayers, day, uptimeSec, baseCamps}` — field-for-field copy of `poller.CurrentMetrics` into a dedicated view struct (§4 struct rule; no identity content today, and the dedicated struct keeps it that way if `CurrentMetrics` grows panel-only fields) |
+| `GET /world/summary` | Cached optional Palworld 1.0 game-data capability/freshness, FPS, and aggregate counts for players, party/base/wild Pals, NPCs, and PalBoxes. It never triggers an upstream request and structurally omits actor names, IDs, guilds, health, actions, trainer links, and every location. |
+| `GET /world/workers` | Cached exact save-linked base workers with save Pal identity, base ID, owner provenance, HP percentage, and allowlisted activity. Unresolved actors are omitted. Runtime actor IDs, locations, guild/trainer names, and raw actions are structurally absent. |
 | `GET /events` | `[{at, kind, message}]` — bounded recent public activity (`limit` default 50, min 1, max 100). Only well-formed join/leave names, generic `Backup completed`, and the four explicitly allowlisted REST-reachability/save-drift system transitions are returned. `meta` is structurally absent; panel/config/audit events and unknown system text are discarded. The handler scans at most 500 newest store rows and does not expose a cursor or kind filter, preventing raw event categories from becoming a probing surface. |
 
 `/world` is deliberately not exposed: `formatDrift`/`skippedProps` are operator diagnostics,
@@ -244,7 +246,7 @@ echoes `err.Error()`; the integration group must not reuse it.)
 - `Cache-Control: no-store` on **every** integration response, set by group middleware. A
   per-endpoint enumeration was considered and rejected: `/players`, `/players/{uid}`, `/pals`,
   and `/guilds` are identity-bearing (names, uids, presence), and blanket no-store on the
-  remaining four (`/map`, `/server`, `/metrics/current`, `/events`) costs nothing while eliminating a
+  remaining six (`/map`, `/server`, `/metrics/current`, `/world/summary`, `/world/workers`, `/events`) costs nothing while eliminating a
   class of "new endpoint forgot the header" regressions.
 - `Cache-Control: no-store` on **every `/api/v1/integration-keys` response** as well. These
   routes live in the session `adminOnly` group, outside the integration group's middleware, and
@@ -631,7 +633,7 @@ why it closes the threat (the repo's review standard).
   over TLS at the network edge and treat keys as passwords** — bearer keys over cleartext HTTP
   are readable on-path; the panel's trusted-edge posture (ARCHITECTURE.md) is the operating
   assumption, and this sentence makes it explicit to key holders.
-- Embedded `openapi.json`: all seven integration paths + three key-management paths, with
+- Embedded `openapi.json`: all ten integration paths + three key-management paths, with
   `bearerAuth` (`type: http, scheme: bearer`) security scheme scoped to the integration paths
   only, full response schemas, and the error envelope schema referenced by 4xx responses.
   `/api/openapi.json` is served unauthenticated (server.go), so the document is public:

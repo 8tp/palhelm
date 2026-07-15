@@ -54,6 +54,8 @@ The default source exposes the complete 1.0-era roster. The script refuses to co
 
 Some Pals may have no icon at the source. Those are logged and skipped, not treated as a fatal error. Re-running the script only fills in gaps, such as previous misses or newly published Pals. Pass `--force` to re-download every icon.
 
+Palhelm resolves boss and Alpha save IDs to the base species portrait, so variants and nicknamed instances do not require duplicate files. PNG portraits may also be placed beside the WebP files for attributed supplemental IDs. The icon dataset endpoint includes those installed filenames automatically; unknown human NPC archetypes continue to use the initials fallback.
+
 An older fallback source (`--source paldb.cc`) exists if the default source is unavailable. It reads the roster with a helper command and makes an extra request per Pal to read the exact-case icon filename.
 
 ### Where Pal icons land

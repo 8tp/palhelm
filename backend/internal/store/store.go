@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/8tp/palhelm/internal/paldeck"
@@ -22,7 +23,12 @@ import (
 var migrations embed.FS
 
 // Store wraps the application's SQLite database.
-type Store struct{ db *sql.DB }
+type Store struct {
+	db *sql.DB
+
+	activityPruneMu sync.Mutex
+	activityPruned  time.Time
+}
 
 // Open opens a database, enables WAL, and applies embedded migrations.
 func Open(path string) (*Store, error) {
@@ -1133,6 +1139,107 @@ type PalWithOwner struct {
 	OwnerUID, OwnerName string
 	OwnerSource         string
 	OwnerResolved       bool
+}
+
+// LivePalIndex returns the save-derived identity and ownership rows needed to reconcile one
+// Game Data API snapshot. The caller performs an exact instance-id join; this deliberately
+// avoids location/name heuristics and loads the table only once per background poll.
+func (s *Store) LivePalIndex(ctx context.Context) (map[string]PalWithOwner, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT p.instance_id,p.character_id,p.display_name,p.level,p.is_alpha,p.is_lucky,p.base_id,p.owner_uid,COALESCE(pl.name,''),p.owner_source,pl.uid IS NOT NULL
+FROM pals p LEFT JOIN players pl ON pl.uid=p.owner_uid`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := make(map[string]PalWithOwner)
+	for rows.Next() {
+		var p PalWithOwner
+		if err = rows.Scan(&p.InstanceID, &p.CharacterID, &p.DisplayName, &p.Level, &p.IsAlpha, &p.IsLucky, &p.BaseID, &p.OwnerUID, &p.OwnerName, &p.OwnerSource, &p.OwnerResolved); err != nil {
+			return nil, err
+		}
+		out[strings.ToLower(p.InstanceID)] = p
+	}
+	return out, rows.Err()
+}
+
+// GameDataActivity is one aggregate-only live-world sample. It intentionally persists no
+// actor identifiers, names, guilds, health, or locations.
+type GameDataActivity struct {
+	At            time.Time `json:"at"`
+	FPS           float64   `json:"fps"`
+	FPSAvg        float64   `json:"fpsAvg"`
+	Players       int       `json:"players"`
+	BasePals      int       `json:"basePals"`
+	Linked        int       `json:"linkedBasePals"`
+	Working       int       `json:"working"`
+	Transporting  int       `json:"transporting"`
+	Eating        int       `json:"eating"`
+	Sleeping      int       `json:"sleeping"`
+	Idle          int       `json:"idle"`
+	Inactive      int       `json:"inactive"`
+	Combat        int       `json:"combat"`
+	Incapacitated int       `json:"incapacitated"`
+	Moving        int       `json:"moving"`
+	Unknown       int       `json:"unknown"`
+}
+
+// AddGameDataActivity records one aggregate snapshot and bounds retention to 30 days.
+func (s *Store) AddGameDataActivity(ctx context.Context, m GameDataActivity) error {
+	_, err := s.db.ExecContext(ctx, `INSERT OR REPLACE INTO game_data_activity(at,fps,fps_avg,players,base_pals,linked_base_pals,working,transporting,eating,sleeping,idle,inactive,combat,incapacitated,moving,unknown)
+VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`, m.At.Unix(), m.FPS, m.FPSAvg, m.Players, m.BasePals, m.Linked, m.Working, m.Transporting, m.Eating, m.Sleeping, m.Idle, m.Inactive, m.Combat, m.Incapacitated, m.Moving, m.Unknown)
+	if err != nil {
+		return err
+	}
+	// Retention cleanup is cheap but does not need to run on every 15–30 second
+	// poll. The first accepted sample after a process start prunes immediately;
+	// later samples prune at most hourly.
+	s.activityPruneMu.Lock()
+	prune := s.activityPruned.IsZero() || m.At.Before(s.activityPruned) || m.At.Sub(s.activityPruned) >= time.Hour
+	if prune {
+		s.activityPruned = m.At
+	}
+	s.activityPruneMu.Unlock()
+	if !prune {
+		return nil
+	}
+	_, err = s.db.ExecContext(ctx, "DELETE FROM game_data_activity WHERE at < ?", m.At.Add(-30*24*time.Hour).Unix())
+	return err
+}
+
+// GameDataActivityHistory returns the newest sample in each time bucket for
+// operator diagnostics. The hard limit bounds both database work and response
+// size even if a caller or future poll cadence is misconfigured.
+func (s *Store) GameDataActivityHistory(ctx context.Context, since time.Time, bucket time.Duration) ([]GameDataActivity, error) {
+	bucketSeconds := int64(bucket / time.Second)
+	if bucketSeconds < 1 {
+		bucketSeconds = 1
+	}
+	rows, err := s.db.QueryContext(ctx, `SELECT a.at,a.fps,a.fps_avg,a.players,a.base_pals,a.linked_base_pals,a.working,a.transporting,a.eating,a.sleeping,a.idle,a.inactive,a.combat,a.incapacitated,a.moving,a.unknown
+FROM game_data_activity a
+JOIN (
+  SELECT MAX(at) AS at
+  FROM game_data_activity
+  WHERE at >= ?
+  GROUP BY at / ?
+  ORDER BY at DESC
+  LIMIT 500
+) sampled ON sampled.at = a.at
+ORDER BY a.at`, since.Unix(), bucketSeconds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []GameDataActivity{}
+	for rows.Next() {
+		var m GameDataActivity
+		var unix int64
+		if err = rows.Scan(&unix, &m.FPS, &m.FPSAvg, &m.Players, &m.BasePals, &m.Linked, &m.Working, &m.Transporting, &m.Eating, &m.Sleeping, &m.Idle, &m.Inactive, &m.Combat, &m.Incapacitated, &m.Moving, &m.Unknown); err != nil {
+			return nil, err
+		}
+		m.At = time.Unix(unix, 0).UTC()
+		out = append(out, m)
+	}
+	return out, rows.Err()
 }
 
 // PalsTyped returns one player's save-derived pals, typed (the integration-surface

@@ -1,12 +1,12 @@
 ---
 title: Storage and migrations
-description: The single SQLite file, what its tables hold, metrics retention windows, and the eight schema migrations.
+description: The single SQLite file, what its tables hold, metrics retention windows, and the nine schema migrations.
 sidebar:
   order: 4
 ---
 
 This page covers where Palhelm keeps its data: one SQLite file, its main table areas,
-how long metrics are kept, and how the schema is versioned through eight ordered
+how long metrics are kept, and how the schema is versioned through nine ordered
 migrations.
 
 ## One SQLite file
@@ -32,6 +32,9 @@ The schema groups into a few areas:
   drift counters from the parser.
 - Operational logs. `events`, `console_log`, and `saved_commands` back the events feed,
   the console history, and saved console commands.
+- Aggregate Game Data diagnostics. `game_data_activity` stores FPS, actor counts, worker
+  activity categories, and exact-link coverage only. It never stores actor identity,
+  names, health, guilds, raw actions, or locations; samples age out after 30 days.
 - Backups and access. `backups` records each archive. `whitelist` holds allow-list
   entries. `api_keys` holds Integration API keys, stored as SHA-256 hashes, never
   plaintext. `kv` is a small key-value table that, among other things, tracks the schema
@@ -69,7 +72,7 @@ migrated: it sees a schema version above the newest migration it knows and refus
 start. To roll back past a migration, restore the pre-update copy of the data volume.
 See [Updating Palhelm](/getting-started/updating/) for the full rollback procedure.
 
-## The eight migrations
+## The nine migrations
 
 | File | Purpose |
 |---|---|
@@ -81,7 +84,8 @@ See [Updating Palhelm](/getting-started/updating/) for the full rollback procedu
 | `006_player_progress.sql` | Adds progress counters to `players`: total captures, unique pals captured, and Paldeck entries unlocked. |
 | `007_pal_instance_details.sql` | Adds per-pal detail columns: HP, gender, the four talent values, passive skill ids, and equipped skill ids. |
 | `008_pal_base_workers.sql` | Adds a `base_id` column to `pals` so pals assigned to a base can be linked to it. |
+| `009_game_data_activity.sql` | Adds aggregate-only Game Data activity/health samples for bounded operator diagnostics. |
 
-Migrations 004 through 008 grew the pal and player records as the panel's player-view
+Migrations 004 through 009 grew the pal/player records and aggregate diagnostics as the panel's player-view
 and pal-box screens matured. Each one is additive, so upgrading is a matter of pulling a
 newer image and restarting.

@@ -7,7 +7,16 @@ sidebar:
 
 This page covers the live map: what it plots, the tile layers, the coordinate readout, and how to install the map tiles.
 
-The map plots player and base positions on the Palworld 1.0 world. Live player positions come from the game REST API, so online markers stay current on their own. Base positions come from the parsed save data and update when save sync runs. A hint in the card header shows when the last sync happened.
+The map plots player and base positions on the Palworld 1.0 world. When the optional
+game-data poller is enabled and has a fresh snapshot, player markers use its sanitized live
+coordinates. Otherwise they fall back to the normal REST player list. Base positions remain
+save-derived and update when save sync runs. The card header states which source is active and
+shows a stale/capability badge rather than silently presenting an old live snapshot as current.
+
+The normal REST player list remains the roster authority. A non-truncated, ready game-data
+snapshot can update a coordinate only when one active actor exactly and uniquely matches that
+known player name. Partial data never hides known players, and extra, stale, inactive, or
+ambiguous actors never become map markers.
 
 ## Using the map
 
@@ -44,4 +53,7 @@ If the installed tiles are an older dataset, the map shows a "MAP DATA: PRE-1.0"
 
 ## Data sources
 
-The map reads `GET /api/v1/map/dataset` to learn which tile layers exist, then loads the tile images from the data volume. Markers come from `GET /api/v1/players` and `GET /api/v1/guilds`. The last sync time comes from `GET /api/v1/server/health`.
+The map reads `GET /api/v1/map/dataset` to learn which tile layers exist, then loads the tile
+images from the data volume. It reads the sanitized `GET /api/v1/world/snapshot` for optional
+live player positions, with `GET /api/v1/players` as the fallback, and reads bases from
+`GET /api/v1/guilds`. The save-sync time comes from `GET /api/v1/server/health`.

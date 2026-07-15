@@ -42,6 +42,7 @@ runtime-downloaded save decompressor also live in that data volume.
   |     metrics   every 5s             backup   browse and restore     |
   |     players   every 15s            config   compose-file editor    |
   |     savesync  every 10m            actions  shutdown, save, kick   |
+  |     game-data every 30s (optional, memory-only live actors)        |
   |                                                                    |
   |   Storage:  one SQLite file in the data volume                     |
   +--------------------------------------------------------------------+
@@ -61,7 +62,7 @@ channels in full.
 
 ## What runs on a timer
 
-Three pollers run on their own intervals and write into SQLite:
+Three persistent pollers and one optional live-actor poller run on their own intervals:
 
 - The metrics poller reads the REST metrics endpoint every 5 seconds and stores server
   frame rate, frame time, and player count.
@@ -69,9 +70,14 @@ Three pollers run on their own intervals and write into SQLite:
   and leave sessions.
 - The save-sync poller parses the world save file every 10 minutes and refreshes the
   players, pals, guilds, and bases tables. It can also run on demand.
+- When explicitly enabled, the Palworld 1.0 game-data poller reads one bounded actor
+  snapshot every 30 seconds into memory. It never persists moving actors or lets a
+  browser/bot request call the game server directly.
 
 All three intervals are configurable, through `PALHELM_METRICS_INTERVAL`,
-`PALHELM_PLAYERS_INTERVAL`, and `PALHELM_SAVE_SYNC_INTERVAL`.
+`PALHELM_PLAYERS_INTERVAL`, and `PALHELM_SAVE_SYNC_INTERVAL`. The optional live
+snapshot uses `PALHELM_GAME_DATA_ENABLED`, `PALHELM_GAME_DATA_INTERVAL`, and
+`PALHELM_GAME_DATA_TIMEOUT`.
 
 ## What runs on request
 

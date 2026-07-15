@@ -23,8 +23,9 @@ type Config struct {
 	// keyless public community endpoint instead of the Web API.
 	SteamWebAPIKey                                     string
 	TrustedProxies                                     []string
-	DockerControl, SecureCookies                       bool
+	DockerControl, SecureCookies, GameDataEnabled      bool
 	MetricsInterval, PlayersInterval, SaveSyncInterval time.Duration
+	GameDataInterval, GameDataTimeout                  time.Duration
 	IntegrationRateLimit                               int
 }
 
@@ -55,6 +56,9 @@ func Load() (Config, error) {
 			return c, fmt.Errorf("PALHELM_SECURE_COOKIES: %w", err)
 		}
 	}
+	if c.GameDataEnabled, err = optionalBool("PALHELM_GAME_DATA_ENABLED", false); err != nil {
+		return c, err
+	}
 	if c.MetricsInterval, err = duration("PALHELM_METRICS_INTERVAL", 5*time.Second); err != nil {
 		return c, err
 	}
@@ -62,6 +66,12 @@ func Load() (Config, error) {
 		return c, err
 	}
 	if c.SaveSyncInterval, err = duration("PALHELM_SAVE_SYNC_INTERVAL", 10*time.Minute); err != nil {
+		return c, err
+	}
+	if c.GameDataInterval, err = boundedDuration("PALHELM_GAME_DATA_INTERVAL", 30*time.Second, 15*time.Second, 10*time.Minute); err != nil {
+		return c, err
+	}
+	if c.GameDataTimeout, err = boundedDuration("PALHELM_GAME_DATA_TIMEOUT", 10*time.Second, time.Second, 30*time.Second); err != nil {
 		return c, err
 	}
 	if c.IntegrationRateLimit, err = positiveInt("PALHELM_INTEGRATION_RATE_LIMIT", 60); err != nil {
@@ -125,6 +135,30 @@ func duration(key string, fallback time.Duration) (time.Duration, error) {
 		return 0, fmt.Errorf("%s: %w", key, err)
 	}
 	return d, nil
+}
+
+func optionalBool(key string, fallback bool) (bool, error) {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return fallback, nil
+	}
+	v, err := strconv.ParseBool(raw)
+	if err != nil {
+		return false, fmt.Errorf("%s must be true or false", key)
+	}
+	return v, nil
+}
+
+func boundedDuration(key string, fallback, min, max time.Duration) (time.Duration, error) {
+	raw := strings.TrimSpace(os.Getenv(key))
+	if raw == "" {
+		return fallback, nil
+	}
+	v, err := time.ParseDuration(raw)
+	if err != nil || v < min || v > max {
+		return 0, fmt.Errorf("%s must be a duration from %s to %s", key, min, max)
+	}
+	return v, nil
 }
 
 // positiveInt parses an integer environment override that must be >= 1; a missing

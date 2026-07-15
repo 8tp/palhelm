@@ -21,6 +21,7 @@ type ErrorKind string
 const (
 	ErrorUnreachable  ErrorKind = "unreachable"
 	ErrorUnauthorized ErrorKind = "unauthorized"
+	ErrorUnsupported  ErrorKind = "unsupported"
 	ErrorResponse     ErrorKind = "response"
 )
 
@@ -43,11 +44,19 @@ func (e *APIError) Unwrap() error { return e.Err }
 type Client struct {
 	base, user, password string
 	http                 *http.Client
+	gameDataHTTP         *http.Client
 }
 
 // NewClient constructs a client with the required five-second timeout.
 func NewClient(base, user, password string) *Client {
-	return &Client{base: strings.TrimRight(base, "/"), user: user, password: password, http: &http.Client{Timeout: 5 * time.Second}}
+	return &Client{
+		base: strings.TrimRight(base, "/"), user: user, password: password,
+		http: &http.Client{Timeout: 5 * time.Second},
+		gameDataHTTP: &http.Client{
+			Timeout:       10 * time.Second,
+			CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse },
+		},
+	}
 }
 
 // Info is the server identity response.

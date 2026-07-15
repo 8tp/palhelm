@@ -282,6 +282,13 @@ func (e *Engine) create(ctx context.Context, trigger string, flush bool, selecti
 			if walkErr != nil {
 				return walkErr
 			}
+			skip, er := skipNestedWorldBackup(world, path, d)
+			if er != nil {
+				return er
+			}
+			if skip {
+				return fs.SkipDir
+			}
 			rel, er := filepath.Rel(base, path)
 			if er != nil {
 				return er
@@ -358,6 +365,23 @@ func (e *Engine) create(ctx context.Context, trigger string, flush bool, selecti
 	}
 	e.event("backup created", meta)
 	return b, nil
+}
+
+// skipNestedWorldBackup prevents the game wrapper's own rolling world backups
+// from being recursively embedded in a Palhelm backup. Only a directory named
+// "backup" directly beneath the selected active-world root is excluded.
+func skipNestedWorldBackup(world, path string, d fs.DirEntry) (bool, error) {
+	if !d.IsDir() {
+		return false, nil
+	}
+	rel, err := filepath.Rel(world, path)
+	if err != nil {
+		return false, err
+	}
+	if filepath.IsAbs(rel) || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return false, fmt.Errorf("backup source %q is outside active world %q", path, world)
+	}
+	return strings.EqualFold(rel, "backup"), nil
 }
 
 type worldSelection struct {

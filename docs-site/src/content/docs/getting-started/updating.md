@@ -51,6 +51,7 @@ You do not run migrations by hand. They apply automatically when the new image b
 | `006_player_progress` | Adds capture totals, unique Pals captured, and Paldeck unlock counts to players. |
 | `007_pal_instance_details` | Adds per-Pal details such as HP, gender, and talents. |
 | `008_pal_base_workers` | Adds a base id to Pals so base workers can be attributed. |
+| `009_game_data_activity` | Adds aggregate-only Game Data FPS, worker activity, and link-coverage samples with 30-day retention. It stores no actor identities, names, health, guilds, or locations. |
 
 The runner fails closed. If the database was written by a newer Palhelm than the running binary knows about, it refuses to open rather than risk corrupting data. That refusal is what makes rollback predictable.
 
@@ -63,6 +64,8 @@ docker compose -f ./compose/docker-compose.yml up -d palhelm
 ```
 
 Whether the old binary starts depends on the schema. A database written at a schema the old binary already knows opens cleanly. If a newer migration ran and the old binary does not recognize the schema version, the runner fails closed and the panel will not start on the old tag. In that case, restore the `/data` copy you made before the update and start the old tag against it:
+
+Version 0.5.0 applies migration 009. Rolling back from it to a 0.4.x image therefore requires restoring the pre-upgrade `/data` backup; changing only the image tag is not sufficient.
 
 ```sh
 docker compose -f ./compose/docker-compose.yml stop palhelm

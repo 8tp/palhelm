@@ -24,12 +24,24 @@ admin password. This is the primary channel. Palhelm uses it for:
 - Server info and settings.
 - Live player list with position, level, and ping.
 - Server metrics: frame rate, frame time, player count.
+- Optionally, Palworld 1.0's current world-actor snapshot for live player and
+  base-Pal state.
 - Announce, kick, ban, and unban.
 - Save.
 - Graceful shutdown with a wait time and message, and force stop.
 
 Palhelm proxies this API server-side. The game admin password stays in the Palhelm
 process and never reaches the browser.
+
+The actor snapshot is treated more strictly than ordinary REST responses: it can be
+large and can contain IP addresses, platform identifiers, exact positions, health, and
+raw activity. Palhelm discards IP and platform-user fields during decode, applies hard
+response/actor bounds, caches one typed generation in memory, and exposes only separate
+allowlisted panel and Integration projections. More precisely, the raw generation is reduced
+once to counts plus at most 2,048 sanitized useful actors; raw IDs/actions and the source actor
+array are not cached. Exact actors expire server-side, while the Integration summary reads only
+precomputed counts. It is a transient observation, not a
+spawn table or a replacement for save-derived ownership.
 
 ### 2. RCON
 
@@ -64,6 +76,7 @@ through a guided flow that requires the server to be stopped. Parsing itself onl
 |---|---|---|---|
 | Dashboard metrics and charts | Yes | | |
 | Live player list and positions | Yes | | |
+| Optional live Pal/base activity | Yes | | |
 | Announce, kick, ban, unban | Yes | | |
 | Save now | Yes | | |
 | Graceful shutdown and stop | Yes | | |

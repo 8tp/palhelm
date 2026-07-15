@@ -61,24 +61,47 @@ type CurrentMetrics struct {
 	BaseCamps   int     `json:"baseCamps"`
 }
 
-// Service owns all three pollers and their current snapshots.
+// Service owns the core pollers, the optional game-data poller, and their current snapshots.
 type Service struct {
-	client                                *palworld.Client
-	store                                 *store.Store
-	pub                                   Publisher
-	health                                *Health
-	log                                   *slog.Logger
-	metricsEvery, playersEvery, saveEvery time.Duration
-	saveDir                               string
-	mu                                    sync.RWMutex
-	current                               CurrentMetrics
-	ring                                  []float64
-	online                                map[string]palworld.Player
-	parsing                               atomic.Bool
-	worldGUID                             atomic.Value
-	lastREST                              atomic.Int32
-	lastInfo                              palworld.Info
-	infoReachable                         bool
+	client                                  *palworld.Client
+	gameDataSource                          GameDataSource
+	store                                   *store.Store
+	pub                                     Publisher
+	health                                  *Health
+	log                                     *slog.Logger
+	metricsEvery, playersEvery, saveEvery   time.Duration
+	saveDir                                 string
+	mu                                      sync.RWMutex
+	current                                 CurrentMetrics
+	ring                                    []float64
+	online                                  map[string]palworld.Player
+	parsing                                 atomic.Bool
+	worldGUID                               atomic.Value
+	lastREST                                atomic.Int32
+	lastInfo                                palworld.Info
+	infoReachable                           bool
+	gameDataEnabled                         bool
+	gameDataEvery                           time.Duration
+	gameDataStaleAfter                      time.Duration
+	gameDataState                           GameDataState
+	gameDataCapturedAt, gameDataLastAttempt time.Time
+	gameDataSourceTime                      string
+	gameDataFPS, gameDataFPSAvg             float64
+	gameDataCounts                          GameDataCounts
+	gameDataActivity                        GameDataActivityCounts
+	gameDataActors                          []LiveWorldActor
+	gameDataTruncated                       bool
+	gameDataCollapsePending                 bool
+	gameDataInFlight                        atomic.Bool
+	gameDataLastRequestDuration             time.Duration
+	gameDataLastAcceptedActorCount          int
+	gameDataLinkedBasePals                  int
+	gameDataUnresolvedBasePals              int
+	gameDataLinkLookupFailed                bool
+	gameDataLastErrorCategory               GameDataErrorCategory
+	gameDataScheduledDelay                  time.Duration
+	gameDataNextAttemptAt                   time.Time
+	gameDataNow                             func() time.Time
 }
 
 // New constructs the poller service.
@@ -95,13 +118,17 @@ func New(c *palworld.Client, s *store.Store, p Publisher, h *Health, metricsEver
 	if h.SaveState == "" {
 		h.SaveState = "unavailable"
 	}
-	return &Service{client: c, store: s, pub: p, health: h, log: log, metricsEvery: metricsEvery, playersEvery: playersEvery, saveEvery: saveEvery, saveDir: saveDir, online: make(map[string]palworld.Player)}
+	return &Service{client: c, gameDataSource: c, store: s, pub: p, health: h, log: log, metricsEvery: metricsEvery, playersEvery: playersEvery, saveEvery: saveEvery, saveDir: saveDir, online: make(map[string]palworld.Player), gameDataState: GameDataDisabled, gameDataLastErrorCategory: GameDataErrorNone, gameDataNow: time.Now}
 }
 
 // Run launches pollers and blocks until cancellation.
 func (s *Service) Run(ctx context.Context) {
 	var wg sync.WaitGroup
-	for _, fn := range []func(context.Context){s.metricsLoop, s.playersLoop, s.saveLoop} {
+	loops := []func(context.Context){s.metricsLoop, s.playersLoop, s.saveLoop}
+	if s.gameDataEnabled {
+		loops = append(loops, s.gameDataLoop)
+	}
+	for _, fn := range loops {
 		wg.Add(1)
 		go func(f func(context.Context)) { defer wg.Done(); f(ctx) }(fn)
 	}

@@ -15,7 +15,8 @@ import {
 } from "../../app/mapTransform";
 import { formatRelativeToNow, formatWorldGuid } from "../../app/format";
 import { tileZoomForScale } from "../../app/mapTiles";
-import { Card, CardHead } from "../../components/Card";
+import { selectLiveMapActors, selectPlayerMarkers } from "../../app/liveWorld";
+import { Card, CardBody, CardHead } from "../../components/Card";
 import { EmptyState } from "../../components/EmptyState";
 import { ToggleChip } from "../../components/ToggleChip";
 import { CodeWell } from "../../components/CodeWell";
@@ -103,6 +104,8 @@ export default function MapRoute() {
   const [layers, setLayers] = useState<Record<string, boolean>>({
     Players: true,
     Bases: true,
+    Workers: true,
+    PalBoxes: false,
   });
   const [tileState, setTileState] = useState<TileState>("checking");
   const [view, setView] = useState<View | null>(null);
@@ -116,6 +119,11 @@ export default function MapRoute() {
   const playersQuery = useQuery({ queryKey: ["players"], queryFn: () => api.players.list(), refetchInterval: 30000 });
   const guildsQuery = useQuery({ queryKey: ["guilds"], queryFn: () => api.guilds.list() });
   const datasetQuery = useQuery({ queryKey: ["map", "dataset"], queryFn: () => api.map.dataset() });
+  const worldSnapshotQuery = useQuery({
+    queryKey: ["world", "snapshot"],
+    queryFn: () => api.world.snapshot(),
+    refetchInterval: 30000,
+  });
 
   const mockTiles = typeof window !== "undefined" && new URLSearchParams(window.location.search).has("mocktiles");
 
@@ -230,8 +238,32 @@ export default function MapRoute() {
     ? tileZoomForScale(view.scale, MAP_SIZE, activeLayer.tileSize, activeLayer.minZoom, activeLayer.maxZoom)
     : 0;
 
-  const onlinePlayers = (playersQuery.data ?? []).filter((p) => p.online && p.location);
+  // TanStack deliberately retains the previous successful data on a refetch failure. Exact
+  // coordinates must fail back to REST instead of presenting that retained `ready` document as
+  // current when Palhelm could not refresh its freshness state.
+  const liveSnapshot = worldSnapshotQuery.isError || worldSnapshotQuery.isRefetchError ? undefined : worldSnapshotQuery.data;
+  const playerMarkerSelection = selectPlayerMarkers(playersQuery.data ?? [], liveSnapshot);
+  const playerMarkers = playerMarkerSelection.markers;
   const bases = (guildsQuery.data ?? []).flatMap((g) => g.bases.map((b) => ({ ...b, guildName: g.name })));
+  const liveMapActors = selectLiveMapActors(liveSnapshot);
+  const workers = liveMapActors.workers;
+  const palBoxes = liveMapActors.palBoxes;
+  const baseHealth = useMemo(() => {
+    const grouped = new Map<string, typeof workers>();
+    for (const worker of workers) {
+      const current = grouped.get(worker.baseId!) ?? [];
+      current.push(worker);
+      grouped.set(worker.baseId!, current);
+    }
+    return [...grouped.entries()].map(([baseId, members]) => ({
+      baseId,
+      name: bases.find((base) => base.id === baseId)?.guildName ?? `Base ${baseId.slice(0, 8)}`,
+      members,
+      lowHP: members.filter((worker) => worker.hpPercent !== undefined && worker.hpPercent < 25).length,
+      incapacitated: members.filter((worker) => worker.activity === "incapacitated").length,
+      idle: members.filter((worker) => worker.activity === "idle" || worker.activity === "inactive").length,
+    }));
+  }, [workers, bases]);
 
   const toScreen = useCallback(
     (mapX: number, mapY: number) => {
@@ -253,8 +285,12 @@ export default function MapRoute() {
       </div>
 
       <Card className="map-card">
-        <CardHead title="World map" hint="positions from save data · updates on sync">
-          {healthQuery.data && <span className="hint">synced {formatRelativeToNow(healthQuery.data.save.lastSyncAt)}</span>}
+        <CardHead title="World map" hint={playerMarkerSelection.usedLive ? "live positions from Palworld game data" : "positions from REST/save data"}>
+          {playerMarkerSelection.usedLive && liveSnapshot?.capturedAt ? (
+            <span className="hint">live snapshot {formatRelativeToNow(liveSnapshot.capturedAt)}</span>
+          ) : healthQuery.data ? (
+            <span className="hint">synced {formatRelativeToNow(healthQuery.data.save.lastSyncAt)}</span>
+          ) : null}
         </CardHead>
 
         <div
@@ -272,7 +308,7 @@ export default function MapRoute() {
               <ToggleChip
                 pressed={layers.Players ?? false}
                 onClick={() => setLayers((l) => ({ ...l, Players: !l.Players }))}
-                count={onlinePlayers.length}
+                count={playerMarkers.length}
               >
                 Players
               </ToggleChip>
@@ -283,7 +319,26 @@ export default function MapRoute() {
               >
                 Bases
               </ToggleChip>
+              <ToggleChip
+                pressed={layers.Workers ?? false}
+                onClick={() => setLayers((l) => ({ ...l, Workers: !l.Workers }))}
+                count={workers.length}
+              >
+                Workers
+              </ToggleChip>
+              <ToggleChip
+                pressed={layers.PalBoxes ?? false}
+                onClick={() => setLayers((l) => ({ ...l, PalBoxes: !l.PalBoxes }))}
+                count={palBoxes.length}
+              >
+                PalBoxes
+              </ToggleChip>
               {isPreV1 && <span className="stamp stamp-warn stamp-tilt">Map data: pre-1.0</span>}
+              {liveSnapshot?.state === "stale" && <span className="stamp stamp-warn">Live data stale</span>}
+              {liveSnapshot?.state === "unsupported" && <span className="stamp stamp-warn">Game data unavailable</span>}
+              {liveSnapshot?.state === "unauthorized" && <span className="stamp stamp-warn">Game data unauthorized</span>}
+              {liveSnapshot?.state === "unavailable" && <span className="stamp stamp-warn">Game data unavailable</span>}
+              {liveSnapshot?.truncated && <span className="stamp stamp-warn">Live data incomplete</span>}
             </div>
           )}
 
@@ -344,15 +399,42 @@ export default function MapRoute() {
                     );
                   })}
               {layers.Players &&
-                onlinePlayers
-                  .filter((p) => onLayer(activeLayer, p.location!.x, p.location!.y))
+                playerMarkers
+                  .filter((p) => onLayer(activeLayer, p.location.x, p.location.y))
                   .map((p) => {
-                    const m = layerWorldToMap(activeLayer, p.location!.x, p.location!.y);
+                    const m = layerWorldToMap(activeLayer, p.location.x, p.location.y);
                     const s = toScreen(m.x, m.y);
                     return (
-                      <div key={p.uid} className="marker marker-player" style={{ left: s.x, top: s.y }}>
+                      <div key={p.key} className="marker marker-player" style={{ left: s.x, top: s.y }}>
                         <span className="dot" />
                         <span className="chip">{p.name}</span>
+                      </div>
+                    );
+                  })}
+              {layers.Workers &&
+                workers
+                  .filter((worker) => onLayer(activeLayer, worker.location.x, worker.location.y))
+                  .map((worker) => {
+                    const m = layerWorldToMap(activeLayer, worker.location.x, worker.location.y);
+                    const s = toScreen(m.x, m.y);
+                    const danger = worker.activity === "incapacitated" || (worker.hpPercent !== undefined && worker.hpPercent < 25);
+                    return (
+                      <div key={worker.instanceId} className={`marker marker-worker${danger ? " danger" : ""}`} style={{ left: s.x, top: s.y }}>
+                        <span className="dot" />
+                        <span className="chip">{worker.name || worker.characterId || "Pal"} · {worker.activity}</span>
+                      </div>
+                    );
+                  })}
+              {layers.PalBoxes &&
+                palBoxes
+                  .filter((box) => onLayer(activeLayer, box.location.x, box.location.y))
+                  .map((box, index) => {
+                    const m = layerWorldToMap(activeLayer, box.location.x, box.location.y);
+                    const s = toScreen(m.x, m.y);
+                    return (
+                      <div key={`${box.guildName ?? "palbox"}-${index}`} className="marker marker-palbox" style={{ left: s.x, top: s.y }}>
+                        <span className="sq" />
+                        <span className="chip">{box.guildName || "Palbox"}</span>
                       </div>
                     );
                   })}
@@ -375,6 +457,27 @@ export default function MapRoute() {
           )}
         </div>
       </Card>
+      {liveMapActors.available && liveSnapshot && (
+        <Card>
+          <CardHead title="Live base health" hint="exact save-linked workers only">
+            <span className="hint">{liveSnapshot.diagnostics.unresolvedBasePals} unresolved</span>
+          </CardHead>
+          <CardBody>
+            {baseHealth.length === 0 ? (
+              <p className="hint">No exact-linked live base workers are currently loaded.</p>
+            ) : (
+              <div className="base-health-grid">
+                {baseHealth.map((base) => (
+                  <div className="base-health-item" key={base.baseId}>
+                    <strong>{base.name}</strong>
+                    <span>{base.members.length} loaded · {base.idle} idle · {base.lowHP} low HP · {base.incapacitated} incapacitated</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      )}
     </main>
   );
 }

@@ -38,6 +38,9 @@ jobs:
       - name: Build (tsc + vite)
         working-directory: frontend
         run: npm run build
+      - name: Check panel version consistency
+        working-directory: frontend
+        run: node --test tests/version.test.mjs
       # `npm test` in frontend/ is not run here: one of its node --test files
       # spawns a Go backend fixture (go run ./internal/server/testfixture), so it
       # needs a Go toolchain in the same job. Run it locally via `npm test`.

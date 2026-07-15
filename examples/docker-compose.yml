@@ -19,6 +19,9 @@ services:
       RCON_PORT: 25575
       SERVER_NAME: "my palworld server"
       ADMIN_PASSWORD: "change-me"        # also enables the REST API auth
+      # Palworld server wrapper 2.6+: enable only when also opting Palhelm into the
+      # bounded live actor poller below.
+      # ENABLE_GAMEDATA_API: "true"
     volumes:
       - ../data:/palworld
 
@@ -43,6 +46,9 @@ services:
       PALWORLD_ADMIN_PASSWORD: "change-me"       # same as the game server's
       PALWORLD_RCON_ADDR: "palworld:25575"
       PALWORLD_SAVE_DIR: "/game/Saved"
+      # PALHELM_GAME_DATA_ENABLED: "true"
+      # PALHELM_GAME_DATA_INTERVAL: "30s"
+      # PALHELM_GAME_DATA_TIMEOUT: "10s"
       # config editor: let Palhelm edit this compose file's env block
       PALHELM_COMPOSE_FILE: "/compose/docker-compose.yml"
       PALHELM_GAME_SERVICE: "palworld"
