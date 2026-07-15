@@ -32,7 +32,7 @@ export default function ActivityRoute() {
       <div className="page-head activity-head">
         <div>
           <h1>Player activity</h1>
-          <span className="sub">panel-observed sessions · rolling windows · no lifetime claims</span>
+          <span className="sub">observed sessions · rolling windows</span>
         </div>
         <div className="activity-window-tabs" aria-label="Activity window">
           {WINDOWS.map((item) => (
@@ -46,15 +46,15 @@ export default function ActivityRoute() {
       ) : query.isPending || !activity ? (
         <Card><CardBody><span className="skel skel-text activity-skeleton" /></CardBody></Card>
       ) : activity.activePlayers === 0 ? (
-        <Card><CardBody><EmptyState title="No observed sessions" description="Activity appears after this panel observes player join and leave transitions." /></CardBody></Card>
+        <Card><CardBody><EmptyState title="No observed sessions" description="Activity appears once players join while the panel is running." /></CardBody></Card>
       ) : (
         <>
-          <Banner tone={activity.analysisTruncated ? "warn" : "info"}>{activityCoverageNote(activity)} These are panel observations, not lifetime game history.</Banner>
+          <Banner tone={activity.analysisTruncated ? "warn" : "info"}>{activityCoverageNote(activity)} Only sessions observed by this panel are counted.</Banner>
 
           <div className="activity-kpis">
             <KPI label="Active players" value={String(activity.activePlayers)} detail={`${activity.newPlayers} first observed · ${activity.returningPlayers} returning`} />
             <KPI label="Peak concurrency" value={String(activity.peakConcurrency)} detail={activity.peakAt ? new Date(activity.peakAt).toLocaleString() : "No peak observed"} />
-            <KPI label="Guild attribution" value={String(activity.activePlayers - activity.unattributedPlayers)} detail={`${activity.unattributedPlayers} without a current guild`} />
+            <KPI label="In a guild" value={String(activity.activePlayers - activity.unattributedPlayers)} detail={`${activity.unattributedPlayers} without a current guild`} />
           </div>
 
           <div className="activity-layout">
@@ -89,19 +89,19 @@ export default function ActivityRoute() {
               <CardHead title="Most active players" hint={`top ${activity.players.length} · selected window`} />
               <CardBody flush className="activity-table-wrap">
                 <table className="table activity-table"><thead><tr><th>Player</th><th>Observed</th><th>Sessions</th></tr></thead><tbody>
-                  {activity.players.map((player) => <tr key={player.uid}><td><strong>{player.name || "Unknown player"}</strong><small>{player.firstObserved ? "First observed in window" : player.currentSession ? "Current session open" : player.guildName || "No current guild"}</small></td><td className="num">{formatDuration(player.durationSec)}</td><td className="num">{player.sessionCount}</td></tr>)}
+                  {activity.players.map((player) => <tr key={player.uid}><td><strong>{player.name || "Unknown player"}</strong><small>{player.firstObserved ? "New this window" : player.currentSession ? "Online now" : player.guildName || "No current guild"}</small></td><td className="num">{formatDuration(player.durationSec)}</td><td className="num">{player.sessionCount}</td></tr>)}
                 </tbody></table>
               </CardBody>
             </Card>
 
             <Card>
-              <CardHead title="Guild activity" hint="current membership attribution" />
+              <CardHead title="Guild activity" hint="credited to current membership" />
               {activity.guilds.length === 0 ? <CardBody><EmptyState title="No attributable guild activity" description="Observed players do not currently have guild evidence." /></CardBody> : (
                 <CardBody flush className="activity-table-wrap">
                   <table className="table activity-table"><thead><tr><th>Guild</th><th>Observed</th><th>Players</th></tr></thead><tbody>
                     {activity.guilds.map((guild) => <tr key={guild.guildId}><td><strong><Link to={`/guilds/${encodeURIComponent(guild.guildId)}`}>{guild.guildName || "Unnamed guild"}</Link></strong><small>{guild.sessionCount} observed sessions</small></td><td className="num">{formatDuration(guild.durationSec)}</td><td className="num">{guild.activePlayers}</td></tr>)}
                   </tbody></table>
-                  <p className="activity-attribution-note">Sessions are attributed to each player's current save-derived guild. Historical guild membership is not stored.</p>
+                  <p className="activity-attribution-note">Time is credited to each player's current guild; past membership is not stored.</p>
                 </CardBody>
               )}
             </Card>

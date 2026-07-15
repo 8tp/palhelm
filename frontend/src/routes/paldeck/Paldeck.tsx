@@ -43,20 +43,20 @@ export default function PaldeckRoute() {
     <main className="content paldeck-page">
       <div className="page-head paldeck-head">
         <div>
-          <h1>Save-observed Paldeck</h1>
-          <span className="sub">pinned 1.0 catalog · authoritative RecordData only</span>
+          <h1>Paldeck</h1>
+          <span className="sub">capture progress from parsed saves · 1.0 catalog</span>
         </div>
         <label className="paldeck-player-select">
           <span>Progress view</span>
           <select className="input" value={selectedUid} onChange={(event) => selectPlayer(event.target.value)}>
-            <option value="">Server union</option>
+            <option value="">All players</option>
             {(playersQuery.data ?? []).map((player) => <option key={player.uid} value={player.uid}>{player.name || "Unknown player"}</option>)}
           </select>
         </label>
       </div>
 
       {query.isError ? (
-        <Banner tone="warn">Couldn't load Paldeck observations from the parsed player saves.</Banner>
+        <Banner tone="warn">Couldn't load Paldeck data from player saves.</Banner>
       ) : query.isPending || !data ? (
         <Card><CardBody><span className="skel skel-text paldeck-skeleton" /></CardBody></Card>
       ) : (
@@ -92,29 +92,29 @@ function PaldeckContent({ data, search, setSearch, filter, setFilter, species }:
     <>
       <Banner tone={!captureConclusive ? "warn" : "info"}>
         {isPlayer
-          ? captureAvailable ? `Capture map observed ${formatRelativeToNow(observedAt)}.` : "This player's save has no decoded per-species capture map yet."
-          : `${data.coverage.playersWithCaptureCounts} of ${data.coverage.playersTotal} players have decoded capture maps; this is the observed server union.`}
-        {captureTruncated ? " The decoded capture map was truncated, so unseen entries are not conclusive." : " Missing observations are never counted as zero."}
+          ? captureAvailable ? `Capture data from ${formatRelativeToNow(observedAt)}.` : "No capture data decoded for this player yet."
+          : `Capture data covers ${data.coverage.playersWithCaptureCounts} of ${data.coverage.playersTotal} players.`}
+        {captureTruncated ? " The capture map was truncated, so “unseen” is not conclusive." : " Missing data is never counted as zero."}
       </Banner>
 
-      <div className="paldeck-stats" aria-label="Save-observed Paldeck summary">
-        <ProgressStat label="Pinned species captured" value={pinnedCaptured} denominator={data.catalog.knownSpecies} percent={paldeckPercent(pinnedCaptured, data.catalog.knownSpecies)} />
-        <ProgressStat label="Pinned entries unlocked" value={pinnedUnlocked} denominator={data.catalog.knownSpecies} percent={paldeckPercent(pinnedUnlocked, data.catalog.knownSpecies)} />
-        <Card><CardBody className="paldeck-stat"><span>Aggregate captures</span><strong>{data.captureTotal ?? "Unavailable"}</strong><small>player-save aggregate counter</small></CardBody></Card>
-        <Card><CardBody className="paldeck-stat"><span>Save unique counter</span><strong>{rawUnique ?? "Unavailable"}</strong><small>may include IDs outside pinned catalog</small></CardBody></Card>
+      <div className="paldeck-stats" aria-label="Paldeck summary">
+        <ProgressStat label="Species captured" value={pinnedCaptured} denominator={data.catalog.knownSpecies} percent={paldeckPercent(pinnedCaptured, data.catalog.knownSpecies)} />
+        <ProgressStat label="Entries unlocked" value={pinnedUnlocked} denominator={data.catalog.knownSpecies} percent={paldeckPercent(pinnedUnlocked, data.catalog.knownSpecies)} />
+        <Card><CardBody className="paldeck-stat"><span>Total captures</span><strong>{data.captureTotal ?? "Unavailable"}</strong><small>sum of save counters</small></CardBody></Card>
+        <Card><CardBody className="paldeck-stat"><span>Unique species counter</span><strong>{rawUnique ?? "Unavailable"}</strong><small>from the save · may include unlisted IDs</small></CardBody></Card>
       </div>
 
       <Card>
-        <CardHead title="Species observations" hint={`${species.length} shown · ${data.catalog.knownSpecies} pinned known species`} />
+        <CardHead title="Species" hint={`${species.length} shown of ${data.catalog.knownSpecies}`} />
         <CardBody>
           <div className="paldeck-tools">
             <SearchField value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search Pal name…" aria-label="Search Paldeck species" />
-            <select className="input" aria-label="Observation filter" value={!captureConclusive && filter === "unseen" ? "all" : filter} onChange={(event) => setFilter(event.target.value as PaldeckSpeciesFilter)}>
-              <option value="all">All species</option><option value="captured">Captured in observations</option><option value="unseen" disabled={!captureConclusive}>Unseen (complete coverage only)</option><option value="unavailable">Unavailable</option>
+            <select className="input" aria-label="Capture filter" value={!captureConclusive && filter === "unseen" ? "all" : filter} onChange={(event) => setFilter(event.target.value as PaldeckSpeciesFilter)}>
+              <option value="all">All species</option><option value="captured">Captured</option><option value="unseen" disabled={!captureConclusive}>Unseen (needs full data)</option><option value="unavailable">No data</option>
             </select>
           </div>
         </CardBody>
-        {species.length === 0 ? <CardBody><EmptyState title="No species match" description="Clear the search or choose another observation filter." /></CardBody> : (
+        {species.length === 0 ? <CardBody><EmptyState title="No species match" description="Clear the search or choose another filter." /></CardBody> : (
           <CardBody className="paldeck-grid">
             {species.map((item) => {
               const count = item.captureCount;
@@ -124,7 +124,7 @@ function PaldeckContent({ data, search, setSearch, filter, setFilter, species }:
               return (
                 <article className="paldeck-species" key={item.characterId}>
                   <PalIcon characterId={item.characterId} displayName={item.displayName} />
-                  <div><strong>{item.displayName}</strong><small>{!item.known ? `Unknown observed id · ${item.characterId}` : count === null ? "Capture observation unavailable" : unsafeZero ? "Zero in available partial observations" : count === 0 ? "Complete observation: unseen" : `${count} save-observed capture${count === 1 ? "" : "s"}`}</small></div>
+                  <div><strong>{item.displayName}</strong><small>{!item.known ? `Unlisted ID · ${item.characterId}` : count === null ? "No capture data" : unsafeZero ? "None seen in partial data" : count === 0 ? "Not captured" : `${count} captured`}</small></div>
                   <div className="paldeck-species-meta">
                     {serverItem && serverItem.capturedByPlayers !== null && <span>{serverItem.capturedByPlayers} players</span>}
                     {playerItem?.unlocked !== null && playerItem?.unlocked !== undefined && <span>{playerItem.unlocked ? "Unlocked" : "Locked"}</span>}
@@ -136,11 +136,11 @@ function PaldeckContent({ data, search, setSearch, filter, setFilter, species }:
           </CardBody>
         )}
       </Card>
-      <p className="paldeck-footnote">Catalog {data.catalog.version} · {data.catalog.observedUnknownSpecies} observed IDs outside the pinned catalog. Counts are last-parsed save observations, not a lifetime timeline.</p>
+      <p className="paldeck-footnote">Catalog {data.catalog.version} · {data.catalog.observedUnknownSpecies} IDs outside the catalog. Counts reflect the latest parsed save.</p>
     </>
   );
 }
 
 function ProgressStat({ label, value, denominator, percent }: { label: string; value: number | null; denominator: number; percent: number | null }) {
-  return <Card><CardBody className="paldeck-stat"><span>{label}</span><strong>{value === null ? "Unavailable" : `${value} / ${denominator}`}</strong><small>{percent === null ? "coverage unavailable" : `${percent}% of pinned catalog`}</small>{percent !== null && <progress max="100" value={percent} aria-label={`${label}: ${percent}%`} />}</CardBody></Card>;
+  return <Card><CardBody className="paldeck-stat"><span>{label}</span><strong>{value === null ? "Unavailable" : `${value} / ${denominator}`}</strong><small>{percent === null ? "needs full capture data" : `${percent}% of catalog`}</small>{percent !== null && <progress max="100" value={percent} aria-label={`${label}: ${percent}%`} />}</CardBody></Card>;
 }

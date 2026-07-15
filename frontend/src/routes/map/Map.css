@@ -69,14 +69,15 @@
   border: 1px solid var(--line);
 }
 
-.map-toggles {
+/* stacked top-left overlay column: row 1 is the marker-layer toggles (+ warning stamps),
+   row 2 the tile-pyramid picker (e.g. Palpagos / World Tree) when the dataset has one —
+   normal flow inside the column, so a wrapping first row can never overlap the second */
+.map-overlays {
   position: absolute; top: 12px; left: 12px; z-index: 2;
-  display: flex; flex-wrap: wrap; gap: 6px; max-width: calc(100% - 24px);
+  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+  max-width: calc(100% - 24px);
 }
-
-/* second row: the base tile-pyramid picker (e.g. Palpagos / World Tree) — only rendered when
-   the dataset reports more than one layer, so it sits just under the overlay-toggle row */
-.map-layer-toggles { top: 48px; }
+.map-toggles { display: flex; flex-wrap: wrap; gap: 6px; max-width: 100%; }
 
 .map-coord {
   position: absolute; bottom: 12px; right: 12px; z-index: 2;
@@ -221,17 +222,14 @@
   .map-card { height: 78dvh; min-height: 600px; }
   .map-actionbar { padding: 8px; gap: 6px; }
   .map-action { min-height: 40px; padding-inline: 9px; font-size: var(--text-sm); }
+  .map-overlays { left: 8px; top: 8px; max-width: calc(100% - 16px); }
   .map-toggles {
     flex-wrap: nowrap;
-    max-width: calc(100% - 16px);
-    left: 8px;
-    top: 8px;
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scrollbar-width: thin;
     padding-bottom: 3px;
   }
-  .map-layer-toggles { top: 48px; }
   .map-zoom { left: 8px; bottom: 8px; flex-direction: row; }
   .map-zoom button { width: 44px; height: 44px; }
   .map-zoom button + button { border-top: 0; border-left: 1px solid var(--line); }

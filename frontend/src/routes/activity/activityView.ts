@@ -7,12 +7,12 @@ export function topPeakBuckets(buckets: ActivityConcurrencyBucket[], limit = 3):
 }
 
 export function activityCoverageNote(activity: Pick<ServerActivity, "trackingSince" | "since" | "analysisTruncated">): string {
-  if (activity.analysisTruncated) return "The defensive interval cap was reached; rankings and concurrency may be incomplete.";
-  if (!activity.trackingSince) return "No player sessions have been observed by this panel yet.";
+  if (activity.analysisTruncated) return "Analysis hit its cap; rankings and concurrency may be incomplete.";
+  if (!activity.trackingSince) return "No player sessions observed yet.";
   if (new Date(activity.trackingSince) > new Date(activity.since)) {
-    return `Coverage begins ${new Date(activity.trackingSince).toLocaleString()}, partway through this window.`;
+    return `Tracking began ${new Date(activity.trackingSince).toLocaleString()}, partway through this window.`;
   }
-  return `Coverage includes the full selected window; panel tracking began ${new Date(activity.trackingSince).toLocaleString()}.`;
+  return `Tracking since ${new Date(activity.trackingSince).toLocaleString()} — the full window is covered.`;
 }
 
 export function localBucketLabel(at: string, bucketSec: number): string {

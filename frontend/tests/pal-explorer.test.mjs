@@ -22,8 +22,8 @@ test("Pal explorer narrows form strings to bounded API parameters", () => {
 });
 
 test("owner evidence is explicit and unresolved owners are never guessed", () => {
-  assert.equal(palOwnerSummary({ ownerName: "Kestrel", ownerResolved: true, ownerSource: "personal_container" }), "Kestrel · current personal container");
-  assert.equal(palOwnerSummary({ ownerName: "Kestrel", ownerResolved: true, ownerSource: "last_observed" }), "Kestrel · last observed owner");
+  assert.equal(palOwnerSummary({ ownerName: "Kestrel", ownerResolved: true, ownerSource: "personal_container" }), "Kestrel");
+  assert.equal(palOwnerSummary({ ownerName: "Kestrel", ownerResolved: true, ownerSource: "last_observed" }), "Kestrel · last known owner");
   assert.equal(palOwnerSummary({ ownerName: "", ownerResolved: false, ownerSource: "unresolved" }), "Owner unavailable");
 });
 

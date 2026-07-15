@@ -10,7 +10,7 @@ test("player detail presents bounded observed activity separately from total tra
   ]);
   assert.match(route, /Observed activity/);
   assert.match(route, /panel tracking only/);
-  assert.match(route, /This is not lifetime game history/);
+  assert.match(route, /Tracked since/);
   assert.match(route, /last24Hours/);
   assert.match(route, /last7Days/);
   assert.match(route, /last30Days/);

@@ -25,8 +25,8 @@ test("guild detail links members, bases, Pals, activity, and progression", async
 test("Paldeck screen distinguishes partial save observations from pinned progression", async () => {
   const source = await readFile(new URL("../src/routes/paldeck/Paldeck.tsx", import.meta.url), "utf8");
   assert.match(source, /playersWithCaptureCounts === data\.coverage\.playersTotal/);
-  assert.match(source, /Pinned species captured/);
-  assert.match(source, /Save unique counter/);
-  assert.match(source, /Missing observations are never counted as zero/);
-  assert.match(source, /Unseen \(complete coverage only\)/);
+  assert.match(source, /Species captured/);
+  assert.match(source, /Unique species counter/);
+  assert.match(source, /Missing data is never counted as zero/);
+  assert.match(source, /Unseen \(needs full data\)/);
 });

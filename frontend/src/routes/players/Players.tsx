@@ -76,7 +76,7 @@ export default function PlayersRoute() {
       <div className="page-head">
         <h1>Players</h1>
         <span className="sub">
-          {playersQuery.data ? `${online} online · ${players.length} known from save data` : "loading…"}
+          {playersQuery.data ? `${online} online · ${players.length} known` : "loading…"}
         </span>
       </div>
 
@@ -375,7 +375,7 @@ function PlayerDetailPanel({ uid, onAction }: { uid: string | null; onAction: (k
           <div className="card-head" style={{ borderTop: "1px solid var(--line)" }}>
             <h2>Pals</h2>
             <span className="hint">
-              {partyPals.length > 0 ? `party of ${partyPals.length} · ${pals.length} owned` : `${pals.length} owned`} · from save data
+              {partyPals.length > 0 ? `party of ${partyPals.length} · ${pals.length} owned` : `${pals.length} owned`}
             </span>
           </div>
           <div>
@@ -459,7 +459,7 @@ function PlayerActivitySummary({ activity }: { activity: PlayerActivity }) {
         <span className="hint">panel tracking only</span>
       </div>
       {activity.trackingSince === null ? (
-        <div className="player-activity-empty">No join or leave session has been observed by this panel yet.</div>
+        <div className="player-activity-empty">No sessions observed yet.</div>
       ) : (
         <>
           <div className="player-activity-current">
@@ -472,8 +472,8 @@ function PlayerActivitySummary({ activity }: { activity: PlayerActivity }) {
             <ActivityWindow label="30 days" value={activity.windows.last30Days} />
           </div>
           <p className="player-activity-coverage">
-            Observed since {new Date(activity.trackingSince).toLocaleString()}.
-            {activity.recentSessionsTruncated ? " Recent-session detail is capped at 20 rows." : " This is not lifetime game history."}
+            Tracked since {new Date(activity.trackingSince).toLocaleString()}.
+            {activity.recentSessionsTruncated ? " Showing the 20 most recent sessions." : ""}
           </p>
         </>
       )}
@@ -698,7 +698,7 @@ function WhitelistTab() {
 
   return (
     <Card>
-      <CardHead title="Player notes" hint="Local Steam ID annotations — this list does not control who can join" />
+      <CardHead title="Player notes" hint="local labels only — does not control who can join" />
       {whitelistQuery.isError ? (
         <CardBody>
           <Banner tone="warn">Couldn't load player notes.</Banner>

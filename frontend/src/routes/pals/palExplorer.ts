@@ -97,9 +97,9 @@ export function palOwnerSummary(pal: Pick<PalExplorerPal, "ownerName" | "ownerRe
   if (!pal.ownerResolved || !pal.ownerName) return "Owner unavailable";
   switch (pal.ownerSource) {
     case "personal_container":
-      return `${pal.ownerName} · current personal container`;
+      return pal.ownerName;
     case "last_observed":
-      return `${pal.ownerName} · last observed owner`;
+      return `${pal.ownerName} · last known owner`;
     case "save":
       return `${pal.ownerName} · save owner`;
     default:

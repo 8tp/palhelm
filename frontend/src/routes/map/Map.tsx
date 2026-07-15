@@ -483,7 +483,7 @@ export default function MapRoute() {
       </div>
 
       <Card className="map-card">
-        <CardHead title="World map" hint={playerMarkerSelection.usedLive ? "live positions from Palworld game data" : "positions from REST/save data"}>
+        <CardHead title="World map" hint={playerMarkerSelection.usedLive ? "live game data" : "positions from save data"}>
           {playerMarkerSelection.usedLive && liveSnapshot?.capturedAt ? (
             <span className="hint">live snapshot {formatRelativeToNow(liveSnapshot.capturedAt)}</span>
           ) : healthQuery.data ? (
@@ -557,6 +557,7 @@ export default function MapRoute() {
           onPointerLeave={hasMap ? cancelPointer : undefined}
         >
           {hasMap && (
+          <div className="map-overlays">
             <div className="map-toggles" role="group" aria-label="Map layers">
               <ToggleChip
                 pressed={layers.Players ?? false}
@@ -593,31 +594,26 @@ export default function MapRoute() {
               {liveSnapshot?.state === "unavailable" && <span className="stamp stamp-warn">Game data unavailable</span>}
               {liveSnapshot?.truncated && <span className="stamp stamp-warn">Live data incomplete</span>}
             </div>
-          )}
-
-          {hasMap && availableLayers.length > 1 && (
-            <div className="map-toggles map-layer-toggles" role="group" aria-label="Map tile layer">
-              {availableLayers.map((l) => (
-                <ToggleChip key={l.id} pressed={activeLayer.id === l.id} onClick={() => setActiveLayerId(l.id)}>
-                  {l.label}
-                </ToggleChip>
-              ))}
-            </div>
+            {availableLayers.length > 1 && (
+              <div className="map-toggles map-layer-toggles" role="group" aria-label="Map tile layer">
+                {availableLayers.map((l) => (
+                  <ToggleChip key={l.id} pressed={activeLayer.id === l.id} onClick={() => setActiveLayerId(l.id)}>
+                    {l.label}
+                  </ToggleChip>
+                ))}
+              </div>
+            )}
+          </div>
           )}
 
           {tileState === "missing" && (
             <div className="map-empty-fill">
               <EmptyState icon={<IconMapEmpty />} title="Map tiles not installed">
                 <p>
-                  Live map rendering needs terrain tiles derived from the game's own assets. These are copyrighted by
-                  Pocketpair and are not shipped with Palhelm — generate them once from your server's install.
+                  Map tiles come from the game's own assets, which Palhelm can't ship (they're Pocketpair's).
+                  Generate them once from your server's install:
                 </p>
                 <CodeWell>docker exec palhelm palhelm fetch-map-tiles</CodeWell>
-                <div style={{ marginTop: "var(--space-2)" }}>
-                  <button type="button" className="btn btn-ghost btn-sm">
-                    Learn more
-                  </button>
-                </div>
               </EmptyState>
             </div>
           )}
@@ -720,12 +716,12 @@ export default function MapRoute() {
       </Card>
       {liveMapActors.available && liveSnapshot && (
         <Card>
-          <CardHead title="Live base health" hint="exact save-linked workers only">
+          <CardHead title="Live base health" hint="save-linked workers">
             <span className="hint">{liveSnapshot.diagnostics.unresolvedBasePals} unresolved</span>
           </CardHead>
           <CardBody>
             {baseHealth.length === 0 ? (
-              <p className="hint">No exact-linked live base workers are currently loaded.</p>
+              <p className="hint">No live base workers loaded right now.</p>
             ) : (
               <div className="base-health-grid">
                 {baseHealth.map((base) => (
@@ -769,7 +765,7 @@ function MapMarkerGroup({
         type="button"
         className={`marker marker-action marker-${kind}${selectedTargetKey === target.key ? " is-selected" : ""}`}
         style={{ left: group.x, top: group.y }}
-        title={`Focus ${target.label} at exact coordinates`}
+        title={`Focus ${target.label}`}
         onClick={() => onTarget(target)}
       >
         <span className="marker-symbol"><Icon /></span>
@@ -788,7 +784,7 @@ function MapMarkerGroup({
         style={{ left: group.x, top: group.y }}
         aria-label={`${group.members.length} nearby ${noun}: ${names.join(", ")}`}
         aria-expanded={expanded}
-        title={`${names.join(", ")} · zoom to separate; at maximum zoom, open the exact-marker chooser`}
+        title={names.join(", ")}
         onClick={() => onCluster(group)}
       >
         <span className="marker-symbol"><Icon /><span className="marker-count">{group.members.length}</span></span>

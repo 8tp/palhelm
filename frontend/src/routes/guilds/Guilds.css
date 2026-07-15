@@ -1,6 +1,6 @@
 .guilds-page { gap: var(--space-4); }
-.guilds-head { align-items: center; justify-content: space-between; }
-.guilds-head > div { display: flex; align-items: baseline; gap: var(--space-3); min-width: 0; }
+.guilds-head { align-items: center; justify-content: space-between; flex-wrap: wrap; row-gap: var(--space-2); }
+.guilds-head > div { display: flex; align-items: baseline; gap: var(--space-3); min-width: 0; flex-wrap: wrap; }
 .guilds-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
 .guild-card-body { display: flex; flex-direction: column; gap: 6px; color: var(--ink-2); font-size: var(--text-sm); }
 .guild-card-body span:last-child { color: var(--ink-3); }

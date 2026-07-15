@@ -91,7 +91,7 @@ export default function EventsRoute() {
         ))}
       </div>
       <p className="events-scope">
-        Lane counts cover the newest {events.length.toLocaleString()} events returned by the panel (bounded to {FETCH_LIMIT}).
+        Counts cover the newest {events.length.toLocaleString()} events (up to {FETCH_LIMIT}).
       </p>
 
       <div className="events-toolbar">
@@ -101,7 +101,7 @@ export default function EventsRoute() {
           placeholder="Search event messages…"
           aria-label="Search events"
         />
-        <select className="input" value={kind} onChange={(event) => changeKind(event.target.value as EventKindFilter)} aria-label="Filter exact event kind">
+        <select className="input" value={kind} onChange={(event) => changeKind(event.target.value as EventKindFilter)} aria-label="Filter event kind">
           <option value="all">{KIND_LABELS.all}</option>
           {availableKinds.map((item) => <option key={item} value={item}>{KIND_LABELS[item]}</option>)}
         </select>

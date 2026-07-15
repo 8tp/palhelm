@@ -1,6 +1,6 @@
 .paldeck-page { gap: var(--space-4); }
-.paldeck-head { justify-content: space-between; align-items: flex-end; }
-.paldeck-head > div:first-child { display: flex; align-items: baseline; gap: var(--space-3); min-width: 0; }
+.paldeck-head { justify-content: space-between; align-items: flex-end; flex-wrap: wrap; row-gap: var(--space-2); }
+.paldeck-head > div:first-child { display: flex; align-items: baseline; gap: var(--space-3); min-width: 0; flex-wrap: wrap; }
 .paldeck-player-select { display: flex; flex-direction: column; gap: 4px; min-width: 220px; color: var(--ink-3); font-size: var(--text-xs); }
 .paldeck-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); }
 .paldeck-stat { display: flex; flex-direction: column; gap: 5px; }
