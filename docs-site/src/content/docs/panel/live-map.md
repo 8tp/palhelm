@@ -22,6 +22,14 @@ ambiguous actors never become map markers.
 
 Drag to pan. Scroll over the map or use its SVG zoom controls to zoom; the fit control returns to the whole active layer. Wheel and trackpad input is contained by the map while the pointer is over it, so zooming does not scroll or zoom the surrounding page. The panel picks the right tile resolution for the current zoom.
 
+The action bar searches the currently known online players and save-derived guild bases. Selecting a result focuses it, enables its marker layer, and leaves it selected for the **Focus selected** action. Panel login names are not game identities, so Palhelm does not guess which player is "you". Use an explicitly selected online player instead.
+
+**Fit online** frames every positioned online player covered by the active tile layer. **Fit bases** does the same for bases. Counts on those buttons are layer-qualified: a Palpagos marker is not included while viewing a World Tree layer that does not cover it.
+
+Tap or click the map to pin its Palworld display coordinate. The coordinate control and **Copy coordinate link** copy a URL containing only `x`, `y`, and the active tile-layer id. Opening that URL restores the layer, pin, and focused position. Shared links never include player names, player IDs, guild names, or live actor data, and the recipient must still authenticate to view the map.
+
+On narrow screens, the search and focus actions wrap into touch-sized controls, map-layer chips scroll horizontally, and zoom controls switch to a bottom row. A tap pins coordinates while a drag continues to pan.
+
 Marker layers can be toggled on or off:
 
 - **Players.** Online players that have a known position. Each marker shows the player name.
@@ -32,7 +40,7 @@ Players, bases, workers, and Palboxes have separate SVG marker shapes as well as
 
 A **Live base health** panel beside the map summarizes those same exact-linked workers by base, with their current activity. It reads "No exact-linked live base workers are currently loaded" rather than guessing when the data is unavailable.
 
-A coordinate readout in the corner follows the cursor. It always reads in Palworld's own in-game display coordinates, independent of the tile imagery.
+A coordinate readout in the corner follows the cursor until a point is pinned. It always reads in Palworld's own in-game display coordinates, independent of the tile imagery.
 
 When the tile dataset reports more than one layer, a second row of toggles lets you switch the base imagery, for example between the Palpagos islands and the World Tree.
 

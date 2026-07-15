@@ -28,6 +28,8 @@ import type {
   PlayerDetail,
   Role,
   SavedCommand,
+  ServerActivity,
+  ServerActivityWindow,
   ServerHealth,
   ServerInfo,
   SessionInfo,
@@ -109,6 +111,10 @@ export const api = {
     current: (): Promise<MetricsCurrent> => (USE_MOCK ? mock.metricsCurrent() : request("GET", "/metrics/current")),
     history: (window: MetricsWindow): Promise<MetricsHistory> =>
       USE_MOCK ? mock.metricsHistory(window) : request("GET", `/metrics/history?window=${window}`),
+  },
+  activity: {
+    get: (window: ServerActivityWindow = "7d"): Promise<ServerActivity> =>
+      USE_MOCK ? mock.getServerActivity(window) : request("GET", `/activity?window=${window}`),
   },
   players: {
     list: (): Promise<Player[]> => (USE_MOCK ? mock.listPlayers() : request("GET", "/players")),

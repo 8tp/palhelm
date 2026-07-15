@@ -37,6 +37,8 @@ import type {
   PlayerPal,
   Role,
   SavedCommand,
+  ServerActivity,
+  ServerActivityWindow,
   ServerHealth,
   ServerInfo,
   SessionInfo,
@@ -317,7 +319,7 @@ export async function getServer(): Promise<ServerInfo> {
     worldGuid: "A1B2C3D4E5F6478090ABCDEF12345678",
     state: "running",
     uptimeSec: Math.floor((Date.now() - BOOT_AT) / 1000),
-    panelVersion: "0.7.0",
+    panelVersion: "0.8.0",
   };
 }
 
@@ -518,6 +520,53 @@ export async function playerDetail(uid: string): Promise<PlayerDetail> {
       recentSessions,
       recentSessionsTruncated: false,
     },
+  };
+}
+
+export async function getServerActivity(window: ServerActivityWindow = "7d"): Promise<ServerActivity> {
+  requireSession();
+  await latency();
+  const now = new Date();
+  const durationMs = window === "24h" ? 86_400_000 : window === "7d" ? 7 * 86_400_000 : 30 * 86_400_000;
+  const bucketMs = window === "24h" ? 3_600_000 : window === "7d" ? 6 * 3_600_000 : 86_400_000;
+  const since = new Date(now.getTime() - durationMs);
+  const concurrency = Array.from({ length: durationMs / bucketMs }, (_, index) => {
+    const wave = Math.max(0, Math.sin((index / 4) * Math.PI));
+    const averagePlayers = Number((wave * 2.2).toFixed(2));
+    return {
+      at: new Date(since.getTime() + index * bucketMs).toISOString(),
+      peakPlayers: Math.ceil(averagePlayers),
+      averagePlayers,
+    };
+  });
+  const rankedPlayers = [...players]
+    .map((player, index) => ({
+      uid: player.uid, name: player.name, guildId: player.guildId ?? "", guildName: player.guildName ?? "",
+      durationSec: Math.min(player.playtimeSec, Math.floor(durationMs / 1000 / (index + 3))),
+      sessionCount: Math.max(1, 6 - index), currentSession: player.online,
+      firstObserved: new Date(player.firstSeenAt) >= since,
+    }))
+    .sort((a, b) => b.durationSec - a.durationSec);
+  const guilds = guildNames.slice(0, 3).map((name) => {
+    const members = rankedPlayers.filter((player) => player.guildName === name);
+    return {
+      guildId: `g-${name.toLowerCase()}`, guildName: name,
+      durationSec: members.reduce((total, player) => total + player.durationSec, 0),
+      sessionCount: members.reduce((total, player) => total + player.sessionCount, 0), activePlayers: members.length,
+    };
+  }).filter((guild) => guild.activePlayers > 0);
+  const peakConcurrency = Math.max(0, ...concurrency.map((bucket) => bucket.peakPlayers));
+  return {
+    coverage: "panel_observed_sessions", trackingSince: players.map((player) => player.firstSeenAt).sort()[0] ?? null,
+    window, since: since.toISOString(), through: now.toISOString(), bucketSec: bucketMs / 1000,
+    analysisTruncated: false, activePlayers: rankedPlayers.length,
+    newPlayers: rankedPlayers.filter((player) => player.firstObserved).length,
+    returningPlayers: rankedPlayers.filter((player) => !player.firstObserved).length,
+    peakConcurrency,
+    peakAt: concurrency.find((bucket) => bucket.peakPlayers === peakConcurrency)?.at ?? null,
+    concurrency, players: rankedPlayers, guilds, guildAttribution: "current_player_guild",
+    unattributedPlayers: rankedPlayers.filter((player) => !player.guildId).length,
+    unattributedDurationSec: rankedPlayers.filter((player) => !player.guildId).reduce((total, player) => total + player.durationSec, 0),
   };
 }
 

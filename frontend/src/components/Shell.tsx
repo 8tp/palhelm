@@ -8,6 +8,7 @@ import { usePaletteBridge } from "../app/paletteBridge";
 import { formatDuration } from "../app/format";
 import {
   HelmMark,
+  IconActivity,
   IconBackups,
   IconConfig,
   IconConsole,
@@ -44,6 +45,7 @@ export interface NavItem {
 export const NAV_ITEMS: NavItem[] = [
   { to: "/", end: true, label: "Overview", icon: IconOverview },
   { to: "/players", label: "Players", icon: IconPlayers },
+  { to: "/activity", label: "Activity", icon: IconActivity },
   { to: "/pals", label: "Pal explorer", icon: IconPals },
   { to: "/map", label: "Live map", icon: IconMap },
   { to: "/events", label: "Events", icon: IconEvents },
@@ -78,6 +80,7 @@ function LiveQueryBridge() {
       }
       if (eventName === "players") {
         void queryClient.invalidateQueries({ queryKey: ["players"] });
+        void queryClient.invalidateQueries({ queryKey: ["activity"] });
         void queryClient.invalidateQueries({ queryKey: ["guilds"] });
         void queryClient.invalidateQueries({ queryKey: ["server", "health"] });
         return;
