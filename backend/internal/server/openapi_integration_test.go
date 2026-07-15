@@ -282,7 +282,7 @@ func TestIntegrationOpenAPIGETResponsesMatchLiveHandlers(t *testing.T) {
 	s, h, st := newIntegrationTestServer(t, nil)
 	uidA, _, _, _ := seedBasicWorld(t, st)
 	if err := st.AddEvent(context.Background(), store.Event{
-		At: time.Now().UTC(), Kind: "join", Message: "Hunter joined", Meta: map[string]any{"uid": uidA},
+		At: time.Now().UTC(), Kind: "join", Message: "Player One joined", Meta: map[string]any{"uid": uidA},
 	}); err != nil {
 		t.Fatal(err)
 	}

@@ -30,12 +30,12 @@ func seedBasicWorld(t *testing.T, st *store.Store) (uidA, uidB, guildID, palID s
 	partyID := "66666666666666666666666666666666"
 	boxID := "77777777777777777777777777777777"
 	w := &sav.World{
-		Players: []sav.Player{{UID: uidA, Nickname: "Hunter", Level: 10, GuildID: guildID, OtomoContainerID: partyID, PalStorageContainerID: boxID, CaptureTotal: int64TestPtr(42), UniquePalsCaptured: intTestPtr(12), PaldeckUnlocked: intTestPtr(15)}, {UID: uidB, Nickname: "Ally", Level: 5, GuildID: guildID}},
+		Players: []sav.Player{{UID: uidA, Nickname: "Player One", Level: 10, GuildID: guildID, OtomoContainerID: partyID, PalStorageContainerID: boxID, CaptureTotal: int64TestPtr(42), UniquePalsCaptured: intTestPtr(12), PaldeckUnlocked: intTestPtr(15)}, {UID: uidB, Nickname: "Player Two", Level: 5, GuildID: guildID}},
 		Pals: []sav.Pal{{InstanceID: palID, CharacterID: "SheepBall", Level: 3, HP: 432.5, Gender: "female", OwnerUID: uidA, IsLucky: true, ContainerID: partyID, SlotIndex: 2,
 			Talents: map[string]int{"Talent_HP": 71, "Talent_Melee": 62, "Talent_Shot": 83, "Talent_Defense": 54}, PassiveSkillIDs: []string{"CraftSpeed_up2"}, EquippedSkillIDs: []string{"AirCanon"}}},
 		Guilds: []sav.Guild{{
 			ID: guildID, Name: "Test Guild", AdminUID: uidA,
-			Members:    []sav.GuildMember{{UID: uidA, Name: "Hunter"}, {UID: uidB, Name: "Ally"}},
+			Members:    []sav.GuildMember{{UID: uidA, Name: "Player One"}, {UID: uidB, Name: "Player Two"}},
 			MemberUIDs: []string{uidA, uidB},
 		}},
 		Bases: []sav.BaseCamp{{ID: baseID, GuildID: guildID, Position: &sav.Vector{X: 100, Y: 200}}},
@@ -45,7 +45,7 @@ func seedBasicWorld(t *testing.T, st *store.Store) (uidA, uidB, guildID, palID s
 	}
 	x, y := 1234.5, 6789.5
 	if err := st.UpsertLivePlayer(ctx, store.Player{
-		UID: uidA, SteamID: "STEAM-SENTINEL-76561198000000001", Name: "Hunter",
+		UID: uidA, SteamID: "STEAM-SENTINEL-76561198000000001", Name: "Player One",
 		AccountName: "ACCOUNT-SENTINEL-live", Level: 10, Ping: 123.456, X: &x, Y: &y, Raw: []byte("{}"),
 	}, time.Now().UTC()); err != nil {
 		t.Fatal(err)
@@ -69,7 +69,7 @@ func TestIntegrationEventsStrictPublicProjection(t *testing.T) {
 	ctx := context.Background()
 	base := time.Date(2026, 7, 11, 12, 0, 0, 0, time.UTC)
 	events := []store.Event{
-		{At: base.Add(time.Second), Kind: "join", Message: "Hunter\nAdmin joined", Meta: map[string]any{"uid": "PRIVATE-UID"}},
+		{At: base.Add(time.Second), Kind: "join", Message: "Player\nAdmin joined", Meta: map[string]any{"uid": "PRIVATE-UID"}},
 		{At: base.Add(2 * time.Second), Kind: "leave", Message: "Player Two left", Meta: map[string]any{"steamId": "PRIVATE-STEAM"}},
 		{At: base.Add(3 * time.Second), Kind: "backup", Message: "backup /private/world.zip completed", Meta: map[string]any{"path": "/private/world.zip"}},
 		{At: base.Add(4 * time.Second), Kind: "system", Message: "Palworld REST API is unreachable", Meta: map[string]any{"detail": "PRIVATE-SYSTEM"}},
@@ -101,7 +101,7 @@ func TestIntegrationEventsStrictPublicProjection(t *testing.T) {
 		{"system", "Palworld REST API is unreachable"},
 		{"backup", "Backup completed"},
 		{"leave", "Player Two left"},
-		{"join", "Hunter Admin joined"},
+		{"join", "Player Admin joined"},
 	}
 	for i, expected := range want {
 		if doc.Data[i].Kind != expected.kind || doc.Data[i].Message != expected.message {
@@ -828,7 +828,7 @@ func TestIntegrationPalsIncludesOwner(t *testing.T) {
 	if err := json.Unmarshal(rr.Body.Bytes(), &doc); err != nil {
 		t.Fatal(err)
 	}
-	if len(doc.Data) != 1 || doc.Data[0].InstanceID != palID || doc.Data[0].OwnerUID != uidA || doc.Data[0].OwnerName != "Hunter" || doc.Data[0].OwnerSource != "personal_container" || !doc.Data[0].OwnerResolved || !doc.Data[0].InParty || doc.Data[0].PartySlot == nil || *doc.Data[0].PartySlot != 2 || doc.Data[0].BoxPage != nil || doc.Data[0].BoxSlot != nil {
+	if len(doc.Data) != 1 || doc.Data[0].InstanceID != palID || doc.Data[0].OwnerUID != uidA || doc.Data[0].OwnerName != "Player One" || doc.Data[0].OwnerSource != "personal_container" || !doc.Data[0].OwnerResolved || !doc.Data[0].InParty || doc.Data[0].PartySlot == nil || *doc.Data[0].PartySlot != 2 || doc.Data[0].BoxPage != nil || doc.Data[0].BoxSlot != nil {
 		t.Fatalf("pals = %#v", doc.Data)
 	}
 	pal := doc.Data[0]
