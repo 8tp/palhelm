@@ -29,6 +29,9 @@ cd frontend && npm ci
 npm run build        # tsc -b && vite build
 npm run lint         # oxlint
 npm test             # node --test; one test spawns a Go fixture, so Go must be installed
+npm run test:smoke   # Playwright smoke: boots Vite in mock mode, visits every nav route
+                     # at two viewports, asserts no console errors and no horizontal overflow.
+                     # Kept out of `npm test`; needs a Chromium browser: npx playwright install chromium
 ```
 
 Go code is expected to be gofmt clean.

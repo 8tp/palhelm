@@ -33,7 +33,7 @@ On narrow screens, the search and focus actions wrap into touch-sized controls, 
 Marker layers can be toggled on or off:
 
 - **Players.** Online players that have a known position. Each marker shows the player name.
-- **Bases.** Guild bases from the save. Each marker shows the guild name.
+- **Bases.** Guild bases from the save. Each marker labels with the base's own chosen name, falling back to the guild's display label (including the "<member>'s guild" fallback for unnamed guilds) when the base was never renamed.
 - **Workers.** Pals working at a base, shown only when the optional game-data poller is enabled and has a fresh snapshot. This dense layer starts off and can be enabled from the map. These are exact save-linked workers, so an actor becomes a worker marker only when it uniquely matches a known save instance. When game data is off, unauthorized, or stale, the map shows a badge instead of plotting workers.
 
 Players, bases, workers, and Palboxes have separate SVG marker shapes as well as labels, so marker identity does not depend on color alone.

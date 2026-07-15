@@ -1,12 +1,12 @@
 ---
 title: Storage and migrations
-description: The single SQLite file, what its tables hold, metrics retention windows, and the ten schema migrations.
+description: The single SQLite file, what its tables hold, metrics retention windows, and the twelve schema migrations.
 sidebar:
   order: 4
 ---
 
 This page covers where Palhelm keeps its data: one SQLite file, its main table areas,
-how long metrics are kept, and how the schema is versioned through ten ordered
+how long metrics are kept, and how the schema is versioned through twelve ordered
 migrations.
 
 ## One SQLite file
@@ -27,9 +27,11 @@ The schema groups into a few areas:
   including identity, level, guild, position, playtime, ban and allow-list flags, and
   progress counters. `sessions` records join and leave times.
 - World data from the save. `guilds`, `guild_members`, `bases`, and `pals` are refreshed
-  by the save-sync poller. `world_state` holds one row of parse metadata: the world day,
-  when the last parse ran, how long it took, the counts it produced, and the skipped and
-  drift counters from the parser.
+  by the save-sync poller. `bases` carries a nullable `name` (the player's chosen base-camp
+  name, `NULL` when unnamed) and `pals` carries a nullable `rank` (the Pal Condenser rank,
+  `NULL` when the save recorded none). `world_state` holds one row of parse metadata: the
+  world day, when the last parse ran, how long it took, the counts it produced, and the
+  skipped and drift counters from the parser.
 - Paldeck observations. `player_paldeck` stores normalized species capture counts and
   unlock flags decoded from authoritative player `RecordData`; `player_paldeck_state`
   distinguishes unavailable, complete, and defensively truncated observations.
@@ -75,7 +77,7 @@ migrated: it sees a schema version above the newest migration it knows and refus
 start. To roll back past a migration, restore the pre-update copy of the data volume.
 See [Updating Palhelm](/getting-started/updating/) for the full rollback procedure.
 
-## The ten migrations
+## The twelve migrations
 
 | File | Purpose |
 |---|---|
@@ -89,7 +91,9 @@ See [Updating Palhelm](/getting-started/updating/) for the full rollback procedu
 | `008_pal_base_workers.sql` | Adds a `base_id` column to `pals` so pals assigned to a base can be linked to it. |
 | `009_game_data_activity.sql` | Adds aggregate-only Game Data activity/health samples for bounded operator diagnostics. |
 | `010_player_paldeck.sql` | Adds authoritative per-player species capture/unlock observations and their availability, timestamp, and truncation state. |
+| `011_base_names.sql` | Adds a nullable `name` column to `bases` for the player's chosen base-camp name, decoded from `BaseCampSaveData.RawData`. Uses the rebuild-table pattern so a replayed migration stays idempotent. Unnamed bases stay `NULL`. |
+| `012_pal_rank.sql` | Adds a nullable `rank` column to `pals` for the Pal Condenser rank (1–5). A pal parsed before this column reads back as `NULL` (unavailable), never a misleading `0`. |
 
-Migrations 004 through 010 grew the pal/player records and aggregate diagnostics as the panel's player-view
+Migrations 004 through 012 grew the pal/player records and aggregate diagnostics as the panel's player-view
 and pal-box screens matured. Each one is additive, so upgrading is a matter of pulling a
 newer image and restarting.

@@ -63,17 +63,22 @@ its declared size and counted, rather than causing a failure.
 ## What Palhelm parses, and what it skips
 
 Palworld stores several sections as opaque `RawData` blobs inside the property tree.
-Palhelm decodes only the two it needs and leaves everything else as bytes.
+Palhelm decodes only the three it needs and leaves everything else as bytes.
 
 Parsed:
 
 - `CharacterSaveParameterMap`: players and pals, told apart by an `IsPlayer` flag.
   Palhelm reads identity, level, HP, character id, owner, placement, gender, talents,
-  passive skills, and equipped attacks.
+  passive skills, equipped attacks, and the Pal Condenser rank.
 - `GroupSaveDataMap`: guilds, including id, name, admin, members with last-online
   timestamps, and base ids. The 1.0 layout of this blob differs from older saves, so
   Palhelm follows the maintained oMaN-Rod fork here. The older cheahjs decoder fails on
   the 1.0 layout.
+- `BaseCampSaveData`: each base camp's player-chosen name and its world-space location,
+  decoded from the base's own `RawData` (along with the worker-container GUID that links
+  base-worker Pals). An unnamed base — the engine writes an untranslated placeholder into
+  every base the player never renamed — decodes to `null`, never a synthetic label; a base
+  whose transform fails to decode serves a `null` location, never a misleading `(0,0)`.
 
 Left as opaque bytes:
 

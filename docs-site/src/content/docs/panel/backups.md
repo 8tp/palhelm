@@ -19,10 +19,10 @@ Select "Browse contents" on a snapshot to list the files inside the archive with
 
 The schedule card sets how often a scheduled backup runs, from every hour up to every 12 hours, and how many days of snapshots to keep, from 7 up to 60 days. When the schedule is enabled, the card shows the next run time. Snapshots older than the retention window are pruned.
 
-The storage card shows the total size of kept snapshots against a reference capacity.
+The storage card shows the total size of kept snapshots against the backup volume's real capacity, with the free space on the volume. Those figures come from a live `statfs` reading of the filesystem behind the data volume; host paths are never shown.
 
 :::note
-The backup volume's real capacity is not reported by the API yet, so the storage meter uses a fixed reference figure for its denominator. Read the "used" total as the accurate number.
+When a panel build cannot read the volume's capacity, the card drops the meter and says so instead of inventing a denominator. Read the "used" total as the accurate number in that case.
 :::
 
 ## Restoring a snapshot
@@ -39,4 +39,4 @@ Restore refuses to run while the game server is running. The request returns a c
 
 ## Data sources
 
-Backups read `GET /api/v1/backups`, `GET /api/v1/backups/{id}/contents`, and `GET/PUT /api/v1/backups/schedule`. Creating uses `POST /api/v1/backups`. Restore uses `POST /api/v1/backups/{id}/restore/dry-run` then `POST /api/v1/backups/{id}/restore` with the typed confirmation. Download uses `GET /api/v1/backups/{id}/download`, and delete uses `DELETE /api/v1/backups/{id}`.
+Backups read `GET /api/v1/backups`, `GET /api/v1/backups/{id}/contents`, `GET /api/v1/backups/storage` for the volume capacity, and `GET/PUT /api/v1/backups/schedule`. Creating uses `POST /api/v1/backups`. Restore uses `POST /api/v1/backups/{id}/restore/dry-run` then `POST /api/v1/backups/{id}/restore` with the typed confirmation. Download uses `GET /api/v1/backups/{id}/download`, and delete uses `DELETE /api/v1/backups/{id}`.

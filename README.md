@@ -103,9 +103,11 @@ scripts/fetch-pal-icons.sh ./palhelm-data/pal-icons   # pal preview icons
 | `PALHELM_OODLE_LIB` | unset | path to `liboo2corelinux64.so.9` if you provide your own |
 | `PALHELM_INTEGRATION_RATE_LIMIT` | `60` | requests/minute per Integration API key |
 
-Version 0.9.0 adds schema migration 010 for save-observed per-player Paldeck progression. Back up
-the complete `/data` volume before upgrading; rollback to a 0.8.x image requires restoring that
-pre-upgrade backup. See [the v0.9.0 release notes](docs/releases/v0.9.0.md).
+Version 0.9.0 adds schema migrations 010–012 (save-observed per-player Paldeck progression,
+base-camp names, and Pal Condenser rank), advancing the schema from version 10 to 12. Back up the
+complete `/data` volume before upgrading; rollback to a 0.8.x image requires restoring that
+pre-upgrade backup, because the older binary fails closed against the newer schema. See
+[the v0.9.0 release notes](docs/releases/v0.9.0.md).
 
 ## Known limits
 

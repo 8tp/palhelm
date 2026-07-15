@@ -43,7 +43,7 @@ A viewer has read-only access. Viewers see the list and the detail panel, but no
 
 ### The Pal box
 
-The detail panel shows the player's active party first, up to five Pals from the save. Each entry has an info button that expands to show level, individual HP, gender, talents, passive skill ids, and equipped skill ids, plus alpha and lucky markers. It also joins the Pal's CharacterID to the bundled, version-pinned species catalogue and shows every available work suitability as a labeled SVG badge with its numeric level, such as **Handiwork Lv 4**. Save observations and species metadata remain labeled separately.
+The detail panel shows the player's active party first, up to five Pals from the save. Each entry has an info button that expands to show level, individual HP, gender, condenser star rating, talents, passive skill ids, and equipped skill ids, plus alpha and lucky markers. The condenser rating reads **Unavailable** when the save carried no rank, never zero stars. It also joins the Pal's CharacterID to the bundled, version-pinned species catalogue and shows every available work suitability as a labeled SVG badge with its numeric level, such as **Handiwork Lv 4**. Save observations and species metadata remain labeled separately.
 
 Select "show all" to open the Pal box dialog. It recreates the in-game storage layout:
 

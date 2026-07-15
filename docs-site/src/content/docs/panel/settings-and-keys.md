@@ -13,7 +13,7 @@ The connections card shows the live status of each data channel: the game REST A
 
 ## Authentication
 
-The authentication card is a reference, not an editor. The admin password and the optional viewer password are set through environment variables when you run the container, and the card confirms what is configured without showing the values. Sessions last 7 days. The game server's admin password is never sent to the browser.
+The authentication card is a reference, not an editor. The admin password and the optional viewer password are set through environment variables when you run the container, and the card confirms what is configured without showing the values. The card also shows the login session duration, which is set through `PALHELM_SESSION_DAYS` (7 days by default) and now honored. The game server's admin password is never sent to the browser.
 
 ## Theme
 

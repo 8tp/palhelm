@@ -53,6 +53,8 @@ You do not run migrations by hand. They apply automatically when the new image b
 | `008_pal_base_workers` | Adds a base id to Pals so base workers can be attributed. |
 | `009_game_data_activity` | Adds aggregate-only Game Data FPS, worker activity, and link-coverage samples with 30-day retention. It stores no actor identities, names, health, guilds, or locations. |
 | `010_player_paldeck` | Adds bounded, save-observed per-player species capture counts and Paldeck unlock flags plus explicit observation and truncation coverage. |
+| `011_base_names` | Adds a nullable `name` column to bases for the player's chosen base-camp name; unnamed bases stay `NULL`, never a synthetic label. |
+| `012_pal_rank` | Adds a nullable `rank` column to pals for the Pal Condenser rank; a Pal parsed before this column reads back as `NULL` (unavailable), never a misleading `0`. |
 
 The runner fails closed. If the database was written by a newer Palhelm than the running binary knows about, it refuses to open rather than risk corrupting data. That refusal is what makes rollback predictable.
 
@@ -66,7 +68,7 @@ docker compose -f ./compose/docker-compose.yml up -d palhelm
 
 Whether the old binary starts depends on the schema. A database written at a schema the old binary already knows opens cleanly. If a newer migration ran and the old binary does not recognize the schema version, the runner fails closed and the panel will not start on the old tag. In that case, restore the `/data` copy you made before the update and start the old tag against it:
 
-Version 0.9.0 applies migration 010. Rolling back from it to a 0.8.x image therefore requires restoring the pre-upgrade `/data` backup; changing only the image tag is not sufficient.
+Version 0.9.0 applies migrations 010, 011, and 012, advancing the schema from version 10 to 12. Rolling back from it to a 0.8.x image therefore requires restoring the pre-upgrade `/data` backup; changing only the image tag is not sufficient, because the older binary fails closed against a schema-12 database and will not start.
 
 ```sh
 docker compose -f ./compose/docker-compose.yml stop palhelm

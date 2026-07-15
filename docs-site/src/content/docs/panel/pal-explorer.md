@@ -10,10 +10,12 @@ Search by Pal name, internal species identifier, or known owner name. Filters na
 party, Palbox, or base placement; owner evidence; level range; and Standard, Alpha, Lucky, or Boss
 specimen.
 
-Each result shows the resolved species name and icon, level, placement, and the best available
-owner evidence. Expand the info control to see individual HP, gender, talents, passive and equipped
-skill identifiers, plus the shared species work-suitability badges. Every work badge uses its own
-SVG symbol and shows the numeric level, such as **Mining Lv 3**.
+Each result shows the resolved species name and icon, level, placement, the best available owner
+evidence, and — when the save recorded one — the Pal's condenser star rating. Expand the info
+control to see individual HP, gender, condenser stars, talents, passive and equipped skill
+identifiers, plus the shared species work-suitability badges. Every work badge uses its own SVG
+symbol and shows the numeric level, such as **Mining Lv 3**. A Pal with no recorded condenser rank
+shows no stars in the list and reads **Unavailable** in the expanded detail, never zero stars.
 
 Owner evidence is deliberately qualified. A current personal container is stronger than the owner
 stored in the save, while “last observed” is historical attribution rather than proof of current

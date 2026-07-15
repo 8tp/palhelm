@@ -115,6 +115,7 @@ curl -H "Authorization: Bearer phk_a1b2c3d4_..." \
         "baseId": null,
         "hp": 340.0,
         "gender": "female",
+        "rank": null,
         "talents": {"hp": 40, "melee": 0, "shot": 15, "defense": 70},
         "passiveSkillIds": ["Rare", "Legend"],
         "equippedSkillIds": ["PowerShot", "IceMissile"]
@@ -134,6 +135,7 @@ curl -H "Authorization: Bearer phk_a1b2c3d4_..." \
         "baseId": null,
         "hp": 615.0,
         "gender": "male",
+        "rank": 3,
         "talents": {"hp": 80, "melee": 55, "shot": 20, "defense": 10},
         "passiveSkillIds": [],
         "equippedSkillIds": ["FireBall"]
@@ -145,7 +147,7 @@ curl -H "Authorization: Bearer phk_a1b2c3d4_..." \
 }
 ```
 
-The second pal shows a `BOSS_` character id resolving to its base species name (`Foxparks`) with `isAlpha` set to `true`. Placement is derived and safe: `party`, `box`, `base`, or `unknown`. Raw container GUIDs are never exposed.
+The second pal shows a `BOSS_` character id resolving to its base species name (`Foxparks`) with `isAlpha` set to `true`, and a condenser `rank` of `3` (two of four stars). Placement is derived and safe: `party`, `box`, `base`, or `unknown`. Raw container GUIDs are never exposed. `rank` is the Pal Condenser rank from 1 (never condensed) to 5 (four stars); displayed stars are `rank − 1`, and it is `null` — never `0` — when the save carried no rank, as on the first pal.
 
 ## GET /pals
 
@@ -178,6 +180,7 @@ curl -H "Authorization: Bearer phk_a1b2c3d4_..." \
       "ownerResolved": true,
       "hp": 505.0,
       "gender": "male",
+      "rank": 2,
       "talents": {"hp": 25, "melee": 30, "shot": 5, "defense": 45},
       "passiveSkillIds": ["Workaholic", "Serious"],
       "equippedSkillIds": ["PoisonBlast"]
@@ -203,7 +206,7 @@ Work suitability and base-combat stats are deliberately not in these responses. 
 
 ## GET /guilds
 
-Every guild with its members and bases. Not paginated: guild counts are small and the response is bounded by save size. Base `location` is exposed here (bases are communal and already discoverable in-game); live player positions are not.
+Every guild with its members and bases. Not paginated: guild counts are small and the response is bounded by save size. Base `location` is exposed here (bases are communal and already discoverable in-game); live player positions are not. Each base carries the player's chosen `name`, or `null` when the base was never renamed (never `""`); `location` is `null`, never `(0,0)`, when the base's world transform could not be decoded.
 
 ```bash
 curl -H "Authorization: Bearer phk_a1b2c3d4_..." \
@@ -223,7 +226,7 @@ curl -H "Authorization: Bearer phk_a1b2c3d4_..." \
         {"uid": "b80d47f1a9c24e6fb35c81902ad7e6f4", "name": "VossR"}
       ],
       "bases": [
-        {"id": "9f4e2b71", "location": {"x": -128340.0, "y": 205117.5}, "level": 3}
+        {"id": "9f4e2b71", "name": "Lakeside HQ", "location": {"x": -128340.0, "y": 205117.5}, "level": 3}
       ]
     },
     {
@@ -235,7 +238,7 @@ curl -H "Authorization: Bearer phk_a1b2c3d4_..." \
         {"uid": "d72f3e10a9c84b56b0e1a2c3f4d5e6a7", "name": "HaruQ"}
       ],
       "bases": [
-        {"id": "3c8d1f60", "location": {"x": 44210.0, "y": -88750.0}, "level": 2}
+        {"id": "3c8d1f60", "name": null, "location": {"x": 44210.0, "y": -88750.0}, "level": 2}
       ]
     }
   ],

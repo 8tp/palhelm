@@ -72,10 +72,14 @@ Pure-Go port, no Python, no CGO:
    Fallback validated: powzix/ooz decodes these streams bit-exact, but it is unlicensed —
    kept out of the tree.
 3. GVAS reader: generic property tree (decode only), ported with oMaN-Rod's fork as reference.
-4. Custom `RawData` decoders: only `CharacterSaveParameterMap.Value.RawData` (players + pals,
-   discriminated by `IsPlayer`) and `GroupSaveDataMap` (guilds: id, name, members, base ids).
-   Item/foliage/dungeon blobs stay opaque bytes — we don't need them and skipping them avoids
-   the 1–3 GB RAM spikes the Python tools hit on large saves.
+4. Custom `RawData` decoders: `CharacterSaveParameterMap.Value.RawData` (players + pals,
+   discriminated by `IsPlayer`; pals include the condenser rank), `GroupSaveDataMap` (guilds:
+   id, name, members, base ids), and `BaseCampSaveData.RawData` (each base's player-chosen name,
+   world-space location, and worker-container GUID). An unnamed base decodes to a `null` name
+   (the engine placeholder is dropped, never shown), and a base whose transform fails to decode
+   serves a `null` location, never a misleading `(0,0)`. Item/foliage/dungeon blobs stay opaque
+   bytes — we don't need them and skipping them avoids the 1–3 GB RAM spikes the Python tools hit
+   on large saves.
 5. Tolerant by design: unknown properties are skipped with a counter, a failed sub-decoder
    degrades that feature (badge in UI: "save format drift"), never the whole panel.
 

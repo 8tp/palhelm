@@ -5,9 +5,10 @@ sidebar:
   order: 4
 ---
 
-The **Save-observed Paldeck** compares authoritative player `RecordData` maps with Palhelm's pinned
-Palworld 1.0 species catalog. Choose **Server union** or an individual player. Search the catalog or
-filter to captured, unseen, or unavailable observations, then open matching owned instances in the
+The **Paldeck** page ("capture progress from parsed saves") compares authoritative player
+`RecordData` maps with Palhelm's pinned Palworld 1.0 species catalog. Use the **Progress view**
+selector to choose all players (server union) or an individual player. Search the catalog or filter
+to captured, unseen, or unavailable observations, then open matching owned instances in the
 [Pal explorer](/panel/pal-explorer/).
 
 Palhelm keeps three kinds of number separate:
