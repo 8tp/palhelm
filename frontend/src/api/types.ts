@@ -115,6 +115,12 @@ export interface PlayerPal {
   baseId?: string | null;
   /** Individual save observations. Null means unavailable, not zero. */
   hp?: number | null;
+  /**
+   * Pal Condenser rank: 1 (never condensed) through 5 (four stars). Displayed
+   * stars are rank-1. Null/undefined means the save carried no Rank property —
+   * shown as "Unavailable", never as zero stars.
+   */
+  rank?: number | null;
   gender?: "male" | "female" | "unknown" | "";
   talents?: {
     hp: number | null;

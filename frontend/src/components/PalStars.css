@@ -1,0 +1,11 @@
+.pal-stars {
+  display: inline-flex;
+  gap: 1px;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.pal-star.is-filled {
+  color: #d9a441;
+}

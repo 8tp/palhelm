@@ -342,6 +342,85 @@ func TestReplaceWorldDerivesPartyAndBoxPlacement(t *testing.T) {
 	}
 }
 
+func TestReplaceWorldCarriesPalCondenserRank(t *testing.T) {
+	s, err := Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	ctx := context.Background()
+	rank3 := 3
+	rank1 := 1
+	w := &sav.World{
+		Players: []sav.Player{{UID: "owner", OtomoContainerID: "party"}},
+		Pals: []sav.Pal{
+			// condensed twice (Rank 3), never condensed (Rank 1), and an older parse
+			// that carried no Rank property at all (nil, must stay unavailable).
+			{InstanceID: "condensed", OwnerUID: "owner", ContainerID: "party", SlotIndex: 0, Rank: &rank3},
+			{InstanceID: "nevercond", OwnerUID: "owner", ContainerID: "party", SlotIndex: 1, Rank: &rank1},
+			{InstanceID: "absent", OwnerUID: "owner", ContainerID: "party", SlotIndex: 2},
+		},
+	}
+	if err = s.ReplaceWorld(ctx, w, time.Now(), 0); err != nil {
+		t.Fatal(err)
+	}
+
+	// Typed surface (integration player detail / PalsTyped).
+	typed, err := s.PalsTyped(ctx, "owner")
+	if err != nil {
+		t.Fatal(err)
+	}
+	byID := map[string]*int{}
+	for i := range typed {
+		byID[typed[i].InstanceID] = typed[i].Rank
+	}
+	if r := byID["condensed"]; r == nil || *r != 3 {
+		t.Fatalf("condensed pal rank = %v, want 3", r)
+	}
+	if r := byID["nevercond"]; r == nil || *r != 1 {
+		t.Fatalf("never-condensed pal rank = %v, want 1", r)
+	}
+	if r, ok := byID["absent"]; !ok || r != nil {
+		t.Fatalf("absent-rank pal rank = %v, want nil (not 0)", r)
+	}
+
+	// Session map surface (player detail UI). Absent rank must be a nil *int, never 0.
+	session, err := s.Pals(ctx, "owner")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, pal := range session {
+		rank, ok := pal["rank"].(*int)
+		if !ok {
+			t.Fatalf("session pal rank is %T, want *int", pal["rank"])
+		}
+		switch pal["instanceId"] {
+		case "condensed":
+			if rank == nil || *rank != 3 {
+				t.Fatalf("session condensed rank = %v, want 3", rank)
+			}
+		case "absent":
+			if rank != nil {
+				t.Fatalf("session absent rank = %v, want nil (not 0)", rank)
+			}
+		}
+	}
+
+	// Explorer/roster surface.
+	rows, err := s.PalsExplorerPage(ctx, PalExplorerQuery{Limit: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, row := range rows {
+		if row.InstanceID == "absent" && row.Rank != nil {
+			t.Fatalf("explorer absent rank = %v, want nil", row.Rank)
+		}
+		if row.InstanceID == "condensed" && (row.Rank == nil || *row.Rank != 3) {
+			t.Fatalf("explorer condensed rank = %v, want 3", row.Rank)
+		}
+	}
+}
+
 func TestReplaceWorldCarriesLastOwnerAcrossGuildBaseDeployment(t *testing.T) {
 	s, err := Open(filepath.Join(t.TempDir(), "test.db"))
 	if err != nil {
@@ -612,8 +691,8 @@ func TestMigration004AddsNullablePalPlacementColumns(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer st.Close()
-	if v, getErr := st.GetKV(context.Background(), "schema_version"); getErr != nil || v != "9" {
-		t.Fatalf("schema_version = %q, %v; want 9", v, getErr)
+	if v, getErr := st.GetKV(context.Background(), "schema_version"); getErr != nil || v != "10" {
+		t.Fatalf("schema_version = %q, %v; want 10", v, getErr)
 	}
 	pals, err := st.PalsTyped(context.Background(), "owner")
 	if err != nil || len(pals) != 1 {
@@ -672,8 +751,8 @@ func TestFreshDatabaseReachesLatestSchemaAndAPIKeysUsable(t *testing.T) {
 	defer s.Close()
 	ctx := context.Background()
 	v, err := s.GetKV(ctx, "schema_version")
-	if err != nil || v != "9" {
-		t.Fatalf("schema_version = %q, %v; want 9", v, err)
+	if err != nil || v != "10" {
+		t.Fatalf("schema_version = %q, %v; want 10", v, err)
 	}
 	hash := [32]byte{1, 2, 3}
 	created, err := s.CreateAPIKey(ctx, "abcd1234", hash, "fresh-db-key", time.Now())
@@ -739,8 +818,8 @@ func TestUpgradeFromV030SchemaAppliesAPIKeysMigration(t *testing.T) {
 	ctx := context.Background()
 
 	v, err := upgraded.GetKV(ctx, "schema_version")
-	if err != nil || v != "9" {
-		t.Fatalf("schema_version after upgrade = %q, %v; want 9", v, err)
+	if err != nil || v != "10" {
+		t.Fatalf("schema_version after upgrade = %q, %v; want 10", v, err)
 	}
 	if _, err = upgraded.ListAPIKeys(ctx); err != nil {
 		t.Fatalf("api_keys table not usable after upgrade: %v", err)
@@ -769,8 +848,8 @@ func TestUpgradeFromV030SchemaAppliesAPIKeysMigration(t *testing.T) {
 		t.Fatalf("second Open (already at latest version) returned an error: %v", err)
 	}
 	defer reopened.Close()
-	if v, err = reopened.GetKV(ctx, "schema_version"); err != nil || v != "9" {
-		t.Fatalf("schema_version after no-op reopen = %q, %v; want 9", v, err)
+	if v, err = reopened.GetKV(ctx, "schema_version"); err != nil || v != "10" {
+		t.Fatalf("schema_version after no-op reopen = %q, %v; want 10", v, err)
 	}
 }
 

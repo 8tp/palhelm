@@ -63,14 +63,20 @@ type Player struct {
 
 // Pal describes a non-player character from CharacterSaveParameterMap.
 type Pal struct {
-	InstanceID       string         `json:"instanceId"`
-	CharacterID      string         `json:"characterId,omitempty"`
-	Level            int32          `json:"level,omitempty"`
-	Exp              int64          `json:"exp,omitempty"`
-	HP               float64        `json:"hp,omitempty"`
-	OwnerUID         string         `json:"ownerUid,omitempty"`
-	IsLucky          bool           `json:"isLucky,omitempty"`
-	IsBoss           bool           `json:"isBoss,omitempty"`
+	InstanceID  string  `json:"instanceId"`
+	CharacterID string  `json:"characterId,omitempty"`
+	Level       int32   `json:"level,omitempty"`
+	Exp         int64   `json:"exp,omitempty"`
+	HP          float64 `json:"hp,omitempty"`
+	OwnerUID    string  `json:"ownerUid,omitempty"`
+	IsLucky     bool    `json:"isLucky,omitempty"`
+	IsBoss      bool    `json:"isBoss,omitempty"`
+	// Rank is the pal's Pal Condenser rank (Rank IntProperty). A never-condensed
+	// pal is Rank 1; each condenser star adds 1, up to Rank 5 (4 stars). Displayed
+	// stars are Rank-1. A nil pointer means the save carried no Rank property (an
+	// older parse or a character that predates the field); the API surfaces null so
+	// the UI can stay honest rather than show a misleading zero stars.
+	Rank             *int           `json:"rank,omitempty"`
 	Talents          map[string]int `json:"talents,omitempty"`
 	Gender           string         `json:"gender,omitempty"`
 	PassiveSkillIDs  []string       `json:"passiveSkillIds,omitempty"`

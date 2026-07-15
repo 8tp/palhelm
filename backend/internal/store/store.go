@@ -973,7 +973,7 @@ func (s *Store) ReplaceWorld(ctx context.Context, w *sav.World, at time.Time, d 
 		}
 		passiveSkillIDs, _ := json.Marshal(p.PassiveSkillIDs)
 		equippedSkillIDs, _ := json.Marshal(p.EquippedSkillIDs)
-		_, err = tx.ExecContext(ctx, "INSERT INTO pals(instance_id,owner_uid,owner_source,character_id,display_name,level,is_alpha,is_lucky,in_party,party_slot,box_page,box_slot,hp,gender,talent_hp,talent_melee,talent_shot,talent_defense,passive_skill_ids,equipped_skill_ids,base_id,raw_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", instanceID, ownerUID, ownerSource, p.CharacterID, paldeck.Name(p.CharacterID), p.Level, p.IsBoss || paldeck.IsBossID(p.CharacterID), p.IsLucky, inParty, partySlot, boxPage, boxSlot, p.HP, p.Gender, nullableTalent(p.Talents, "Talent_HP"), nullableTalent(p.Talents, "Talent_Melee"), nullableTalent(p.Talents, "Talent_Shot"), nullableTalent(p.Talents, "Talent_Defense"), string(passiveSkillIDs), string(equippedSkillIDs), NormalizeUID(p.BaseID), string(b))
+		_, err = tx.ExecContext(ctx, "INSERT INTO pals(instance_id,owner_uid,owner_source,character_id,display_name,level,is_alpha,is_lucky,in_party,party_slot,box_page,box_slot,hp,gender,talent_hp,talent_melee,talent_shot,talent_defense,passive_skill_ids,equipped_skill_ids,base_id,rank,raw_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", instanceID, ownerUID, ownerSource, p.CharacterID, paldeck.Name(p.CharacterID), p.Level, p.IsBoss || paldeck.IsBossID(p.CharacterID), p.IsLucky, inParty, partySlot, boxPage, boxSlot, p.HP, p.Gender, nullableTalent(p.Talents, "Talent_HP"), nullableTalent(p.Talents, "Talent_Melee"), nullableTalent(p.Talents, "Talent_Shot"), nullableTalent(p.Talents, "Talent_Defense"), string(passiveSkillIDs), string(equippedSkillIDs), NormalizeUID(p.BaseID), nullableRank(p.Rank), string(b))
 		if err != nil {
 			return err
 		}
@@ -1082,6 +1082,16 @@ func nullableTalent(talents map[string]int, name string) any {
 		return nil
 	}
 	return value
+}
+
+// nullableRank stores the pal's Condenser rank as a nullable column: a nil pointer
+// (the save carried no Rank property) persists as SQL NULL so the read path can keep
+// the unavailable-vs-zero distinction rather than defaulting to a misleading 0.
+func nullableRank(rank *int) any {
+	if rank == nil {
+		return nil
+	}
+	return *rank
 }
 
 // WorldState returns the most recent parse status.
@@ -1245,6 +1255,9 @@ type Pal struct {
 	TalentShot, TalentDefense            *int
 	PassiveSkillIDs, EquippedSkillIDs    []string
 	BaseID                               string
+	// Rank is the Pal Condenser rank (1..5) or nil when the save carried no Rank
+	// property. Displayed stars are Rank-1; nil stays unavailable, never 0.
+	Rank *int
 }
 
 // PalWithOwner is one bulk-paginated pal row with its owner uid/name joined in, so the
@@ -1374,7 +1387,7 @@ ORDER BY a.at`, since.Unix(), bucketSeconds)
 // PalsTyped returns one player's save-derived pals, typed (the integration-surface
 // counterpart to Pals, which returns map[string]any for the session UI).
 func (s *Store) PalsTyped(ctx context.Context, uid string) ([]Pal, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT instance_id,character_id,display_name,level,is_alpha,is_lucky,in_party,party_slot,box_page,box_slot,hp,gender,talent_hp,talent_melee,talent_shot,talent_defense,passive_skill_ids,equipped_skill_ids,base_id FROM pals WHERE owner_uid=?", NormalizeUID(uid))
+	rows, err := s.db.QueryContext(ctx, "SELECT instance_id,character_id,display_name,level,is_alpha,is_lucky,in_party,party_slot,box_page,box_slot,hp,gender,talent_hp,talent_melee,talent_shot,talent_defense,passive_skill_ids,equipped_skill_ids,base_id,rank FROM pals WHERE owner_uid=?", NormalizeUID(uid))
 	if err != nil {
 		return nil, err
 	}
@@ -1383,7 +1396,7 @@ func (s *Store) PalsTyped(ctx context.Context, uid string) ([]Pal, error) {
 	for rows.Next() {
 		var p Pal
 		var passiveJSON, equippedJSON string
-		if err = rows.Scan(&p.InstanceID, &p.CharacterID, &p.DisplayName, &p.Level, &p.IsAlpha, &p.IsLucky, &p.InParty, &p.PartySlot, &p.BoxPage, &p.BoxSlot, &p.HP, &p.Gender, &p.TalentHP, &p.TalentMelee, &p.TalentShot, &p.TalentDefense, &passiveJSON, &equippedJSON, &p.BaseID); err != nil {
+		if err = rows.Scan(&p.InstanceID, &p.CharacterID, &p.DisplayName, &p.Level, &p.IsAlpha, &p.IsLucky, &p.InParty, &p.PartySlot, &p.BoxPage, &p.BoxSlot, &p.HP, &p.Gender, &p.TalentHP, &p.TalentMelee, &p.TalentShot, &p.TalentDefense, &passiveJSON, &equippedJSON, &p.BaseID, &p.Rank); err != nil {
 			return nil, err
 		}
 		_ = json.Unmarshal([]byte(passiveJSON), &p.PassiveSkillIDs)
@@ -1397,7 +1410,7 @@ func (s *Store) PalsTyped(ctx context.Context, uid string) ([]Pal, error) {
 // with owner uid/name left-joined from players (owner name is empty when the owner row has
 // no name, which the LEFT JOIN's COALESCE also covers if the owner row is somehow absent).
 func (s *Store) PalsPage(ctx context.Context, after string, limit int) ([]PalWithOwner, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT p.instance_id,p.character_id,p.display_name,p.level,p.is_alpha,p.is_lucky,p.in_party,p.party_slot,p.box_page,p.box_slot,p.hp,p.gender,p.talent_hp,p.talent_melee,p.talent_shot,p.talent_defense,p.passive_skill_ids,p.equipped_skill_ids,p.base_id,p.owner_uid,COALESCE(pl.name,''),p.owner_source,pl.uid IS NOT NULL
+	rows, err := s.db.QueryContext(ctx, `SELECT p.instance_id,p.character_id,p.display_name,p.level,p.is_alpha,p.is_lucky,p.in_party,p.party_slot,p.box_page,p.box_slot,p.hp,p.gender,p.talent_hp,p.talent_melee,p.talent_shot,p.talent_defense,p.passive_skill_ids,p.equipped_skill_ids,p.base_id,p.rank,p.owner_uid,COALESCE(pl.name,''),p.owner_source,pl.uid IS NOT NULL
 FROM pals p LEFT JOIN players pl ON pl.uid=p.owner_uid
 WHERE p.instance_id > ? ORDER BY p.instance_id ASC LIMIT ?`, after, limit)
 	if err != nil {
@@ -1408,7 +1421,7 @@ WHERE p.instance_id > ? ORDER BY p.instance_id ASC LIMIT ?`, after, limit)
 	for rows.Next() {
 		var p PalWithOwner
 		var passiveJSON, equippedJSON string
-		if err = rows.Scan(&p.InstanceID, &p.CharacterID, &p.DisplayName, &p.Level, &p.IsAlpha, &p.IsLucky, &p.InParty, &p.PartySlot, &p.BoxPage, &p.BoxSlot, &p.HP, &p.Gender, &p.TalentHP, &p.TalentMelee, &p.TalentShot, &p.TalentDefense, &passiveJSON, &equippedJSON, &p.BaseID, &p.OwnerUID, &p.OwnerName, &p.OwnerSource, &p.OwnerResolved); err != nil {
+		if err = rows.Scan(&p.InstanceID, &p.CharacterID, &p.DisplayName, &p.Level, &p.IsAlpha, &p.IsLucky, &p.InParty, &p.PartySlot, &p.BoxPage, &p.BoxSlot, &p.HP, &p.Gender, &p.TalentHP, &p.TalentMelee, &p.TalentShot, &p.TalentDefense, &passiveJSON, &equippedJSON, &p.BaseID, &p.Rank, &p.OwnerUID, &p.OwnerName, &p.OwnerSource, &p.OwnerResolved); err != nil {
 			return nil, err
 		}
 		_ = json.Unmarshal([]byte(passiveJSON), &p.PassiveSkillIDs)
@@ -1422,7 +1435,7 @@ WHERE p.instance_id > ? ORDER BY p.instance_id ASC LIMIT ?`, after, limit)
 // filters in SQLite. Filtering before pagination is important: a client-side filter over one page
 // would silently omit matching Pals later in the roster.
 func (s *Store) PalsExplorerPage(ctx context.Context, filter PalExplorerQuery) ([]PalWithOwner, error) {
-	const selectPals = `SELECT p.instance_id,p.character_id,p.display_name,p.level,p.is_alpha,p.is_lucky,p.in_party,p.party_slot,p.box_page,p.box_slot,p.hp,p.gender,p.talent_hp,p.talent_melee,p.talent_shot,p.talent_defense,p.passive_skill_ids,p.equipped_skill_ids,p.base_id,p.owner_uid,COALESCE(pl.name,''),p.owner_source,pl.uid IS NOT NULL
+	const selectPals = `SELECT p.instance_id,p.character_id,p.display_name,p.level,p.is_alpha,p.is_lucky,p.in_party,p.party_slot,p.box_page,p.box_slot,p.hp,p.gender,p.talent_hp,p.talent_melee,p.talent_shot,p.talent_defense,p.passive_skill_ids,p.equipped_skill_ids,p.base_id,p.rank,p.owner_uid,COALESCE(pl.name,''),p.owner_source,pl.uid IS NOT NULL
 FROM pals p LEFT JOIN players pl ON pl.uid=p.owner_uid`
 	var query strings.Builder
 	query.WriteString(selectPals)
@@ -1478,7 +1491,7 @@ FROM pals p LEFT JOIN players pl ON pl.uid=p.owner_uid`
 	for rows.Next() {
 		var p PalWithOwner
 		var passiveJSON, equippedJSON string
-		if err = rows.Scan(&p.InstanceID, &p.CharacterID, &p.DisplayName, &p.Level, &p.IsAlpha, &p.IsLucky, &p.InParty, &p.PartySlot, &p.BoxPage, &p.BoxSlot, &p.HP, &p.Gender, &p.TalentHP, &p.TalentMelee, &p.TalentShot, &p.TalentDefense, &passiveJSON, &equippedJSON, &p.BaseID, &p.OwnerUID, &p.OwnerName, &p.OwnerSource, &p.OwnerResolved); err != nil {
+		if err = rows.Scan(&p.InstanceID, &p.CharacterID, &p.DisplayName, &p.Level, &p.IsAlpha, &p.IsLucky, &p.InParty, &p.PartySlot, &p.BoxPage, &p.BoxSlot, &p.HP, &p.Gender, &p.TalentHP, &p.TalentMelee, &p.TalentShot, &p.TalentDefense, &passiveJSON, &equippedJSON, &p.BaseID, &p.Rank, &p.OwnerUID, &p.OwnerName, &p.OwnerSource, &p.OwnerResolved); err != nil {
 			return nil, err
 		}
 		_ = json.Unmarshal([]byte(passiveJSON), &p.PassiveSkillIDs)
@@ -1495,7 +1508,7 @@ func escapeSQLLike(value string) string {
 
 // Pals returns a player's save-derived pals.
 func (s *Store) Pals(ctx context.Context, uid string) ([]map[string]any, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT instance_id,character_id,display_name,level,is_alpha,is_lucky,in_party,party_slot,box_page,box_slot,base_id,hp,gender,talent_hp,talent_melee,talent_shot,talent_defense,passive_skill_ids,equipped_skill_ids FROM pals WHERE owner_uid=?", NormalizeUID(uid))
+	rows, err := s.db.QueryContext(ctx, "SELECT instance_id,character_id,display_name,level,is_alpha,is_lucky,in_party,party_slot,box_page,box_slot,base_id,hp,gender,talent_hp,talent_melee,talent_shot,talent_defense,passive_skill_ids,equipped_skill_ids,rank FROM pals WHERE owner_uid=?", NormalizeUID(uid))
 	if err != nil {
 		return nil, err
 	}
@@ -1508,8 +1521,8 @@ func (s *Store) Pals(ctx context.Context, uid string) ([]map[string]any, error) 
 		var partySlot, boxPage, boxSlot *int
 		var hp *float64
 		var gender, passiveJSON, equippedJSON string
-		var talentHP, talentMelee, talentShot, talentDefense *int
-		if err = rows.Scan(&i, &c, &n, &l, &a, &k, &inParty, &partySlot, &boxPage, &boxSlot, &baseID, &hp, &gender, &talentHP, &talentMelee, &talentShot, &talentDefense, &passiveJSON, &equippedJSON); err != nil {
+		var talentHP, talentMelee, talentShot, talentDefense, rank *int
+		if err = rows.Scan(&i, &c, &n, &l, &a, &k, &inParty, &partySlot, &boxPage, &boxSlot, &baseID, &hp, &gender, &talentHP, &talentMelee, &talentShot, &talentDefense, &passiveJSON, &equippedJSON, &rank); err != nil {
 			return nil, err
 		}
 		passives, equipped := []string{}, []string{}
@@ -1525,7 +1538,7 @@ func (s *Store) Pals(ctx context.Context, uid string) ([]map[string]any, error) 
 			"instanceId": i, "characterId": c, "displayName": n, "level": l,
 			"isAlpha": a, "isLucky": k, "inParty": inParty, "partySlot": partySlot,
 			"boxPage": boxPage, "boxSlot": boxSlot, "baseId": nullableString(baseID),
-			"placement": palPlacement(inParty, boxPage, baseID), "hp": hp, "gender": gender,
+			"placement": palPlacement(inParty, boxPage, baseID), "hp": hp, "gender": gender, "rank": rank,
 			"talents":         map[string]any{"hp": talentHP, "melee": talentMelee, "shot": talentShot, "defense": talentDefense},
 			"passiveSkillIds": passives, "equippedSkillIds": equipped,
 		})

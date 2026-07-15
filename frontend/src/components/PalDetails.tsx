@@ -1,7 +1,10 @@
+import type { ReactNode } from "react";
 import type { PlayerPal } from "../api/types";
 import { truncateMiddle } from "../app/format";
 import { IconInfo } from "./icons";
 import { humanizePalIdentifier, palGenderLabel, palPlacementLabel } from "./palDetails";
+import { condensedStars } from "./palStars";
+import { PalStars } from "./PalStars";
 import { WorkSuitabilityBadges } from "./WorkSuitabilityBadges";
 import { PAL_WORK_DATA_PROVENANCE } from "./workSuitabilities";
 import "./PalDetails.css";
@@ -46,6 +49,7 @@ export function PalDetailPanel({ pal, id }: { pal: PlayerPal; id: string }) {
         <Fact label="Current HP" value={pal.hp === undefined || pal.hp === null ? "Unavailable" : formatNumber(pal.hp)} />
         <Fact label="Placement" value={palPlacementLabel(pal)} />
         <Fact label="Specimen" value={[pal.isAlpha ? "Alpha" : null, pal.isLucky ? "Lucky" : null].filter(Boolean).join(" · ") || "Standard"} />
+        <Fact label="Condensed" value={condensedStars(pal.rank) === null ? "Unavailable" : <PalStars rank={pal.rank} />} />
       </div>
 
       <div className="pal-detail-section">
@@ -74,7 +78,7 @@ export function PalDetailPanel({ pal, id }: { pal: PlayerPal; id: string }) {
   );
 }
 
-function Fact({ label, value }: { label: string; value: string }) {
+function Fact({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="pal-detail-fact">
       <span>{label}</span>

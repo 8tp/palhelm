@@ -4,6 +4,7 @@ import { Dialog } from "./ConfirmDialog";
 import { PalIcon } from "./PalIcon";
 import { IconChevronLeft, IconChevronRight } from "./icons";
 import { PalDetailPanel, PalInfoButton } from "./PalDetails";
+import { PalStars } from "./PalStars";
 
 const PARTY_SLOTS = 5;
 const BOX_SLOTS = 30;
@@ -65,6 +66,7 @@ function PalCell({ pal, expanded, onInfo }: { pal: PlayerPal | null; expanded: b
         Lv {pal.level}
         {pal.isAlpha && <span className="pal-tag alpha">α</span>}
         {pal.isLucky && <span className="pal-tag lucky">✦</span>}
+        {pal.rank != null && pal.rank > 1 && <PalStars rank={pal.rank} />}
       </span>
     </div>
   );

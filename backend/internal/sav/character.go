@@ -83,6 +83,14 @@ func characterFromEntry(e mapEntry, stats *ParseStats) (*Player, *Pal, error) {
 			pal.SlotIndex = int(idx)
 		}
 	}
+	// Rank is the Pal Condenser rank (1 = never condensed, up to 5 = 4 stars).
+	// Absent on characters that predate the field, so keep it nil rather than 0 to
+	// preserve the unavailable-vs-zero distinction. Soul-enhancement Rank_HP /
+	// Rank_Attack / Rank_Defence are deliberately not read here.
+	if v, ok := propertyInt(sp, "Rank"); ok {
+		rank := int(v)
+		pal.Rank = &rank
+	}
 	for _, name := range []string{"Talent_HP", "Talent_Melee", "Talent_Shot", "Talent_Defense"} {
 		if v, ok := propertyInt(sp, name); ok {
 			pal.Talents[name] = int(v)
