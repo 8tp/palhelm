@@ -199,13 +199,13 @@ function GameDataDiagnosticsCard() {
                 <div className="kv-row"><span className="k">FPS</span><span className="v mono">{snapshot ? `${snapshot.fps.toFixed(1)} · avg ${snapshot.fpsAvg.toFixed(1)}` : "—"}</span></div>
               </div>
               <div>
-                <div className="kv-row"><span className="k">Exact worker links</span><span className="v mono">{diagnostics ? `${diagnostics.linkedBasePals}/${snapshot?.counts.basePals ?? 0}` : "—"}</span></div>
+                <div className="kv-row"><span className="k">Linked workers</span><span className="v mono">{diagnostics ? `${diagnostics.linkedBasePals}/${snapshot?.counts.basePals ?? 0}` : "—"}</span></div>
                 <div className="kv-row"><span className="k">Unresolved workers</span><span className="v mono">{diagnostics?.unresolvedBasePals ?? "—"}</span></div>
                 <div className="kv-row"><span className="k">Last poll result</span><span className="v">{diagnostics?.lastErrorCategory ?? "—"}</span></div>
                 <div className="kv-row"><span className="k">Next attempt</span><span className="v">{diagnostics?.nextAttemptAt ? formatRelativeToNow(diagnostics.nextAttemptAt) : "not scheduled"}</span></div>
               </div>
             </div>
-            {diagnostics?.linkLookupFailed && <Banner tone="warn">The snapshot loaded, but save-derived worker identity linkage failed.</Banner>}
+            {diagnostics?.linkLookupFailed && <Banner tone="warn">The snapshot loaded, but workers couldn't be matched to their save identities.</Banner>}
             {activity && (
               <p className="field-hint mono" style={{ marginTop: "var(--space-3)" }}>
                 workers · {activity.working} working · {activity.transporting} transporting · {activity.eating} eating · {activity.sleeping} sleeping · {activity.idle} idle · {activity.incapacitated} incapacitated · {activity.unknown} unknown

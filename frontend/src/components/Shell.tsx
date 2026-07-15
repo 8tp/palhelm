@@ -207,14 +207,14 @@ function HelmStrip() {
         </div>
       </div>
 
-      <div className="instrument">
+      <div className="instrument instrument-secondary">
         <div>
           <span className="label">In-game</span>
           <span className="value">Day {metrics ? metrics.day : "—"}</span>
         </div>
       </div>
 
-      <div className="instrument">
+      <div className="instrument instrument-secondary">
         <div>
           <span className="label">Uptime</span>
           <span className="value">{metrics ? formatDuration(metrics.uptimeSec) : "—"}</span>

@@ -194,10 +194,15 @@ dialog.dialog {
 .instrument .value small { color: var(--band-ink-2); font-weight: 400; }
 .helmstrip .grow { flex: 1; }
 .helmstrip .actions { display: flex; align-items: center; gap: var(--space-2); }
-/* mid-width: tighten instrument spacing so the strip's labels never wrap or clip */
+/* mid-width: tighten instrument spacing so the strip's labels never wrap or clip,
+   and drop the secondary instruments (in-game day, uptime) before they crowd out
+   the status pill and admin actions */
 @media (max-width: 1150px) {
   .helmstrip { gap: var(--space-3); padding: 0 var(--space-3); }
   .instrument + .instrument { padding-left: var(--space-3); }
+}
+@media (max-width: 1000px) {
+  .instrument-secondary { display: none; }
 }
 
 /* state pill — a rubber stamp: rounded rect, inked border, mono caps */

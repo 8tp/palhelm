@@ -94,7 +94,7 @@ export function PalBoxDialog({
   return (
     <Dialog open={open} title={`${playerName} · Pals`} onClose={onClose} className="pal-box-dialog">
       {current === null ? (
-        <div className="pal-box-empty">No pals in the latest save parse.</div>
+        <div className="pal-box-empty">No Pals in the latest save.</div>
       ) : (
         <div className="pal-box">
           <div className="pal-box-nav">

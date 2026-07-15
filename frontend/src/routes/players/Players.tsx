@@ -381,7 +381,7 @@ function PlayerDetailPanel({ uid, onAction }: { uid: string | null; onAction: (k
           <div>
             {pals.length === 0 && (
               <div className="pal-row" style={{ color: "var(--ink-3)" }}>
-                No pals in the latest save parse.
+                No Pals in the latest save.
               </div>
             )}
             {shownPals.map((pal) => {

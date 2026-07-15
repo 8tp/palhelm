@@ -61,7 +61,7 @@ export default function DiagnosticsRoute() {
       <div className="page-head diagnostics-head">
         <div>
           <h1>Diagnostics</h1>
-          <span className="sub">read-only operator evidence · cached pollers · no raw actor data</span>
+          <span className="sub">read-only health evidence · cached pollers</span>
         </div>
         <button type="button" className="btn btn-sm" disabled={refreshing} onClick={refresh}>
           {refreshing ? "Refreshing…" : "Refresh now"}
