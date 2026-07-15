@@ -23,6 +23,7 @@ import type {
   GuildDetail,
   IntegrationKey,
   IntegrationKeyCreated,
+  LiveWorldActor,
   LiveWorldSnapshot,
   MapDataset,
   MetricsCurrent,
@@ -1026,6 +1027,38 @@ export async function getWorld(): Promise<WorldInfo> {
   };
 }
 
+// A realistic single base: one PalBox with ~16 workers packed tightly around it, so mock mode
+// exercises the map's Workers-layer clustering (they collapse to one chip at world zoom and
+// separate as you zoom in). Positions are a fixed ring of small world-cm offsets from the base
+// center, deterministic across renders. A couple are critically hurt and one is knocked out so
+// the cluster's danger accent and "N workers · M hurt" label are visible.
+const mockBaseCenter = guilds[0]?.bases[0]?.location ?? { x: 0, y: 0 };
+const mockBaseId = guilds[0]?.bases[0]?.id;
+const mockWorkerNames = [
+  "Anubis", "Grizzbolt", "Digtoise", "Penking", "Foxparks", "Lamball", "Cattiva", "Chikipi",
+  "Tombat", "Rayhound", "Melpaca", "Vixy", "Tanzee", "Lifmunk", "Fuack", "Depresso",
+];
+const mockBaseWorkers: LiveWorldActor[] = mockWorkerNames.map((name, i) => {
+  const angle = (i / mockWorkerNames.length) * Math.PI * 2;
+  const radius = 2600 + (i % 4) * 1500; // world cm: tight enough to cluster, wide enough to split on zoom
+  const hurt = i === 3 || i === 9; // critically low HP
+  const down = i === 12; // knocked out
+  return {
+    kind: "BaseCampPal",
+    characterId: name,
+    name,
+    level: 8 + ((i * 7) % 28),
+    hpPercent: down ? 0 : hurt ? 14 : 70 + ((i * 13) % 30),
+    active: true,
+    activity: down ? "incapacitated" : i % 5 === 0 ? "transporting" : i % 3 === 0 ? "idle" : "working",
+    linked: true,
+    instanceId: `mock-worker-${i + 1}`,
+    baseId: mockBaseId,
+    ownerName: players[0]?.name,
+    location: { x: mockBaseCenter.x + Math.cos(angle) * radius, y: mockBaseCenter.y + Math.sin(angle) * radius, z: 0 },
+  };
+});
+
 export async function getWorldSnapshot(): Promise<LiveWorldSnapshot> {
   requireSession();
   await latency();
@@ -1037,7 +1070,7 @@ export async function getWorldSnapshot(): Promise<LiveWorldSnapshot> {
     sourceTime: "2026-07-14 13:00:00",
     fps: 57,
     fpsAvg: 55.4,
-    counts: { players: online.length, partyPals: online.length * 2, basePals: 18, wildPals: 84, npcs: 11, palBoxes: 2, unknown: 0 },
+    counts: { players: online.length, partyPals: online.length * 2, basePals: mockBaseWorkers.length, wildPals: 84, npcs: 11, palBoxes: 1, unknown: 0 },
     activity: { working: 9, transporting: 2, eating: 1, sleeping: 2, idle: 2, inactive: 1, combat: 0, incapacitated: 1, moving: 0, unknown: 0 },
     actors: [
       ...online.map((player) => ({
@@ -1049,7 +1082,8 @@ export async function getWorldSnapshot(): Promise<LiveWorldSnapshot> {
         active: true,
         location: { x: player.location!.x, y: player.location!.y, z: 0 },
       })),
-      { kind: "BaseCampPal", characterId: "Anubis", name: "Anubis", level: 35, hpPercent: 88, active: true, activity: "working", linked: true, instanceId: "mock-pal-1", baseId: guilds[0]?.bases[0]?.id, ownerName: players[0]?.name, location: { x: guilds[0]?.bases[0]?.location?.x ?? 0, y: guilds[0]?.bases[0]?.location?.y ?? 0, z: 0 } },
+      { kind: "PalBox", guildName: guilds[0]?.name, activity: "unknown", location: { x: mockBaseCenter.x, y: mockBaseCenter.y, z: 0 } },
+      ...mockBaseWorkers,
     ],
     truncated: false,
     diagnostics: { lastRequestDurationMs: 184, lastAcceptedActorCount: 118, lastErrorCategory: "none", linkedBasePals: 18, unresolvedBasePals: 0, linkLookupFailed: false, scheduledDelayMs: 30000, nextAttemptAt: new Date(Date.now() + 18_000).toISOString() },

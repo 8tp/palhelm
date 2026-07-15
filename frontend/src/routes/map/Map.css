@@ -186,6 +186,8 @@
 }
 .marker-worker.danger .marker-symbol { color: var(--danger); }
 .marker-worker.danger .chip { color: var(--danger-ink); border-color: var(--danger); }
+.marker-worker.marker-cluster .marker-count { background: var(--ok); }
+.marker-worker.marker-cluster.danger .marker-count { background: var(--danger); }
 .marker-palbox { display: flex; align-items: center; gap: 5px; }
 .marker-palbox .marker-symbol { color: var(--accent); }
 .marker-coordinate { display: flex; align-items: center; gap: 6px; z-index: 3; }

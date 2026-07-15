@@ -47,6 +47,21 @@ export function selectLiveMapActors(snapshot: LiveWorldSnapshot | undefined): Li
   };
 }
 
+/** A base worker counts as "in danger" when it is knocked out or critically low on HP. The map
+ * keeps this visible on the worker's own chip and propagates it to any cluster it collapses into,
+ * so an overview never hides a base that needs attention. Unknown HP is not treated as danger. */
+export function isWorkerInDanger(worker: LiveWorldActor): boolean {
+  return worker.activity === "incapacitated" || (worker.hpPercent !== undefined && worker.hpPercent < 25);
+}
+
+/** Plain-English summary for a group of clustered base workers, e.g. "12 workers · 2 hurt". The
+ * hurt count is only appended when at least one worker is in danger, keeping healthy bases quiet. */
+export function summarizeWorkerCluster(workers: readonly LiveWorldActor[]): { label: string; hurt: number; danger: boolean } {
+  const hurt = workers.filter(isWorkerInDanger).length;
+  const label = hurt > 0 ? `${workers.length} workers · ${hurt} hurt` : `${workers.length} workers`;
+  return { label, hurt, danger: hurt > 0 };
+}
+
 /**
  * Reconciles transient game-data coordinates onto the authoritative REST roster.
  *

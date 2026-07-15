@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, USE_MOCK } from "../../api/client";
-import type { GuildBase, MapDataset, MapDatasetLayer } from "../../api/types";
+import type { GuildBase, LiveWorldActor, MapDataset, MapDatasetLayer } from "../../api/types";
 import {
   layerMapToWorld,
   MAP_SIZE,
@@ -29,7 +29,7 @@ import {
   zoomMapView,
   type MapSearchTarget,
 } from "../../app/mapInteraction";
-import { selectLiveMapActors, selectPlayerMarkers } from "../../app/liveWorld";
+import { isWorkerInDanger, selectLiveMapActors, selectPlayerMarkers, summarizeWorkerCluster } from "../../app/liveWorld";
 import { Card, CardBody, CardHead } from "../../components/Card";
 import { EmptyState } from "../../components/EmptyState";
 import { ToggleChip } from "../../components/ToggleChip";
@@ -453,6 +453,28 @@ export default function MapRoute() {
     setExpandedClusterKey((current) => current === group.key ? null : group.key);
   }, [activeLayer, scaleBoundsFor, view]);
 
+  // Base workers reuse the same screen-space clustering as players and bases so a busy base
+  // (the live server currently loads 200+) collapses into one "N workers" chip instead of a
+  // wall of overlapping labels. Because clustering runs in screen space on every view change,
+  // zooming in separates the members automatically — no separate chooser is needed.
+  const workerMarkerGroups = useMemo(() => {
+    const points = workers
+      .filter((worker) => onLayer(activeLayer, worker.location.x, worker.location.y))
+      .map((worker) => {
+        const mapPoint = layerWorldToMap(activeLayer, worker.location.x, worker.location.y);
+        const screenPoint = toScreen(mapPoint.x, mapPoint.y);
+        return {
+          key: `worker:${worker.instanceId}`,
+          kind: "worker" as const,
+          layerId: activeLayer.id,
+          x: screenPoint.x,
+          y: screenPoint.y,
+          value: worker,
+        };
+      });
+    return clusterMapMarkers(points, 48);
+  }, [activeLayer, workers, toScreen]);
+
   const hasMap = tileState === "tiles" || tileState === "mockgrid";
 
   useEffect(() => {
@@ -658,20 +680,9 @@ export default function MapRoute() {
                   onCluster={focusCluster}
                 />
               ))}
-              {layers.Workers &&
-                workers
-                  .filter((worker) => onLayer(activeLayer, worker.location.x, worker.location.y))
-                  .map((worker) => {
-                    const m = layerWorldToMap(activeLayer, worker.location.x, worker.location.y);
-                    const s = toScreen(m.x, m.y);
-                    const danger = worker.activity === "incapacitated" || (worker.hpPercent !== undefined && worker.hpPercent < 25);
-                    return (
-                      <div key={worker.instanceId} className={`marker marker-worker${danger ? " danger" : ""}`} style={{ left: s.x, top: s.y }}>
-                        <span className="marker-symbol"><IconMapWorker /></span>
-                        <span className="chip">{worker.name || worker.characterId || "Pal"} · {worker.activity}</span>
-                      </div>
-                    );
-                  })}
+              {layers.Workers && workerMarkerGroups.map((group) => (
+                <WorkerMarkerGroup key={group.key} group={group} />
+              ))}
               {layers.PalBoxes &&
                 palBoxes
                   .filter((box) => onLayer(activeLayer, box.location.x, box.location.y))
@@ -808,6 +819,36 @@ function MapMarkerGroup({
         </div>
       )}
     </>
+  );
+}
+
+/** Renders one clustered group of live base workers: a lone worker keeps its per-Pal chip
+ * (name · activity), while a cluster shows "N workers" and, when any member is knocked out or
+ * critically hurt, takes the danger accent and spells out how many (e.g. "12 workers · 2 hurt")
+ * so a crowded base never hides one that needs help. Workers are read-only markers, so — unlike
+ * player/base clusters — there is nothing to click; zooming in is what separates them. */
+function WorkerMarkerGroup({ group }: { group: ClusterMarkerGroup<LiveWorldActor> }) {
+  if (group.type === "single") {
+    const worker = group.member.value;
+    const danger = isWorkerInDanger(worker);
+    return (
+      <div className={`marker marker-worker${danger ? " danger" : ""}`} style={{ left: group.x, top: group.y }}>
+        <span className="marker-symbol"><IconMapWorker /></span>
+        <span className="chip">{worker.name || worker.characterId || "Pal"} · {worker.activity}</span>
+      </div>
+    );
+  }
+
+  const { label, danger } = summarizeWorkerCluster(group.members.map(({ value }) => value));
+  return (
+    <div
+      className={`marker marker-worker marker-cluster${danger ? " danger" : ""}`}
+      style={{ left: group.x, top: group.y }}
+      aria-label={label}
+    >
+      <span className="marker-symbol"><IconMapWorker /><span className="marker-count">{group.members.length}</span></span>
+      <span className="chip">{label}</span>
+    </div>
   );
 }
 

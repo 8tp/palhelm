@@ -1,4 +1,4 @@
-export type ClusterMarkerKind = "player" | "base";
+export type ClusterMarkerKind = "player" | "base" | "worker";
 
 /** A marker already projected into screen space. `value` retains the original entity/coordinates. */
 export interface ClusterMarkerPoint<T> {

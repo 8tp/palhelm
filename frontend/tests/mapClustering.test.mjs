@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { clusterMapMarkers } from "../src/app/mapClustering.ts";
+import { isWorkerInDanger, summarizeWorkerCluster } from "../src/app/liveWorld.ts";
 
 function point(key, kind, layerId, x, y, worldX = x, worldY = y) {
   return { key, kind, layerId, x, y, value: { location: { x: worldX, y: worldY } } };
@@ -67,6 +68,60 @@ test("invalid clustering radius leaves every original marker accessible", () => 
     point("player:b", "player", "default", 0, 0),
   ];
   assert.deepEqual(clusterMapMarkers(points, 0).map((group) => group.key), ["player:a", "player:b"]);
+});
+
+function worker(instanceId, x, y, over = {}) {
+  return {
+    key: `worker:${instanceId}`,
+    kind: "worker",
+    layerId: "default",
+    x,
+    y,
+    value: { instanceId, name: instanceId, activity: "working", hpPercent: 80, location: { x, y, z: 0 }, ...over },
+  };
+}
+
+test("nearby base workers collapse into one worker cluster, keeping a lone worker standalone", () => {
+  const groups = clusterMapMarkers([
+    worker("w-a", 0, 0),
+    worker("w-b", 20, 0),
+    worker("w-c", 400, 0),
+  ], 48);
+  const cluster = groups.find((group) => group.type === "cluster");
+  const single = groups.find((group) => group.type === "single");
+  assert.equal(cluster.members.length, 2);
+  assert.ok(cluster.key.includes("worker"));
+  assert.equal(single.member.value.instanceId, "w-c");
+});
+
+test("a worker is in danger only when knocked out or critically hurt", () => {
+  const at = { location: { x: 0, y: 0, z: 0 } };
+  assert.equal(isWorkerInDanger({ activity: "incapacitated", ...at }), true);
+  assert.equal(isWorkerInDanger({ activity: "working", hpPercent: 10, ...at }), true);
+  assert.equal(isWorkerInDanger({ activity: "working", hpPercent: 90, ...at }), false);
+  assert.equal(isWorkerInDanger({ activity: "working", ...at }), false); // unknown HP is not danger
+});
+
+test("a worker cluster label names how many members are hurt and flags danger", () => {
+  const at = { location: { x: 0, y: 0, z: 0 } };
+  const summary = summarizeWorkerCluster([
+    { activity: "working", hpPercent: 90, ...at },
+    { activity: "incapacitated", ...at },
+    { activity: "working", hpPercent: 12, ...at },
+  ]);
+  assert.equal(summary.label, "3 workers · 2 hurt");
+  assert.equal(summary.hurt, 2);
+  assert.equal(summary.danger, true);
+});
+
+test("a healthy worker cluster reads plainly with no hurt count", () => {
+  const at = { location: { x: 0, y: 0, z: 0 } };
+  const summary = summarizeWorkerCluster([
+    { activity: "working", hpPercent: 90, ...at },
+    { activity: "idle", hpPercent: 88, ...at },
+  ]);
+  assert.equal(summary.label, "2 workers");
+  assert.equal(summary.danger, false);
 });
 
 test("map clusters expose a direct exact-coordinate chooser when zoom cannot separate members", async () => {
