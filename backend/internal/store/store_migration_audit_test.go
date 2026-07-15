@@ -132,8 +132,8 @@ func TestAuditUpgradeV030RealVolumeReadableThroughBothSurfaces(t *testing.T) {
 	}
 	defer st.Close()
 	ctx := context.Background()
-	if v, err := st.GetKV(ctx, "schema_version"); err != nil || v != "11" {
-		t.Fatalf("schema_version = %q, %v; want 11", v, err)
+	if v, err := st.GetKV(ctx, "schema_version"); err != nil || v != "12" {
+		t.Fatalf("schema_version = %q, %v; want 12", v, err)
 	}
 	if v, err := st.GetKV(ctx, "operator-note"); err != nil || v != "preserve-me" {
 		t.Fatalf("operator kv = %q, %v", v, err)
@@ -293,8 +293,8 @@ func TestAuditInterruptedMigrationReplayPreservesData(t *testing.T) {
 		t.Fatalf("reopen after simulated interrupted migration: %v", err)
 	}
 	defer reopened.Close()
-	if v, err := reopened.GetKV(ctx, "schema_version"); err != nil || v != "11" {
-		t.Fatalf("schema_version after replay = %q, %v; want repaired to 11", v, err)
+	if v, err := reopened.GetKV(ctx, "schema_version"); err != nil || v != "12" {
+		t.Fatalf("schema_version after replay = %q, %v; want repaired to 12", v, err)
 	}
 	keys, err := reopened.ListAPIKeys(ctx)
 	if err != nil || len(keys) != 1 || keys[0].ID != "aaaa1111" || keys[0].Label != "survives-replay" {
@@ -310,7 +310,7 @@ func TestAuditSchemaVersionFailClosedMessageAndCorruptValue(t *testing.T) {
 	t.Run("future version names both numbers", func(t *testing.T) {
 		path := filepath.Join(t.TempDir(), "future.db")
 		legacy := buildV030Database(t, path)
-		if _, err := legacy.Exec(`UPDATE kv SET value='12' WHERE key='schema_version'`); err != nil {
+		if _, err := legacy.Exec(`UPDATE kv SET value='13' WHERE key='schema_version'`); err != nil {
 			t.Fatal(err)
 		}
 		if err := legacy.Close(); err != nil {
@@ -318,9 +318,9 @@ func TestAuditSchemaVersionFailClosedMessageAndCorruptValue(t *testing.T) {
 		}
 		_, err := Open(path)
 		if err == nil {
-			t.Fatal("Open on schema_version 12 succeeded")
+			t.Fatal("Open on schema_version 13 succeeded")
 		}
-		for _, needle := range []string{"12", "11", "newer than this binary supports"} {
+		for _, needle := range []string{"13", "12", "newer than this binary supports"} {
 			if !strings.Contains(err.Error(), needle) {
 				t.Errorf("fail-closed error %q does not mention %q", err, needle)
 			}
@@ -403,9 +403,9 @@ func TestAuditConcurrentOpenSameFile(t *testing.T) {
 		if err != nil {
 			t.Fatalf("round %d: reopen after concurrent Open: %v", round, err)
 		}
-		if v, err := st.GetKV(context.Background(), "schema_version"); err != nil || v != "11" {
+		if v, err := st.GetKV(context.Background(), "schema_version"); err != nil || v != "12" {
 			st.Close()
-			t.Fatalf("round %d: schema_version = %q, %v; want 11", round, v, err)
+			t.Fatalf("round %d: schema_version = %q, %v; want 12", round, v, err)
 		}
 		if _, err := st.ListAPIKeys(context.Background()); err != nil {
 			st.Close()
@@ -527,7 +527,7 @@ func TestAuditDowngradeV04DatabaseUnderV03OpenSemantics(t *testing.T) {
 		t.Fatalf("v0.3 binary cannot open a v0.4 database (001 re-execution failed): %v", err)
 	}
 	var v string
-	if err = v03.QueryRow(`SELECT value FROM kv WHERE key='schema_version'`).Scan(&v); err != nil || v != "11" {
+	if err = v03.QueryRow(`SELECT value FROM kv WHERE key='schema_version'`).Scan(&v); err != nil || v != "12" {
 		t.Fatalf("schema_version after v0.3-style open = %q, %v; INSERT OR IGNORE must not clobber it", v, err)
 	}
 	var name string

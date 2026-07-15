@@ -25,25 +25,28 @@ type sessionPalTalents struct {
 // sessionPalExplorerView is an explicit viewer-safe allowlist. In particular, it never exposes
 // pals.raw_json or any player Steam/account fields through the server-wide roster.
 type sessionPalExplorerView struct {
-	InstanceID       string            `json:"instanceId"`
-	CharacterID      string            `json:"characterId"`
-	DisplayName      string            `json:"displayName"`
-	Level            int               `json:"level"`
-	IsAlpha          bool              `json:"isAlpha"`
-	IsLucky          bool              `json:"isLucky"`
-	IsBoss           bool              `json:"isBoss"`
-	InParty          bool              `json:"inParty"`
-	PartySlot        *int              `json:"partySlot"`
-	BoxPage          *int              `json:"boxPage"`
-	BoxSlot          *int              `json:"boxSlot"`
-	Placement        string            `json:"placement"`
-	BaseID           *string           `json:"baseId"`
-	OwnerUID         string            `json:"ownerUid"`
-	OwnerName        string            `json:"ownerName"`
-	OwnerSource      string            `json:"ownerSource"`
-	OwnerResolved    bool              `json:"ownerResolved"`
-	HP               *float64          `json:"hp"`
-	Gender           string            `json:"gender"`
+	InstanceID    string   `json:"instanceId"`
+	CharacterID   string   `json:"characterId"`
+	DisplayName   string   `json:"displayName"`
+	Level         int      `json:"level"`
+	IsAlpha       bool     `json:"isAlpha"`
+	IsLucky       bool     `json:"isLucky"`
+	IsBoss        bool     `json:"isBoss"`
+	InParty       bool     `json:"inParty"`
+	PartySlot     *int     `json:"partySlot"`
+	BoxPage       *int     `json:"boxPage"`
+	BoxSlot       *int     `json:"boxSlot"`
+	Placement     string   `json:"placement"`
+	BaseID        *string  `json:"baseId"`
+	OwnerUID      string   `json:"ownerUid"`
+	OwnerName     string   `json:"ownerName"`
+	OwnerSource   string   `json:"ownerSource"`
+	OwnerResolved bool     `json:"ownerResolved"`
+	HP            *float64 `json:"hp"`
+	Gender        string   `json:"gender"`
+	// Rank is the Pal Condenser rank (1..5) or null when the save carried no Rank
+	// property. Displayed stars are rank-1; null stays "unavailable", never 0.
+	Rank             *int              `json:"rank"`
 	Talents          sessionPalTalents `json:"talents"`
 	PassiveSkillIDs  []string          `json:"passiveSkillIds"`
 	EquippedSkillIDs []string          `json:"equippedSkillIds"`
@@ -176,7 +179,7 @@ func newSessionPalExplorerView(p store.PalWithOwner) sessionPalExplorerView {
 		InParty: p.InParty, PartySlot: p.PartySlot, BoxPage: p.BoxPage, BoxSlot: p.BoxSlot,
 		Placement: integrationPalPlacement(p.Pal), BaseID: baseID,
 		OwnerUID: p.OwnerUID, OwnerName: p.OwnerName, OwnerSource: p.OwnerSource, OwnerResolved: p.OwnerResolved,
-		HP: p.HP, Gender: p.Gender,
+		HP: p.HP, Gender: p.Gender, Rank: p.Rank,
 		Talents:         sessionPalTalents{HP: p.TalentHP, Melee: p.TalentMelee, Shot: p.TalentShot, Defense: p.TalentDefense},
 		PassiveSkillIDs: passives, EquippedSkillIDs: equipped,
 	}

@@ -255,8 +255,10 @@ func slotIDStruct(container [16]byte, slotIndex int32) []byte {
 }
 
 // palSaveParam builds a pal's SaveParameter list. When slot is non-nil it is
-// appended (a SlotId struct); wild/NPC pals pass nil so no SlotId is present.
-func palSaveParam(charID string, level uint8, hp int64, talentHP uint8, owner [16]byte, slot []byte) []byte {
+// appended (a SlotId struct); wild/NPC pals pass nil so no SlotId is present. A
+// rank of 0 omits the Rank IntProperty entirely, modeling a pal parsed before the
+// field existed (the decoder must leave Rank nil, not default it to 0).
+func palSaveParam(charID string, level uint8, hp int64, talentHP uint8, rank int32, owner [16]byte, slot []byte) []byte {
 	w := &gw{}
 	w.bytes(strProp("CharacterID", "NameProperty", charID))
 	w.bytes(byteProp("Level", level))
@@ -264,6 +266,9 @@ func palSaveParam(charID string, level uint8, hp int64, talentHP uint8, owner [1
 	w.bytes(byteProp("Talent_HP", talentHP))
 	w.bytes(byteProp("Talent_Shot", 70))
 	w.bytes(byteProp("Talent_Defense", 60))
+	if rank != 0 {
+		w.bytes(intProp("Rank", rank))
+	}
 	w.bytes(enumProp("Gender", "EPalGenderType", "EPalGenderType::Female"))
 	w.bytes(stringArrayProp("PassiveSkillList", "NameProperty", "CraftSpeed_up2", "PAL_ALLAttack_up1"))
 	w.bytes(stringArrayProp("EquipWaza", "EnumProperty", "EPalWazaID::AirCanon", "EPalWazaID::StoneShotgun"))
@@ -364,11 +369,11 @@ func build10World(withDrift bool) []byte {
 	chars.bytes(characterEntry(ownerUID, playerInstance,
 		playerSaveParam("Ada", 5, 570000, ownerUID), group))
 	chars.bytes(characterEntry(ownerUID, pal1Instance,
-		palSaveParam("Grassmon", 12, 1500, 50, ownerUID, slotIDStruct(palBoxContainer, 0)), group))
+		palSaveParam("Grassmon", 12, 1500, 50, 3, ownerUID, slotIDStruct(palBoxContainer, 0)), group))
 	chars.bytes(characterEntry(ownerUID, pal2Instance,
-		palSaveParam("Rockmon", 7, 900, 30, ownerUID, slotIDStruct(palBoxContainer, 1)), group))
+		palSaveParam("Rockmon", 7, 900, 30, 1, ownerUID, slotIDStruct(palBoxContainer, 1)), group))
 	chars.bytes(characterEntry(ownerUID, pal3Instance,
-		palSaveParam("Wildmon", 3, 300, 10, ownerUID, nil), group))
+		palSaveParam("Wildmon", 3, 300, 10, 0, ownerUID, nil), group))
 	inner.bytes(mapProp("CharacterSaveParameterMap", "StructProperty", "StructProperty", 4, chars.b))
 
 	// GroupSaveDataMap: one guild in the retail 1.x layout with two members and a
@@ -478,6 +483,18 @@ func TestParseSynthetic1_0Fixture(t *testing.T) {
 	// Wildmon has no SlotId: empty container id and the -1 default slot.
 	if wild.ContainerID != "" || wild.SlotIndex != -1 {
 		t.Fatalf("wild container = %q slot %d, want empty/-1", wild.ContainerID, wild.SlotIndex)
+	}
+	// Condenser rank: Grassmon carries Rank 3 (two stars), Rockmon Rank 1 (never
+	// condensed, zero stars) — both decoded from the IntProperty. Wildmon omits the
+	// property, so its Rank must stay nil (unavailable), never a defaulted 0.
+	if grass.Rank == nil || *grass.Rank != 3 {
+		t.Fatalf("grass rank = %v, want 3", grass.Rank)
+	}
+	if rock.Rank == nil || *rock.Rank != 1 {
+		t.Fatalf("rock rank = %v, want 1", rock.Rank)
+	}
+	if wild.Rank != nil {
+		t.Fatalf("wild rank = %v, want nil (absent Rank property)", *wild.Rank)
 	}
 	if len(w.Guilds) != 1 {
 		t.Fatalf("guilds=%d, want 1", len(w.Guilds))

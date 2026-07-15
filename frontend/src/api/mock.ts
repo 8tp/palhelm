@@ -491,13 +491,13 @@ const palsByPlayer: Record<string, MockPalBase[]> = {
   Kestrel: [
     {
       instanceId: "pal-k1", characterId: "Anubis", displayName: "Anubis", level: 34, isAlpha: true, isLucky: false,
-      hp: 1240.5, gender: "male", talents: { hp: 87, melee: 73, shot: 92, defense: 81 },
+      hp: 1240.5, gender: "male", rank: 5, talents: { hp: 87, melee: 73, shot: 92, defense: 81 },
       passiveSkillIds: ["CraftSpeed_up2", "ElementBoost_Earth_2_PAL"], equippedSkillIds: ["RockLance", "StoneShotgun", "GroundWave"],
     },
-    { instanceId: "pal-k2", characterId: "Grizzbolt", displayName: "Grizzbolt", level: 31, isAlpha: false, isLucky: false },
-    { instanceId: "pal-k3", characterId: "Faleris", displayName: "Faleris", level: 30, isAlpha: false, isLucky: false },
+    { instanceId: "pal-k2", characterId: "Grizzbolt", displayName: "Grizzbolt", level: 31, isAlpha: false, isLucky: false, rank: 3 },
+    { instanceId: "pal-k3", characterId: "Faleris", displayName: "Faleris", level: 30, isAlpha: false, isLucky: false, rank: 1 },
     { instanceId: "pal-k4", characterId: "Digtoise", displayName: "Digtoise", level: 27, isAlpha: false, isLucky: false },
-    { instanceId: "pal-k5", characterId: "Penking", displayName: "Penking", level: 25, isAlpha: false, isLucky: true },
+    { instanceId: "pal-k5", characterId: "Penking", displayName: "Penking", level: 25, isAlpha: false, isLucky: true, rank: 2 },
     { instanceId: "pal-k6", characterId: "Rayhound", displayName: "Rayhound", level: 24, isAlpha: false, isLucky: false },
     { instanceId: "pal-k7", characterId: "Tombat", displayName: "Tombat", level: 22, isAlpha: false, isLucky: false },
     { instanceId: "pal-k8", characterId: "Foxparks", displayName: "Foxparks", level: 19, isAlpha: false, isLucky: false },
@@ -507,7 +507,7 @@ const palsByPlayer: Record<string, MockPalBase[]> = {
     { instanceId: "pal-k12", characterId: "Pengullet", displayName: "Pengullet", level: 7, isAlpha: false, isLucky: false },
   ],
   VossR: [
-    { instanceId: "pal-v1", characterId: "Frostallion", displayName: "Frostallion", level: 32, isAlpha: false, isLucky: false },
+    { instanceId: "pal-v1", characterId: "Frostallion", displayName: "Frostallion", level: 32, isAlpha: false, isLucky: false, rank: 4 },
     { instanceId: "pal-v2", characterId: "Ragnahawk", displayName: "Ragnahawk", level: 28, isAlpha: false, isLucky: false },
     { instanceId: "pal-v3", characterId: "Surfent", displayName: "Surfent", level: 26, isAlpha: false, isLucky: false },
     { instanceId: "pal-v4", characterId: "Direhowl", displayName: "Direhowl", level: 20, isAlpha: false, isLucky: false },

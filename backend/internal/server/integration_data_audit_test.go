@@ -360,14 +360,14 @@ func TestAuditRedactionKeySetsExact(t *testing.T) {
 	auditAssertKeys(t, "player detail", detail, detailKeys...)
 	for _, p := range detail["pals"].([]any) {
 		pal := p.(map[string]any)
-		auditAssertKeys(t, "detail pal", pal, "instanceId", "characterId", "displayName", "level", "isAlpha", "isLucky", "inParty", "partySlot", "boxPage", "boxSlot", "placement", "baseId", "hp", "gender", "talents", "passiveSkillIds", "equippedSkillIds")
+		auditAssertKeys(t, "detail pal", pal, "instanceId", "characterId", "displayName", "level", "isAlpha", "isLucky", "inParty", "partySlot", "boxPage", "boxSlot", "placement", "baseId", "hp", "gender", "rank", "talents", "passiveSkillIds", "equippedSkillIds")
 		if pal["inParty"] != true || pal["partySlot"] != float64(2) || pal["boxPage"] != nil || pal["boxSlot"] != nil {
 			t.Errorf("detail pal placement = %#v", pal)
 		}
 	}
 	for _, p := range palsEnv["data"].([]any) {
 		pal := p.(map[string]any)
-		auditAssertKeys(t, "pals row", pal, "instanceId", "characterId", "displayName", "level", "isAlpha", "isLucky", "inParty", "partySlot", "boxPage", "boxSlot", "placement", "baseId", "ownerUid", "ownerName", "ownerSource", "ownerResolved", "hp", "gender", "talents", "passiveSkillIds", "equippedSkillIds")
+		auditAssertKeys(t, "pals row", pal, "instanceId", "characterId", "displayName", "level", "isAlpha", "isLucky", "inParty", "partySlot", "boxPage", "boxSlot", "placement", "baseId", "ownerUid", "ownerName", "ownerSource", "ownerResolved", "hp", "gender", "rank", "talents", "passiveSkillIds", "equippedSkillIds")
 		if pal["inParty"] != true || pal["partySlot"] != float64(2) || pal["boxPage"] != nil || pal["boxSlot"] != nil {
 			t.Errorf("bulk pal placement = %#v", pal)
 		}

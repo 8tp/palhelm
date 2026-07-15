@@ -9,6 +9,7 @@ import { Card, CardBody, CardHead } from "../../components/Card";
 import { EmptyState } from "../../components/EmptyState";
 import { PalDetailPanel, PalInfoButton } from "../../components/PalDetails";
 import { PalIcon } from "../../components/PalIcon";
+import { PalStars } from "../../components/PalStars";
 import { palPlacementLabel } from "../../components/palDetails";
 import { SearchField } from "../../components/Field";
 import {
@@ -172,6 +173,7 @@ function PalExplorerCard({ pal, expanded, onToggle }: { pal: PalExplorerPal; exp
           <div className="pal-explorer-tags">
             {specimen.map((label) => <span key={label} className={`pal-explorer-tag is-${label.toLowerCase()}`}>{label === "Boss" ? "◆ Boss" : label}</span>)}
             {specimen.length === 0 && <span className="pal-explorer-tag">Standard</span>}
+            {pal.rank != null && pal.rank > 1 && <PalStars rank={pal.rank} />}
           </div>
           <strong className={pal.ownerResolved ? "" : "is-muted"}>{palOwnerSummary(pal)}</strong>
           <span>{palPlacementLabel(pal)}</span>
