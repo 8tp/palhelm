@@ -45,6 +45,7 @@ type GuildDetailPal struct {
 	CharacterID   string  `json:"characterId"`
 	DisplayName   string  `json:"displayName"`
 	Level         int     `json:"level"`
+	Rank          *int    `json:"rank"`
 	IsAlpha       bool    `json:"isAlpha"`
 	IsLucky       bool    `json:"isLucky"`
 	IsBoss        bool    `json:"isBoss"`
@@ -161,7 +162,7 @@ FROM guild_members gm LEFT JOIN players p ON p.uid=gm.player_uid WHERE gm.guild_
 		return GuildDetail{}, err
 	}
 	result.PalsTruncated = result.PalCount > maxGuildDetailPals
-	palRows, err := s.db.QueryContext(ctx, `SELECT p.instance_id,p.character_id,p.display_name,p.level,p.is_alpha,p.is_lucky,p.in_party,p.box_page,p.base_id,p.owner_uid,COALESCE(owner.name,''),p.owner_source,owner.uid IS NOT NULL,b.id IS NOT NULL
+	palRows, err := s.db.QueryContext(ctx, `SELECT p.instance_id,p.character_id,p.display_name,p.level,p.rank,p.is_alpha,p.is_lucky,p.in_party,p.box_page,p.base_id,p.owner_uid,COALESCE(owner.name,''),p.owner_source,owner.uid IS NOT NULL,b.id IS NOT NULL
 FROM pals p
 LEFT JOIN players owner ON owner.uid=p.owner_uid
 LEFT JOIN guild_members gm ON gm.player_uid=p.owner_uid AND gm.guild_id=?
@@ -176,7 +177,7 @@ ORDER BY p.display_name,p.instance_id LIMIT ?`, guildID, guildID, maxGuildDetail
 		var inParty, hasBase bool
 		var boxPage sql.NullInt64
 		var baseID string
-		if err = palRows.Scan(&pal.InstanceID, &pal.CharacterID, &pal.DisplayName, &pal.Level, &pal.IsAlpha, &pal.IsLucky, &inParty, &boxPage, &baseID, &pal.OwnerUID, &pal.OwnerName, &pal.OwnerSource, &pal.OwnerResolved, &hasBase); err != nil {
+		if err = palRows.Scan(&pal.InstanceID, &pal.CharacterID, &pal.DisplayName, &pal.Level, &pal.Rank, &pal.IsAlpha, &pal.IsLucky, &inParty, &boxPage, &baseID, &pal.OwnerUID, &pal.OwnerName, &pal.OwnerSource, &pal.OwnerResolved, &hasBase); err != nil {
 			palRows.Close()
 			return GuildDetail{}, err
 		}

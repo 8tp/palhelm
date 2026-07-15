@@ -15,6 +15,7 @@ import {
   type MapPoint,
 } from "../../app/mapTransform";
 import { formatRelativeToNow, formatWorldGuid } from "../../app/format";
+import { guildDisplayName } from "../../app/guildDisplay";
 import { tileZoomForScale } from "../../app/mapTiles";
 import { clusterMapMarkers, type ClusterMarkerGroup } from "../../app/mapClustering";
 import {
@@ -299,9 +300,11 @@ export default function MapRoute() {
   const playerMarkerSelection = selectPlayerMarkers(playersQuery.data ?? [], liveSnapshot);
   const playerMarkers = playerMarkerSelection.markers;
   // Bases without a decoded location cannot be plotted; drop them so every
-  // downstream base marker has a real (never (0,0)) position.
+  // downstream base marker has a real (never (0,0)) position. Labels prefer the
+  // base's own save name, then the guild's display label (with the unnamed-guild
+  // member fallback).
   const bases = (guildsQuery.data ?? [])
-    .flatMap((g) => g.bases.map((b) => ({ ...b, guildName: g.name })))
+    .flatMap((g) => g.bases.map((b) => ({ ...b, guildName: b.name ?? guildDisplayName(g) })))
     .filter((b): b is typeof b & { location: NonNullable<GuildBase["location"]> } => b.location !== null);
   const liveMapActors = selectLiveMapActors(liveSnapshot);
   const workers = liveMapActors.workers;
@@ -755,7 +758,9 @@ export default function MapRoute() {
 }
 
 function markerKind(group: ClusterMarkerGroup<MapSearchTarget>): "player" | "base" {
-  return group.type === "single" ? group.member.kind : group.members[0].kind;
+  // Read the target's own kind: the cluster point's kind field widened to include
+  // "worker", but MapMarkerGroup only ever receives player/base groups.
+  return group.type === "single" ? group.member.value.kind : group.members[0].value.kind;
 }
 
 function MapMarkerGroup({

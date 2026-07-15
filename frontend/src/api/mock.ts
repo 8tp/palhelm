@@ -710,6 +710,7 @@ export async function guildDetail(id: string): Promise<GuildDetail> {
     characterId: pal.characterId,
     displayName: pal.displayName,
     level: pal.level,
+    rank: pal.rank ?? null,
     isAlpha: pal.isAlpha,
     isLucky: pal.isLucky,
     isBoss: pal.characterId.toLowerCase().startsWith("boss_"),

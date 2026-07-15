@@ -9,6 +9,7 @@ import { Banner } from "../../components/Banner";
 import { Card, CardBody, CardHead } from "../../components/Card";
 import { EmptyState } from "../../components/EmptyState";
 import { PalIcon } from "../../components/PalIcon";
+import { PalStars } from "../../components/PalStars";
 import { Pill } from "../../components/Pill";
 import { palExplorerHref, palOwnerSummary, palSpecimenLabels } from "../pals/palExplorer";
 import "./Guilds.css";
@@ -103,7 +104,7 @@ function GuildDetailView({ guild }: { guild: GuildDetail }) {
               const specimen = palSpecimenLabels(pal);
               return <article key={pal.instanceId} className="guild-pal">
                 <PalIcon characterId={pal.characterId} displayName={pal.displayName} />
-                <div><strong>{pal.displayName}</strong><small>Lv {pal.level} · {specimen.length ? specimen.map((label) => label === "Boss" ? "◆ Boss" : label).join(" · ") : "Standard"}</small><small>{pal.association === "guild_base" ? "Guild base" : palOwnerSummary(pal)}</small></div>
+                <div><strong>{pal.displayName}</strong><small>Lv {pal.level} · {specimen.length ? specimen.map((label) => label === "Boss" ? "◆ Boss" : label).join(" · ") : "Standard"}{pal.rank != null && pal.rank > 1 && <> · <PalStars rank={pal.rank} /></>}</small><small>{pal.association === "guild_base" ? "Guild base" : palOwnerSummary(pal)}</small></div>
                 <Link to={palExplorerHref({ q: pal.displayName, placement: pal.association === "guild_base" ? "base" : "" })}>Roster</Link>
               </article>;
             })}

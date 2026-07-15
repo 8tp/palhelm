@@ -309,6 +309,8 @@ export interface GuildDetailPal {
   characterId: string;
   displayName: string;
   level: number;
+  /** Pal Condenser rank (1–5, stars = rank-1); null when the save carried no Rank property. */
+  rank?: number | null;
   isAlpha: boolean;
   isLucky: boolean;
   isBoss: boolean;
