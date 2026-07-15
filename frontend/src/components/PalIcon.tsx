@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, USE_MOCK } from "../api/client";
+import { palIconId } from "../lib/palIconId";
 
 function initials(name: string): string {
   return name.slice(0, 2).toUpperCase();
@@ -29,12 +30,13 @@ function useKnownPalIconIds(): Set<string> {
 export function PalIcon({ characterId, displayName }: { characterId: string; displayName: string }) {
   const known = useKnownPalIconIds();
   const [failed, setFailed] = useState(false);
-  const showImage = !USE_MOCK && !failed && known.has(characterId.toLowerCase());
+  const iconId = palIconId(characterId);
+  const showImage = !USE_MOCK && !failed && known.has(iconId);
 
   return (
     <span className="pal-chip">
       {showImage ? (
-        <img src={api.paldeck.iconUrl(characterId)} alt="" loading="lazy" onError={() => setFailed(true)} />
+        <img src={api.paldeck.iconUrl(iconId)} alt="" loading="lazy" onError={() => setFailed(true)} />
       ) : (
         initials(displayName)
       )}

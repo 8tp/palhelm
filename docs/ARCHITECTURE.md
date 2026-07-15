@@ -190,13 +190,14 @@ Same pattern as map tiles: Pal preview icons are Pocketpair-derived art and **no
 `scripts/fetch-pal-icons.sh` reads the CharacterID roster straight from
 paldeck.cc's rendered, current Paldeck by default (with the pinned backend roster plus
 paldb.cc retained as a fallback), fetches each icon directly, and writes them into
-`<dataDir>/pal-icons/<characterId-lowercased>.webp` (`.png` also accepted if an operator drops
-one in by hand). `GET /api/v1/paldeck/icon/{characterId}` serves them case-insensitively with a
-long cache lifetime; `GET /api/v1/paldeck/icon-dataset` reports what's installed (source,
-fetched-at, count) plus the full known roster, so the frontend can skip requesting icons for ids
-it knows aren't installed. Both are 404-safe — an unfetched or unrecognized id just means the
-frontend falls back to an initials avatar, the same contract the map screen uses for missing
-tiles.
+`<dataDir>/pal-icons/<characterId-lowercased>.webp` (`.png` is also accepted for attributed,
+operator-installed supplements). `GET /api/v1/paldeck/icon/{characterId}` serves them
+case-insensitively with a long cache lifetime. Save-instance `BOSS_` prefixes resolve to base
+species art, and a small explicit alias table handles known cosmetic/tower IDs; display names and
+nicknames never participate in image identity. `GET /api/v1/paldeck/icon-dataset` reports the
+sidecar provenance plus the union of the canonical roster and actual PNG/WebP filenames on disk,
+so the frontend can use legitimate supplemental portraits without speculative requests. Both
+routes are 404-safe — an unfetched or unrecognized id means the frontend falls back to initials.
 
 ## Security posture
 
