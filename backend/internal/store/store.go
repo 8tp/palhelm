@@ -1109,9 +1109,24 @@ func (s *Store) WorldState(ctx context.Context) (WorldState, error) {
 	return v, err
 }
 
-// GuildJSON returns API-ready guild objects including members and bases.
+// guildListRealFilter restricts a guild-list query to genuine player guilds.
+// Palworld's save writes a group record into GroupSaveDataMap for things that are
+// not player guilds — a solo player's auto-created organization and other non-guild
+// group types — and those decode into guild rows with no base placed and no member
+// whose save identity resolves to a known player. Requiring at least one placed base
+// AND at least one member with a confirmed player identity drops those empty records
+// so every panel consumer of the list (guilds page, players "Guilds" tab, dashboard
+// count, map bases) agrees on the same set. The guild detail path deliberately does
+// NOT apply this, so a player row can still open its guild even when the guild is
+// filtered out of the list.
+const guildListRealFilter = `WHERE EXISTS (SELECT 1 FROM bases b WHERE b.guild_id=guilds.id)
+	AND EXISTS (SELECT 1 FROM guild_members gm JOIN players p ON p.uid=gm.player_uid WHERE gm.guild_id=guilds.id)`
+
+// GuildJSON returns API-ready guild objects including members and bases. Only guilds
+// with at least one placed base and one confirmed player member are listed; see
+// guildListRealFilter.
 func (s *Store) GuildJSON(ctx context.Context) ([]map[string]any, error) {
-	rows, err := s.db.QueryContext(ctx, "SELECT id,name,admin_uid FROM guilds ORDER BY name")
+	rows, err := s.db.QueryContext(ctx, "SELECT id,name,admin_uid FROM guilds "+guildListRealFilter+" ORDER BY name")
 	if err != nil {
 		return nil, err
 	}

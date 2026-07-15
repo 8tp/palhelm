@@ -190,6 +190,40 @@ const players: Player[] = [
     banned: true,
     whitelisted: false,
   },
+  {
+    uid: "7C1B8D22-1234-4B7E-9A11-000000000006",
+    steamId: "76561198044456789",
+    name: "Ferro",
+    accountName: "ferro",
+    online: false,
+    level: 19,
+    guildId: "g-cinderwake",
+    guildName: "Cinderwake",
+    ping: null,
+    location: null,
+    firstSeenAt: "2026-07-06T11:00:00Z",
+    lastSeenAt: "2026-07-08T20:30:00Z",
+    playtimeSec: 9 * 3600 + 3 * 60,
+    banned: false,
+    whitelisted: false,
+  },
+  {
+    uid: "2D8F3A55-1234-4B7E-9A11-000000000007",
+    steamId: "76561198077765432",
+    name: "Wren",
+    accountName: "wren",
+    online: false,
+    level: 22,
+    guildId: "g-palisade",
+    guildName: "Palisade",
+    ping: null,
+    location: null,
+    firstSeenAt: "2026-07-05T16:40:00Z",
+    lastSeenAt: "2026-07-09T18:05:00Z",
+    playtimeSec: 11 * 3600 + 27 * 60,
+    banned: false,
+    whitelisted: false,
+  },
 ];
 
 const guildNames = ["Nightloom", "Driftbone", "Cinderwake", "Palisade", "Thornmere", "Greywatch", "Amberfen"];
@@ -223,6 +257,20 @@ const guilds: Guild[] = guildNames.map((name, i) => {
     })),
   };
 });
+
+// Palworld's save records a group for more than just player guilds: a solo player's
+// auto-created organization and other non-guild groups show up with no base placed and
+// no confirmed member. The Guilds list hides these, but guildDetail still resolves them
+// so a player row can link through to its guild. This fixture makes that visible in mock
+// mode — it never appears in listGuilds() yet still opens by id.
+const placeholderGuilds: Guild[] = [
+  { id: "g-driftless-org", name: "Driftless (solo org)", adminUid: "synthetic-solo", memberCount: 0, members: [], bases: [] },
+];
+const allGuilds: Guild[] = [...guilds, ...placeholderGuilds];
+
+// A guild is listed only when it has at least one placed base and one confirmed member,
+// mirroring the backend guild-list filter.
+const isListableGuild = (g: Guild): boolean => g.bases.length > 0 && g.members.length > 0;
 
 let whitelist: WhitelistEntry[] = [
   { steamId: "76561198012345678", name: "Kestrel" },
@@ -639,13 +687,13 @@ export async function putWhitelist(entries: WhitelistEntry[]): Promise<Whitelist
 export async function listGuilds(): Promise<Guild[]> {
   requireSession();
   await latency();
-  return guilds;
+  return allGuilds.filter(isListableGuild);
 }
 
 export async function guildDetail(id: string): Promise<GuildDetail> {
   requireSession();
   await latency();
-  const guild = guilds.find((item) => item.id === id);
+  const guild = allGuilds.find((item) => item.id === id);
   if (!guild) throw new ApiRequestError(404, "not_found", "Guild not found.");
   const memberPlayers = players.filter((player) => player.guildId === guild.id);
   const now = new Date();

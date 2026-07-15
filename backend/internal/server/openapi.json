@@ -25,7 +25,7 @@
     "/api/v1/players/{uid}/ban": {"post": {"parameters": [{"name":"uid","in":"path","required":true,"schema":{"type":"string"}}], "responses": {"200": {"description": "Player banned"}}}},
     "/api/v1/players/{uid}/unban": {"post": {"parameters": [{"name":"uid","in":"path","required":true,"schema":{"type":"string"}}], "responses": {"200": {"description": "Player unbanned"}}}},
     "/api/v1/whitelist": {"get": {"responses": {"200": {"description": "Whitelist"}}}, "put": {"responses": {"200": {"description": "Whitelist replaced"}}}},
-    "/api/v1/guilds": {"get": {"responses": {"200": {"description": "Guilds"}}}},
+    "/api/v1/guilds": {"get": {"responses": {"200": {"description": "Real player guilds only: those with at least one placed base and one member matched to a known player. Placeholder groups (solo auto-organizations and other non-guild group types) are excluded from the list, but remain reachable via GET /api/v1/guilds/{id}."}}}},
     "/api/v1/guilds/{id}": {"get": {"parameters": [{"name":"id","in":"path","required":true,"schema":{"type":"string","pattern":"^[0-9a-fA-F-]{1,36}$"}}], "responses": {"200": {"description": "Viewer-safe current-save guild detail with members, bases, bounded associated Pals, and current-membership-attributed 30-day panel activity", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/GuildDetail"}}}}, "404": {"description": "Unknown or invalid guild id"}}}},
     "/api/v1/world": {"get": {"responses": {"200": {"description": "Save parse status"}}}},
     "/api/v1/world/snapshot": {"get": {"responses": {"200": {"description": "Sanitized, memory-only live actor snapshot plus bounded session-only poller diagnostics for the authenticated panel"}}}},
