@@ -59,6 +59,15 @@ type Player struct {
 	CaptureTotal       *int64 `json:"captureTotal,omitempty"`
 	UniquePalsCaptured *int   `json:"uniquePalsCaptured,omitempty"`
 	PaldeckUnlocked    *int   `json:"paldeckUnlocked,omitempty"`
+	// PalCaptureCounts and PaldeckUnlockFlags retain the authoritative
+	// CharacterID-keyed RecordData maps for Paldeck progression. A nil map means
+	// unavailable; an empty map is an authoritative zero-entry map. The
+	// Truncated flags are defensive parser bounds and must be surfaced by any
+	// consumer rather than silently treating a partial map as complete.
+	PalCaptureCounts            map[string]int64 `json:"palCaptureCounts,omitempty"`
+	PaldeckUnlockFlags          map[string]bool  `json:"paldeckUnlockFlags,omitempty"`
+	PalCaptureCountsTruncated   bool             `json:"palCaptureCountsTruncated,omitempty"`
+	PaldeckUnlockFlagsTruncated bool             `json:"paldeckUnlockFlagsTruncated,omitempty"`
 }
 
 // Pal describes a non-player character from CharacterSaveParameterMap.

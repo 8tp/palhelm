@@ -20,6 +20,7 @@ import type {
   ConfigValue,
   ConsoleLogEntry,
   Guild,
+  GuildDetail,
   IntegrationKey,
   IntegrationKeyCreated,
   LiveWorldSnapshot,
@@ -31,6 +32,7 @@ import type {
   PalExplorerPal,
   PalExplorerParams,
   PaldeckIconDataset,
+  PlayerPaldeck,
   PalhelmEvent,
   Player,
   PlayerDetail,
@@ -40,6 +42,7 @@ import type {
   ServerActivity,
   ServerActivityWindow,
   ServerHealth,
+  ServerPaldeck,
   ServerInfo,
   SessionInfo,
   WhitelistEntry,
@@ -107,6 +110,9 @@ const players: Player[] = [
     firstSeenAt: "2026-07-04T09:12:00Z",
     lastSeenAt: new Date().toISOString(),
     playtimeSec: 21 * 3600 + 36 * 60,
+    captureTotal: 146,
+    uniquePalsCaptured: 8,
+    paldeckUnlocked: 9,
     banned: false,
     whitelisted: true,
   },
@@ -124,6 +130,9 @@ const players: Player[] = [
     firstSeenAt: "2026-07-04T10:02:00Z",
     lastSeenAt: new Date().toISOString(),
     playtimeSec: 18 * 3600 + 5 * 60,
+    captureTotal: 113,
+    uniquePalsCaptured: 7,
+    paldeckUnlocked: 8,
     banned: false,
     whitelisted: true,
   },
@@ -141,6 +150,9 @@ const players: Player[] = [
     firstSeenAt: "2026-07-05T08:00:00Z",
     lastSeenAt: "2026-07-09T22:18:00Z",
     playtimeSec: 15 * 3600 + 51 * 60,
+    captureTotal: 82,
+    uniquePalsCaptured: 5,
+    paldeckUnlocked: 6,
     banned: false,
     whitelisted: true,
   },
@@ -319,7 +331,7 @@ export async function getServer(): Promise<ServerInfo> {
     worldGuid: "A1B2C3D4E5F6478090ABCDEF12345678",
     state: "running",
     uptimeSec: Math.floor((Date.now() - BOOT_AT) / 1000),
-    panelVersion: "0.8.0",
+    panelVersion: "0.9.0",
   };
 }
 
@@ -630,6 +642,71 @@ export async function listGuilds(): Promise<Guild[]> {
   return guilds;
 }
 
+export async function guildDetail(id: string): Promise<GuildDetail> {
+  requireSession();
+  await latency();
+  const guild = guilds.find((item) => item.id === id);
+  if (!guild) throw new ApiRequestError(404, "not_found", "Guild not found.");
+  const memberPlayers = players.filter((player) => player.guildId === guild.id);
+  const now = new Date();
+  const since = new Date(now.getTime() - 30 * 86_400_000);
+  const guildPals = memberPlayers.flatMap((owner) => withPlacement(palsByPlayer[owner.name] ?? []).map((pal) => ({
+    instanceId: pal.instanceId,
+    characterId: pal.characterId,
+    displayName: pal.displayName,
+    level: pal.level,
+    isAlpha: pal.isAlpha,
+    isLucky: pal.isLucky,
+    isBoss: pal.characterId.toLowerCase().startsWith("boss_"),
+    placement: pal.placement ?? "unknown",
+    baseId: null,
+    ownerUid: owner.uid,
+    ownerName: owner.name,
+    ownerSource: "personal_container" as const,
+    ownerResolved: true,
+    association: "current_member_owner" as const,
+  })));
+  return {
+    id: guild.id,
+    name: guild.name,
+    adminUid: guild.adminUid,
+    memberCount: guild.memberCount,
+    members: guild.members.map((member) => {
+      const player = players.find((item) => item.uid === member.uid);
+      return {
+        uid: member.uid,
+        name: member.name,
+        level: player?.level ?? 0,
+        online: player?.online ?? false,
+        lastSeenAt: player?.lastSeenAt ?? null,
+        playtimeSec: player?.playtimeSec ?? 0,
+        captureTotal: player?.captureTotal ?? null,
+        uniquePalsCaptured: player?.uniquePalsCaptured ?? null,
+        paldeckUnlocked: player?.paldeckUnlocked ?? null,
+        observedDurationSec: player ? Math.min(player.playtimeSec, 30 * 3600) : 0,
+        observedSessionCount: player ? Math.max(1, Math.ceil(player.playtimeSec / 7200)) : 0,
+        currentSession: player?.online ?? false,
+      };
+    }),
+    bases: guild.bases.map((base) => ({ ...base, palCount: 0 })),
+    palCount: guildPals.length,
+    palsTruncated: false,
+    pals: guildPals,
+    activity: {
+      coverage: "panel_observed_sessions",
+      attribution: "current_guild_membership",
+      window: "30d",
+      since: since.toISOString(),
+      through: now.toISOString(),
+      trackingSince: memberPlayers.map((player) => player.firstSeenAt).sort()[0] ?? null,
+      analysisTruncated: false,
+      durationSec: memberPlayers.reduce((total, player) => total + Math.min(player.playtimeSec, 30 * 3600), 0),
+      sessionCount: memberPlayers.reduce((total, player) => total + Math.max(1, Math.ceil(player.playtimeSec / 7200)), 0),
+      activePlayers: memberPlayers.length,
+    },
+  };
+}
+
 // ---------- integration keys ----------
 // Admin key management (docs/specs/integration-api.md §9). This mock never validates a bearer
 // token against `/api/integration/v1` — that surface isn't part of this frontend's scope — it
@@ -735,6 +812,89 @@ export function __seedActiveIntegrationKeysForTests(count: number): IntegrationK
 }
 
 // ---------- paldeck icons ----------
+
+const mockPaldeckSpecies = [
+  ["Anubis", "Anubis"],
+  ["Bristla", "Bristla"],
+  ["Depresso", "Depresso"],
+  ["Eikthyrdeer", "Eikthyrdeer"],
+  ["Fuack", "Fuack"],
+  ["Grizzbolt", "Grizzbolt"],
+  ["Lamball", "Lamball"],
+  ["Mammorest", "Mammorest"],
+  ["Mossanda", "Mossanda"],
+  ["Petallia", "Petallia"],
+  ["Relaxaurus", "Relaxaurus"],
+  ["Shadowbeak", "Shadowbeak"],
+] as const;
+
+function mockCaptureCount(playerIndex: number, characterId: string): number {
+  const owned = new Set((palsByPlayer[players[playerIndex]?.name ?? ""] ?? []).map((pal) => pal.characterId.toLowerCase()));
+  return owned.has(characterId.toLowerCase()) ? playerIndex + 1 : 0;
+}
+
+export async function getServerPaldeck(): Promise<ServerPaldeck> {
+  requireSession();
+  await latency();
+  const observedPlayers = players.slice(0, 3);
+  const species = mockPaldeckSpecies.map(([characterId, displayName]) => {
+    const counts = observedPlayers.map((_, playerIndex) => mockCaptureCount(playerIndex, characterId));
+    return {
+      characterId,
+      displayName,
+      known: true,
+      captureCount: counts.reduce((total, count) => total + count, 0),
+      capturedByPlayers: counts.filter((count) => count > 0).length,
+      unlockedByPlayers: counts.filter((count) => count > 0).length,
+    };
+  });
+  return {
+    coverage: {
+      source: "player_save_record_data",
+      playersTotal: players.length,
+      playersWithCaptureCounts: observedPlayers.length,
+      playersWithUnlockFlags: observedPlayers.length,
+      captureCountsTruncated: false,
+      unlockFlagsTruncated: false,
+      oldestObservedAt: "2026-07-10T08:00:00Z",
+      latestObservedAt: new Date().toISOString(),
+    },
+    catalog: { version: "palworld_1.0_pinned", knownSpecies: mockPaldeckSpecies.length, observedUnknownSpecies: 0 },
+    captureTotal: observedPlayers.reduce((total, player) => total + (player.captureTotal ?? 0), 0),
+    uniqueSpeciesCaptured: species.filter((item) => (item.captureCount ?? 0) > 0).length,
+    speciesUnlocked: species.filter((item) => (item.unlockedByPlayers ?? 0) > 0).length,
+    species,
+  };
+}
+
+export async function getPlayerPaldeck(uid: string): Promise<PlayerPaldeck> {
+  requireSession();
+  await latency();
+  const playerIndex = players.findIndex((item) => item.uid === uid);
+  if (playerIndex < 0) throw new ApiRequestError(404, "not_found", "Player not found.");
+  const player = players[playerIndex];
+  const available = playerIndex < 3;
+  return {
+    player: { uid: player.uid, name: player.name },
+    coverage: {
+      source: "player_save_record_data",
+      captureCountsAvailable: available,
+      unlockFlagsAvailable: available,
+      captureCountsTruncated: false,
+      unlockFlagsTruncated: false,
+      captureObservedAt: available ? new Date().toISOString() : null,
+      unlockObservedAt: available ? new Date().toISOString() : null,
+    },
+    catalog: { version: "palworld_1.0_pinned", knownSpecies: mockPaldeckSpecies.length, observedUnknownSpecies: 0 },
+    captureTotal: player.captureTotal ?? null,
+    uniquePalsCaptured: player.uniquePalsCaptured ?? null,
+    paldeckUnlocked: player.paldeckUnlocked ?? null,
+    species: mockPaldeckSpecies.map(([characterId, displayName]) => {
+      const count = available ? mockCaptureCount(playerIndex, characterId) : null;
+      return { characterId, displayName, known: true, captureCount: count, unlocked: count === null ? null : count > 0 };
+    }),
+  };
+}
 
 // A couple of entries so the "known id" branch in <PalIcon> is exercised in mock mode — the
 // component itself still skips the actual <img> fetch under USE_MOCK (see components/PalIcon.tsx),

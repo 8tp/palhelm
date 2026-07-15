@@ -112,6 +112,25 @@ export function IconPals(props: IconProps) {
   );
 }
 
+export function IconGuild(props: IconProps) {
+  return (
+    <svg {...base(props)} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 14V2.2M3.4 3h8.8l-1.7 2.5 1.7 2.5H3.4" />
+      <path d="M1.7 14h3" />
+    </svg>
+  );
+}
+
+export function IconPaldeck(props: IconProps) {
+  return (
+    <svg {...base(props)} stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2.2 2.5h4.2c.9 0 1.6.7 1.6 1.6v9.4c0-.9-.7-1.6-1.6-1.6H2.2z" />
+      <path d="M13.8 2.5H9.6c-.9 0-1.6.7-1.6 1.6v9.4c0-.9.7-1.6 1.6-1.6h4.2z" />
+      <circle cx="8" cy="7.1" r="1.3" />
+    </svg>
+  );
+}
+
 export function IconMapWorker(props: IconProps) {
   return <IconPals {...props} />;
 }

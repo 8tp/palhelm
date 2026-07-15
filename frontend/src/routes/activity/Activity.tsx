@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router";
 import { api } from "../../api/client";
 import type { ServerActivityWindow } from "../../api/types";
 import { formatDuration } from "../../app/format";
@@ -98,7 +99,7 @@ export default function ActivityRoute() {
               {activity.guilds.length === 0 ? <CardBody><EmptyState title="No attributable guild activity" description="Observed players do not currently have guild evidence." /></CardBody> : (
                 <CardBody flush className="activity-table-wrap">
                   <table className="table activity-table"><thead><tr><th>Guild</th><th>Observed</th><th>Players</th></tr></thead><tbody>
-                    {activity.guilds.map((guild) => <tr key={guild.guildId}><td><strong>{guild.guildName || "Unnamed guild"}</strong><small>{guild.sessionCount} observed sessions</small></td><td className="num">{formatDuration(guild.durationSec)}</td><td className="num">{guild.activePlayers}</td></tr>)}
+                    {activity.guilds.map((guild) => <tr key={guild.guildId}><td><strong><Link to={`/guilds/${encodeURIComponent(guild.guildId)}`}>{guild.guildName || "Unnamed guild"}</Link></strong><small>{guild.sessionCount} observed sessions</small></td><td className="num">{formatDuration(guild.durationSec)}</td><td className="num">{guild.activePlayers}</td></tr>)}
                   </tbody></table>
                   <p className="activity-attribution-note">Sessions are attributed to each player's current save-derived guild. Historical guild membership is not stored.</p>
                 </CardBody>

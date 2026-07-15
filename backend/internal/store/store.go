@@ -917,6 +917,14 @@ func (s *Store) ReplaceWorld(ctx context.Context, w *sav.World, at time.Time, d 
 		if incoming.PaldeckUnlocked != nil {
 			merged.PaldeckUnlocked = incoming.PaldeckUnlocked
 		}
+		if incoming.PalCaptureCounts != nil {
+			merged.PalCaptureCounts = incoming.PalCaptureCounts
+			merged.PalCaptureCountsTruncated = incoming.PalCaptureCountsTruncated
+		}
+		if incoming.PaldeckUnlockFlags != nil {
+			merged.PaldeckUnlockFlags = incoming.PaldeckUnlockFlags
+			merged.PaldeckUnlockFlagsTruncated = incoming.PaldeckUnlockFlagsTruncated
+		}
 		merged.UID = uid
 		players[uid] = merged
 	}
@@ -929,6 +937,9 @@ func (s *Store) ReplaceWorld(ctx context.Context, w *sav.World, at time.Time, d 
 		}
 		_, err = tx.ExecContext(ctx, `INSERT INTO players(uid,name,level,guild_id,location_x,location_y,first_seen,last_seen,capture_total,unique_pals_captured,paldeck_unlocked) VALUES(?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(uid) DO UPDATE SET name=CASE WHEN excluded.name='' THEN players.name ELSE excluded.name END,level=MAX(players.level,excluded.level),guild_id=CASE WHEN excluded.guild_id='' THEN players.guild_id ELSE excluded.guild_id END,location_x=COALESCE(excluded.location_x,players.location_x),location_y=COALESCE(excluded.location_y,players.location_y),capture_total=COALESCE(excluded.capture_total,players.capture_total),unique_pals_captured=COALESCE(excluded.unique_pals_captured,players.unique_pals_captured),paldeck_unlocked=COALESCE(excluded.paldeck_unlocked,players.paldeck_unlocked)`, uid, p.Nickname, p.Level, p.GuildID, x, y, at.Unix(), at.Unix(), p.CaptureTotal, p.UniquePalsCaptured, p.PaldeckUnlocked)
 		if err != nil {
+			return err
+		}
+		if err = replacePlayerPaldeck(ctx, tx, p, at); err != nil {
 			return err
 		}
 	}

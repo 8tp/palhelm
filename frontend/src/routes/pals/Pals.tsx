@@ -1,5 +1,6 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router";
 import { api } from "../../api/client";
 import type { PalExplorerPal } from "../../api/types";
 import { Banner } from "../../components/Banner";
@@ -13,24 +14,19 @@ import { SearchField } from "../../components/Field";
 import {
   PAL_EXPLORER_CLIENT_CAP,
   PAL_EXPLORER_PAGE_SIZE,
+  EMPTY_PAL_EXPLORER_FILTERS,
+  palExplorerFiltersFromSearch,
   palExplorerParams,
+  palExplorerSearch,
   palOwnerSummary,
   palSpecimenLabels,
   type PalExplorerFilterState,
 } from "./palExplorer";
 import "./Pals.css";
 
-const initialFilters: PalExplorerFilterState = {
-  q: "",
-  ownerSource: "",
-  placement: "",
-  specimen: "",
-  minLevel: "",
-  maxLevel: "",
-};
-
 export default function PalsRoute() {
-  const [filters, setFilters] = useState(initialFilters);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filters = useMemo(() => palExplorerFiltersFromSearch(searchParams), [searchParams]);
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
 
@@ -56,7 +52,7 @@ export default function PalsRoute() {
   const capped = pals.length >= PAL_EXPLORER_CLIENT_CAP && palsQuery.data?.pages.at(-1)?.nextCursor !== null;
 
   function update<K extends keyof PalExplorerFilterState>(key: K, value: PalExplorerFilterState[K]) {
-    setFilters((current) => ({ ...current, [key]: value }));
+    setSearchParams(palExplorerSearch({ ...filters, [key]: value }, searchParams), { replace: true });
     setExpanded(null);
   }
 
@@ -109,7 +105,7 @@ export default function PalsRoute() {
               <span>Maximum level</span>
               <input className="input" type="number" min="0" max="999" inputMode="numeric" value={filters.maxLevel} onChange={(event) => update("maxLevel", event.target.value)} placeholder="Any" />
             </label>
-            <Button sm variant="ghost" className="pals-clear" onClick={() => { setFilters(initialFilters); setExpanded(null); }}>
+            <Button sm variant="ghost" className="pals-clear" onClick={() => { setSearchParams(palExplorerSearch(EMPTY_PAL_EXPLORER_FILTERS, searchParams), { replace: true }); setExpanded(null); }}>
               Clear filters
             </Button>
           </div>

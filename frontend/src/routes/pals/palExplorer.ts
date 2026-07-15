@@ -12,6 +12,66 @@ export interface PalExplorerFilterState {
   maxLevel: string;
 }
 
+export const EMPTY_PAL_EXPLORER_FILTERS: PalExplorerFilterState = {
+  q: "",
+  ownerSource: "",
+  placement: "",
+  specimen: "",
+  minLevel: "",
+  maxLevel: "",
+};
+
+const PAL_EXPLORER_SEARCH_KEYS = ["q", "ownerSource", "placement", "specimen", "minLevel", "maxLevel"] as const;
+
+/** Restore only the explorer's allowlisted filters from a shareable URL. */
+export function palExplorerFiltersFromSearch(search: URLSearchParams | string): PalExplorerFilterState {
+  const query = typeof search === "string" ? new URLSearchParams(search) : search;
+  const params = palExplorerParams({
+    q: query.get("q") ?? "",
+    ownerSource: query.get("ownerSource") ?? "",
+    placement: query.get("placement") ?? "",
+    specimen: query.get("specimen") ?? "",
+    minLevel: query.get("minLevel") ?? "",
+    maxLevel: query.get("maxLevel") ?? "",
+  });
+  return {
+    q: params.q ?? "",
+    ownerSource: params.ownerSource ?? "",
+    placement: params.placement ?? "",
+    specimen: params.specimen ?? "",
+    minLevel: params.minLevel === undefined ? "" : String(params.minLevel),
+    maxLevel: params.maxLevel === undefined ? "" : String(params.maxLevel),
+  };
+}
+
+/**
+ * Write a canonical explorer query while retaining unrelated flags such as `mock`.
+ * Cursors are intentionally excluded so a record link always starts at fresh results.
+ */
+export function palExplorerSearch(
+  state: PalExplorerFilterState,
+  current: URLSearchParams | string = "",
+): URLSearchParams {
+  const query = new URLSearchParams(typeof current === "string" ? current : current.toString());
+  for (const key of PAL_EXPLORER_SEARCH_KEYS) query.delete(key);
+  query.delete("cursor");
+  const params = palExplorerParams(state);
+  if (params.q) query.set("q", params.q);
+  if (params.ownerSource) query.set("ownerSource", params.ownerSource);
+  if (params.placement) query.set("placement", params.placement);
+  if (params.specimen) query.set("specimen", params.specimen);
+  if (params.minLevel !== undefined) query.set("minLevel", String(params.minLevel));
+  if (params.maxLevel !== undefined) query.set("maxLevel", String(params.maxLevel));
+  return query;
+}
+
+/** Build a stable panel deep link for records, history, guilds, or external integrations. */
+export function palExplorerHref(filters: Partial<PalExplorerFilterState>): string {
+  const query = palExplorerSearch({ ...EMPTY_PAL_EXPLORER_FILTERS, ...filters });
+  const suffix = query.toString();
+  return suffix ? `/pals?${suffix}` : "/pals";
+}
+
 /** Convert form strings to the API's narrow query contract without sending empty values. */
 export function palExplorerParams(state: PalExplorerFilterState): PalExplorerParams {
   const params: PalExplorerParams = {};

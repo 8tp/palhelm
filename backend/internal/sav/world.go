@@ -302,6 +302,14 @@ func mergePlayer(w *World, p Player) {
 			if p.PaldeckUnlocked != nil {
 				w.Players[i].PaldeckUnlocked = p.PaldeckUnlocked
 			}
+			if p.PalCaptureCounts != nil {
+				w.Players[i].PalCaptureCounts = p.PalCaptureCounts
+				w.Players[i].PalCaptureCountsTruncated = p.PalCaptureCountsTruncated
+			}
+			if p.PaldeckUnlockFlags != nil {
+				w.Players[i].PaldeckUnlockFlags = p.PaldeckUnlockFlags
+				w.Players[i].PaldeckUnlockFlagsTruncated = p.PaldeckUnlockFlagsTruncated
+			}
 			return
 		}
 	}
@@ -313,6 +321,7 @@ func mergePlayer(w *World, p Player) {
 // from the current world roster. Missing maps stay nil so API consumers can say
 // "unavailable" instead of presenting a misleading zero.
 func decodePlayerProgress(data propertyMap, p *Player) {
+	const maxPaldeckEntries = 2048
 	record, ok := propertyProperties(data, "RecordData")
 	if !ok {
 		return
@@ -322,19 +331,43 @@ func decodePlayerProgress(data propertyMap, p *Player) {
 	}
 	if entries, ok := propertyMapEntries(record, "PalCaptureCount"); ok {
 		count := 0
+		p.PalCaptureCounts = make(map[string]int64, min(len(entries), maxPaldeckEntries))
 		for _, entry := range entries {
 			if v, ok := numericValue(entry.Value); ok && v > 0 {
 				count++
 			}
+			key, validKey := entry.Key.(string)
+			value, validValue := numericValue(entry.Value)
+			key = strings.TrimSpace(key)
+			if !validKey || key == "" || !validValue || value < 0 {
+				continue
+			}
+			if _, exists := p.PalCaptureCounts[key]; !exists && len(p.PalCaptureCounts) == maxPaldeckEntries {
+				p.PalCaptureCountsTruncated = true
+				continue
+			}
+			p.PalCaptureCounts[key] = value
 		}
 		p.UniquePalsCaptured = intPtr(count)
 	}
 	if entries, ok := propertyMapEntries(record, "PaldeckUnlockFlag"); ok {
 		count := 0
+		p.PaldeckUnlockFlags = make(map[string]bool, min(len(entries), maxPaldeckEntries))
 		for _, entry := range entries {
 			if v, ok := entry.Value.(bool); ok && v {
 				count++
 			}
+			key, validKey := entry.Key.(string)
+			value, validValue := entry.Value.(bool)
+			key = strings.TrimSpace(key)
+			if !validKey || key == "" || !validValue {
+				continue
+			}
+			if _, exists := p.PaldeckUnlockFlags[key]; !exists && len(p.PaldeckUnlockFlags) == maxPaldeckEntries {
+				p.PaldeckUnlockFlagsTruncated = true
+				continue
+			}
+			p.PaldeckUnlockFlags[key] = value
 		}
 		p.PaldeckUnlocked = intPtr(count)
 	}

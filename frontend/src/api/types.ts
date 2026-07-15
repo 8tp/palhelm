@@ -90,6 +90,10 @@ export interface Player {
   firstSeenAt: string;
   lastSeenAt: string;
   playtimeSec: number;
+  /** Aggregate player-save observations. Omitted by older parsers; absence is not zero. */
+  captureTotal?: number;
+  uniquePalsCaptured?: number;
+  paldeckUnlocked?: number;
   banned: boolean;
   whitelisted: boolean;
 }
@@ -259,6 +263,127 @@ export interface Guild {
   memberCount: number;
   members: GuildMember[];
   bases: GuildBase[];
+}
+
+export interface GuildDetailMember {
+  uid: string;
+  name: string;
+  level: number;
+  online: boolean;
+  lastSeenAt: string | null;
+  playtimeSec: number;
+  captureTotal: number | null;
+  uniquePalsCaptured: number | null;
+  paldeckUnlocked: number | null;
+  observedDurationSec: number;
+  observedSessionCount: number;
+  currentSession: boolean;
+}
+
+export interface GuildDetailBase {
+  id: string;
+  location: PlayerLocation | null;
+  level: number;
+  palCount: number;
+}
+
+export interface GuildDetailPal {
+  instanceId: string;
+  characterId: string;
+  displayName: string;
+  level: number;
+  isAlpha: boolean;
+  isLucky: boolean;
+  isBoss: boolean;
+  placement: PalPlacement;
+  baseId: string | null;
+  ownerUid: string;
+  ownerName: string;
+  ownerSource: PalOwnerSource;
+  ownerResolved: boolean;
+  association: "guild_base" | "current_member_owner";
+}
+
+export interface GuildDetail {
+  id: string;
+  name: string;
+  adminUid: string;
+  memberCount: number;
+  members: GuildDetailMember[];
+  bases: GuildDetailBase[];
+  palCount: number;
+  palsTruncated: boolean;
+  pals: GuildDetailPal[];
+  activity: {
+    coverage: "panel_observed_sessions";
+    attribution: "current_guild_membership";
+    window: "30d";
+    since: string;
+    through: string;
+    trackingSince: string | null;
+    analysisTruncated: boolean;
+    durationSec: number;
+    sessionCount: number;
+    activePlayers: number;
+  };
+}
+
+// ---------- Paldeck progression ----------
+export interface PaldeckCatalogCoverage {
+  version: "palworld_1.0_pinned";
+  knownSpecies: number;
+  observedUnknownSpecies: number;
+}
+
+export interface ServerPaldeckSpecies {
+  characterId: string;
+  displayName: string;
+  known: boolean;
+  captureCount: number | null;
+  capturedByPlayers: number | null;
+  unlockedByPlayers: number | null;
+}
+
+export interface ServerPaldeck {
+  coverage: {
+    source: "player_save_record_data";
+    playersTotal: number;
+    playersWithCaptureCounts: number;
+    playersWithUnlockFlags: number;
+    captureCountsTruncated: boolean;
+    unlockFlagsTruncated: boolean;
+    oldestObservedAt: string | null;
+    latestObservedAt: string | null;
+  };
+  catalog: PaldeckCatalogCoverage;
+  captureTotal: number | null;
+  uniqueSpeciesCaptured: number | null;
+  speciesUnlocked: number | null;
+  species: ServerPaldeckSpecies[];
+}
+
+export interface PlayerPaldeck {
+  player: { uid: string; name: string };
+  coverage: {
+    source: "player_save_record_data";
+    captureCountsAvailable: boolean;
+    unlockFlagsAvailable: boolean;
+    captureCountsTruncated: boolean;
+    unlockFlagsTruncated: boolean;
+    captureObservedAt: string | null;
+    unlockObservedAt: string | null;
+  };
+  catalog: PaldeckCatalogCoverage;
+  captureTotal: number | null;
+  uniquePalsCaptured: number | null;
+  paldeckUnlocked: number | null;
+  species: Array<{
+    characterId: string;
+    displayName: string;
+    known: boolean;
+    captureCount: number | null;
+    unlocked: boolean | null;
+  }>;
 }
 
 // ---------- Map ----------

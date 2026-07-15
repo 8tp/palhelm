@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import type { Player, PlayerActivity, PlayerActivityWindow, WhitelistEntry } from "../../api/types";
@@ -52,7 +52,14 @@ function StatusPill({ p }: { p: Player }) {
 
 export default function PlayersRoute() {
   const [tab, setTab] = useState<TabKey>("players");
-  const [selectedUid, setSelectedUid] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedUid = searchParams.get("player");
+  const setSelectedUid = (uid: string | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (uid) next.set("player", uid);
+    else next.delete("player");
+    setSearchParams(next, { replace: true });
+  };
 
   const playersQuery = useQuery({ queryKey: ["players"], queryFn: () => api.players.list(), refetchInterval: 15000 });
   const guildsQuery = useQuery({ queryKey: ["guilds"], queryFn: () => api.guilds.list() });
@@ -224,7 +231,7 @@ function PlayersTab({
                         <StatusPill p={p} />
                       </td>
                       <td className="num">{p.level}</td>
-                      <td>{p.guildName ?? "—"}</td>
+                      <td onClick={(event) => event.stopPropagation()}>{p.guildId && p.guildName ? <Link to={`/guilds/${encodeURIComponent(p.guildId)}`}>{p.guildName}</Link> : "—"}</td>
                       <td className="num">{p.ping !== null ? `${p.ping} ms` : "—"}</td>
                       <td className="num">{lastSeenLabel(p)}</td>
                       <td className="actions" onClick={(e) => e.stopPropagation()}>
@@ -341,7 +348,7 @@ function PlayerDetailPanel({ uid, onAction }: { uid: string | null; onAction: (k
             </div>
             <div>
               <span className="label">Guild</span>
-              <span className="val">{d.guildName ?? "—"}</span>
+              <span className="val">{d.guildId && d.guildName ? <Link to={`/guilds/${encodeURIComponent(d.guildId)}`}>{d.guildName}</Link> : "—"}</span>
             </div>
             <div>
               <span className="label">Position</span>
@@ -638,7 +645,7 @@ function GuildsTab() {
                     <div className="who-cell">
                       <span className="avatar">{initials(g.name)}</span>
                       <div>
-                        <div className="name">{g.name}</div>
+                        <div className="name"><Link to={`/guilds/${encodeURIComponent(g.id)}`}>{g.name}</Link></div>
                         <div className="id">{g.id}</div>
                       </div>
                     </div>

@@ -18,6 +18,8 @@ import {
   IconSettings,
   IconEvents,
   IconInfo,
+  IconGuild,
+  IconPaldeck,
   IconPals,
   type IconProps,
 } from "./icons";
@@ -47,6 +49,8 @@ export const NAV_ITEMS: NavItem[] = [
   { to: "/players", label: "Players", icon: IconPlayers },
   { to: "/activity", label: "Activity", icon: IconActivity },
   { to: "/pals", label: "Pal explorer", icon: IconPals },
+  { to: "/paldeck", label: "Paldeck", icon: IconPaldeck },
+  { to: "/guilds", label: "Guilds", icon: IconGuild },
   { to: "/map", label: "Live map", icon: IconMap },
   { to: "/events", label: "Events", icon: IconEvents },
   { to: "/console", label: "Console", icon: IconConsole },

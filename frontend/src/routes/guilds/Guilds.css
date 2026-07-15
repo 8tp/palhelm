@@ -1,0 +1,33 @@
+.guilds-page { gap: var(--space-4); }
+.guilds-head { align-items: center; justify-content: space-between; }
+.guilds-head > div { display: flex; align-items: baseline; gap: var(--space-3); min-width: 0; }
+.guilds-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); }
+.guild-card-body { display: flex; flex-direction: column; gap: 6px; color: var(--ink-2); font-size: var(--text-sm); }
+.guild-card-body span:last-child { color: var(--ink-3); }
+.guilds-skeleton { width: 100%; height: 150px; }
+.guilds-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); }
+.guild-stat { display: flex; flex-direction: column; gap: 4px; }
+.guild-stat span { color: var(--ink-3); font-size: var(--text-xs); text-transform: uppercase; letter-spacing: var(--track-caps); }
+.guild-stat strong { font: 600 var(--text-2xl)/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.guild-stat small { color: var(--ink-3); }
+.guilds-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); align-items: start; }
+.guild-table-wrap { overflow-x: auto; }
+.guild-table-wrap td strong, .guild-table-wrap td small { display: block; }
+.guild-table-wrap td small { margin-top: 3px; color: var(--ink-3); font-size: 10px; }
+.guild-muted { color: var(--ink-3); }
+.guild-pal-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); }
+.guild-pal { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 9px; align-items: center; padding: 9px; border: 1px solid var(--line); border-radius: var(--radius-ctl); background: var(--surface-2); }
+.guild-pal > div { min-width: 0; }
+.guild-pal strong, .guild-pal small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.guild-pal small { color: var(--ink-3); font-size: 10px; }
+@media (max-width: 850px) {
+  .guilds-grid, .guilds-detail-grid { grid-template-columns: 1fr; }
+  .guilds-stats, .guild-pal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 620px) {
+  .guilds-head, .guilds-head > div { align-items: flex-start; }
+  .guilds-head > div { flex-direction: column; gap: 2px; }
+  .guilds-stats, .guild-pal-grid { grid-template-columns: 1fr; }
+  .guild-pal { grid-template-columns: auto minmax(0, 1fr); }
+  .guild-pal > a { grid-column: 2; justify-self: start; }
+}

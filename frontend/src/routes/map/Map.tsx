@@ -16,6 +16,7 @@ import {
 } from "../../app/mapTransform";
 import { formatRelativeToNow, formatWorldGuid } from "../../app/format";
 import { tileZoomForScale } from "../../app/mapTiles";
+import { clusterMapMarkers, type ClusterMarkerGroup } from "../../app/mapClustering";
 import {
   addContainedMapWheelListener,
   buildSharedMapURL,
@@ -141,6 +142,7 @@ export default function MapRoute() {
   const [mapSearch, setMapSearch] = useState("");
   const [searchExpanded, setSearchExpanded] = useState(false);
   const [selectedTargetKey, setSelectedTargetKey] = useState<string | null>(null);
+  const [expandedClusterKey, setExpandedClusterKey] = useState<string | null>(null);
   const [activeLayerId, setActiveLayerId] = useState<string | null>(() => initialShared.current?.layerId ?? null);
   const wellRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ startX: number; startY: number; tx: number; ty: number; moved: boolean } | null>(null);
@@ -368,11 +370,12 @@ export default function MapRoute() {
     setPinnedGame(worldToGame(location.x, location.y));
   }, [activeLayer, availableLayers, scaleBoundsFor, view?.scale]);
 
-  function focusTarget(target: MapSearchTarget) {
+  const focusTarget = useCallback((target: MapSearchTarget) => {
     focusWorldLocation(target.location, target.kind, target.key);
     setMapSearch(target.label);
     setSearchExpanded(false);
-  }
+    setExpandedClusterKey(null);
+  }, [focusWorldLocation]);
 
   function fitLocations(kind: "player" | "base") {
     const locations = kind === "player"
@@ -409,6 +412,42 @@ export default function MapRoute() {
     },
     [view],
   );
+
+  const markerGroups = useMemo(() => {
+    const points = searchTargets
+      .filter((target) => onLayer(activeLayer, target.location.x, target.location.y))
+      .map((target) => {
+        const mapPoint = layerWorldToMap(activeLayer, target.location.x, target.location.y);
+        const screenPoint = toScreen(mapPoint.x, mapPoint.y);
+        return {
+          key: target.key,
+          kind: target.kind,
+          layerId: activeLayer.id,
+          x: screenPoint.x,
+          y: screenPoint.y,
+          value: target,
+        };
+      });
+    return clusterMapMarkers(points, 48, selectedTargetKey);
+  }, [activeLayer, searchTargets, selectedTargetKey, toScreen]);
+  const baseMarkerGroups = markerGroups.filter((group) => markerKind(group) === "base");
+  const playerMarkerGroups = markerGroups.filter((group) => markerKind(group) === "player");
+
+  const focusCluster = useCallback((group: Extract<ClusterMarkerGroup<MapSearchTarget>, { type: "cluster" }>) => {
+    const el = wellRef.current;
+    if (!el) return;
+    const points = group.members.map(({ value: target }) =>
+      layerWorldToMap(activeLayer, target.location.x, target.location.y));
+    const next = fitMapPoints(points, { width: el.clientWidth, height: el.clientHeight }, scaleBoundsFor(activeLayer));
+    // Zoom to the exact member extent first. If the members are still inseparable at the
+    // current/max scale (including identical coordinates), expose the exact-marker chooser.
+    if (next && (!view || next.scale > view.scale * 1.15)) {
+      setExpandedClusterKey(null);
+      setView(next);
+      return;
+    }
+    setExpandedClusterKey((current) => current === group.key ? null : group.key);
+  }, [activeLayer, scaleBoundsFor, view]);
 
   const hasMap = tileState === "tiles" || tileState === "mockgrid";
 
@@ -599,32 +638,26 @@ export default function MapRoute() {
               </div>
 
               {/* screen-space markers (chips stay crisp and unscaled) */}
-              {layers.Bases &&
-                bases
-                  .filter((b) => onLayer(activeLayer, b.location.x, b.location.y))
-                  .map((b) => {
-                    const m = layerWorldToMap(activeLayer, b.location.x, b.location.y);
-                    const s = toScreen(m.x, m.y);
-                    return (
-                      <div key={b.id} className={`marker marker-base${selectedTargetKey === `base:${b.id}` ? " is-selected" : ""}`} style={{ left: s.x, top: s.y }}>
-                        <span className="marker-symbol"><IconMapBase /></span>
-                        <span className="chip">{b.guildName}</span>
-                      </div>
-                    );
-                  })}
-              {layers.Players &&
-                playerMarkers
-                  .filter((p) => onLayer(activeLayer, p.location.x, p.location.y))
-                  .map((p) => {
-                    const m = layerWorldToMap(activeLayer, p.location.x, p.location.y);
-                    const s = toScreen(m.x, m.y);
-                    return (
-                      <div key={p.key} className={`marker marker-player${selectedTargetKey === `player:${p.key}` ? " is-selected" : ""}`} style={{ left: s.x, top: s.y }}>
-                        <span className="marker-symbol"><IconMapPlayer /></span>
-                        <span className="chip">{p.name}</span>
-                      </div>
-                    );
-                  })}
+              {layers.Bases && baseMarkerGroups.map((group) => (
+                <MapMarkerGroup
+                  key={group.key}
+                  group={group}
+                  selectedTargetKey={selectedTargetKey}
+                  expanded={expandedClusterKey === group.key}
+                  onTarget={focusTarget}
+                  onCluster={focusCluster}
+                />
+              ))}
+              {layers.Players && playerMarkerGroups.map((group) => (
+                <MapMarkerGroup
+                  key={group.key}
+                  group={group}
+                  selectedTargetKey={selectedTargetKey}
+                  expanded={expandedClusterKey === group.key}
+                  onTarget={focusTarget}
+                  onCluster={focusCluster}
+                />
+              ))}
               {layers.Workers &&
                 workers
                   .filter((worker) => onLayer(activeLayer, worker.location.x, worker.location.y))
@@ -707,6 +740,74 @@ export default function MapRoute() {
         </Card>
       )}
     </main>
+  );
+}
+
+function markerKind(group: ClusterMarkerGroup<MapSearchTarget>): "player" | "base" {
+  return group.type === "single" ? group.member.kind : group.members[0].kind;
+}
+
+function MapMarkerGroup({
+  group,
+  selectedTargetKey,
+  expanded,
+  onTarget,
+  onCluster,
+}: {
+  group: ClusterMarkerGroup<MapSearchTarget>;
+  selectedTargetKey: string | null;
+  expanded: boolean;
+  onTarget: (target: MapSearchTarget) => void;
+  onCluster: (group: Extract<ClusterMarkerGroup<MapSearchTarget>, { type: "cluster" }>) => void;
+}) {
+  const kind = markerKind(group);
+  const Icon = kind === "player" ? IconMapPlayer : IconMapBase;
+  if (group.type === "single") {
+    const target = group.member.value;
+    return (
+      <button
+        type="button"
+        className={`marker marker-action marker-${kind}${selectedTargetKey === target.key ? " is-selected" : ""}`}
+        style={{ left: group.x, top: group.y }}
+        title={`Focus ${target.label} at exact coordinates`}
+        onClick={() => onTarget(target)}
+      >
+        <span className="marker-symbol"><Icon /></span>
+        <span className="chip">{target.label}</span>
+      </button>
+    );
+  }
+
+  const noun = kind === "player" ? "online players" : "bases";
+  const names = group.members.map(({ value }) => value.label);
+  return (
+    <>
+      <button
+        type="button"
+        className={`marker marker-action marker-${kind} marker-cluster`}
+        style={{ left: group.x, top: group.y }}
+        aria-label={`${group.members.length} nearby ${noun}: ${names.join(", ")}`}
+        aria-expanded={expanded}
+        title={`${names.join(", ")} · zoom to separate; at maximum zoom, open the exact-marker chooser`}
+        onClick={() => onCluster(group)}
+      >
+        <span className="marker-symbol"><Icon /><span className="marker-count">{group.members.length}</span></span>
+        <span className="chip">{group.members.length} nearby</span>
+      </button>
+      {expanded && (
+        <div className="marker-cluster-menu" style={{ left: group.x, top: group.y }} role="group" aria-label={`Choose one of ${group.members.length} nearby ${noun}`}>
+          {group.members.map(({ value: target }) => {
+            const coordinate = worldToGame(target.location.x, target.location.y);
+            return (
+              <button type="button" key={target.key} onClick={() => onTarget(target)}>
+                <span>{target.label}</span>
+                <small>{coordinate.x}, {coordinate.y}</small>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </>
   );
 }
 
