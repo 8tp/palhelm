@@ -247,7 +247,9 @@ export interface WhitelistEntry {
 // ---------- Guilds ----------
 export interface GuildBase {
   id: string;
-  location: { x: number; y: number };
+  // null when the base's world transform was never decoded (a pre-decoding
+  // save). Consumers must treat this as "location unavailable", never (0,0).
+  location: { x: number; y: number } | null;
   level: number;
 }
 

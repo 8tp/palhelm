@@ -1049,7 +1049,7 @@ export async function getWorldSnapshot(): Promise<LiveWorldSnapshot> {
         active: true,
         location: { x: player.location!.x, y: player.location!.y, z: 0 },
       })),
-      { kind: "BaseCampPal", characterId: "Anubis", name: "Anubis", level: 35, hpPercent: 88, active: true, activity: "working", linked: true, instanceId: "mock-pal-1", baseId: guilds[0]?.bases[0]?.id, ownerName: players[0]?.name, location: { x: guilds[0]?.bases[0]?.location.x ?? 0, y: guilds[0]?.bases[0]?.location.y ?? 0, z: 0 } },
+      { kind: "BaseCampPal", characterId: "Anubis", name: "Anubis", level: 35, hpPercent: 88, active: true, activity: "working", linked: true, instanceId: "mock-pal-1", baseId: guilds[0]?.bases[0]?.id, ownerName: players[0]?.name, location: { x: guilds[0]?.bases[0]?.location?.x ?? 0, y: guilds[0]?.bases[0]?.location?.y ?? 0, z: 0 } },
     ],
     truncated: false,
     diagnostics: { lastRequestDurationMs: 184, lastAcceptedActorCount: 118, lastErrorCategory: "none", linkedBasePals: 18, unresolvedBasePals: 0, linkLookupFailed: false, scheduledDelayMs: 30000, nextAttemptAt: new Date(Date.now() + 18_000).toISOString() },

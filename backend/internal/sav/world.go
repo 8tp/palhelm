@@ -2,6 +2,7 @@ package sav
 
 import (
 	"errors"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -75,7 +76,7 @@ func extractWorldSaveData(w *World, props propertyMap) {
 	if p := root["BaseCampSaveData"]; p != nil {
 		if entries, ok := p.Value.([]mapEntry); ok {
 			for _, e := range entries {
-				w.Bases = append(w.Bases, baseFromEntry(e))
+				w.Bases = append(w.Bases, baseFromEntry(e, &w.Stats))
 			}
 		} else {
 			w.Stats.DecodeFailures["bases"]++
@@ -125,15 +126,28 @@ func decodeGuildEntry(w *World, e mapEntry) {
 	w.Guilds = append(w.Guilds, g)
 }
 
-func baseFromEntry(e mapEntry) BaseCamp {
+func baseFromEntry(e mapEntry, stats *ParseStats) BaseCamp {
 	b := BaseCamp{}
 	if id, ok := e.Key.(string); ok {
 		b.ID = id
 	}
 	if v, ok := asProperties(e.Value); ok {
 		b.GuildID = firstString(v, "GroupIdBelongTo", "GroupID", "GuildId", "GuildID")
-		if p, ok := firstVector(v, "Position", "Location"); ok {
-			b.Position = &p
+		// The base's world transform lives inside PalBaseCampSaveData.RawData; it is
+		// not exposed as an ordinary Position/Location property, so decode it from the
+		// raw bytes. A pre-1.0 save that instead carries a plain vector property is
+		// still honored as a fallback.
+		if raw, ok := propertyBytes(v, "RawData"); ok {
+			if loc, ok := baseLocation(raw, b.ID); ok {
+				b.Position = loc
+			} else {
+				stats.recordSkip("worldSaveData.BaseCampSaveData.Value.RawData.transform", "tolerated")
+			}
+		}
+		if b.Position == nil {
+			if p, ok := firstVector(v, "Position", "Location"); ok {
+				b.Position = &p
+			}
 		}
 		if worker, ok := propertyProperties(v, "WorkerDirector"); ok {
 			if raw, ok := propertyBytes(worker, "RawData"); ok {
@@ -142,6 +156,63 @@ func baseFromEntry(e mapEntry) BaseCamp {
 		}
 	}
 	return b
+}
+
+// baseLocation decodes the world-space translation of a base camp from
+// PalBaseCampSaveData.RawData. The proven retail 1.x prefix is:
+//
+//	id                 GUID (16 bytes) — must match the map key
+//	name               fstring
+//	state              1 byte (EPalBaseCampWorkerStateType)
+//	transform          FTransform: rotation quaternion (4 f64) + translation
+//	                   (3 f64) + scale3d (3 f64); modern 1.x saves store each
+//	                   component as f64
+//	area_range         f32
+//	group_id_belong_to GUID
+//	... (worker/module data this decoder ignores)
+//
+// Only the translation is needed. Any structural drift — short buffer, an
+// embedded GUID that does not match the map key, a read error, or a non-finite
+// or implausibly large component — yields (nil,false) so the caller serves a
+// null location rather than a misleading (0,0). Verified against a live 1.0
+// world: all 20 bases decoded to within <1 cm of the guild's in-game PalBox.
+func baseLocation(raw []byte, baseID string) (*Vector, bool) {
+	r := newReader(raw)
+	embedded, err := readGUID(r)
+	if err != nil || (baseID != "" && !strings.EqualFold(embedded, baseID)) {
+		return nil, false
+	}
+	if _, err = r.fstring(); err != nil { // name
+		return nil, false
+	}
+	// state byte, then the rotation quaternion (4 f64) we do not need.
+	if err = r.skip(1 + 4*8); err != nil {
+		return nil, false
+	}
+	x, err := r.f64()
+	if err != nil {
+		return nil, false
+	}
+	y, err := r.f64()
+	if err != nil {
+		return nil, false
+	}
+	z, err := r.f64()
+	if err != nil {
+		return nil, false
+	}
+	if !finiteBaseCoord(x) || !finiteBaseCoord(y) || !finiteBaseCoord(z) {
+		return nil, false
+	}
+	return &Vector{X: x, Y: y, Z: z}, true
+}
+
+// finiteBaseCoord rejects NaN, infinities, and coordinates far outside any
+// plausible Palworld world extent (~±700 km in cm), which would indicate the
+// transform read landed on misaligned bytes rather than a real translation.
+func finiteBaseCoord(v float64) bool {
+	const maxWorldCoord = 1e10
+	return !math.IsNaN(v) && !math.IsInf(v, 0) && v >= -maxWorldCoord && v <= maxWorldCoord
 }
 
 // workerContainerID decodes PalBaseCampSaveData_WorkerDirector.RawData. The

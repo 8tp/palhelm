@@ -197,6 +197,21 @@ func resolveSchema(doc map[string]any, schema map[string]any) map[string]any {
 		}
 		return map[string]any{"type": "object", "properties": props, "required": required}
 	}
+	// A nullable object/ref is documented as oneOf:[<schema>, {"type":"null"}].
+	// Resolve the non-null branch so a present value is validated field-for-field
+	// while a JSON null legitimately matches the null branch.
+	if oneOf, ok := schema["oneOf"].([]any); ok {
+		for _, sub := range oneOf {
+			subSchema, ok := sub.(map[string]any)
+			if !ok {
+				continue
+			}
+			if typ, _ := subSchema["type"].(string); typ == "null" {
+				continue
+			}
+			return resolveSchema(doc, subSchema)
+		}
+	}
 	return schema
 }
 

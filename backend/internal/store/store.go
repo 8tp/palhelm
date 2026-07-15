@@ -1171,7 +1171,11 @@ func (s *Store) GuildJSON(ctx context.Context) ([]map[string]any, error) {
 				br.Close()
 				return nil, e
 			}
-			bases = append(bases, map[string]any{"id": bid, "location": map[string]any{"x": x.Float64, "y": y.Float64}, "level": level})
+			var location any // null, not (0,0), when the base transform was never decoded.
+			if x.Valid && y.Valid {
+				location = map[string]any{"x": x.Float64, "y": y.Float64}
+			}
+			bases = append(bases, map[string]any{"id": bid, "location": location, "level": level})
 		}
 		br.Close()
 		out = append(out, map[string]any{"id": g.id, "name": g.name, "adminUid": g.admin, "memberCount": len(members), "members": members, "bases": bases})
@@ -1192,11 +1196,14 @@ type Guild struct {
 // GuildMember is one guild roster entry.
 type GuildMember struct{ UID, Name string }
 
-// GuildBase is one persistent guild-owned base.
+// GuildBase is one persistent guild-owned base. HasLocation is false when the
+// base transform was never decoded (a pre-decoding save); X and Y are then zero
+// and must be surfaced as a null location rather than a misleading (0,0).
 type GuildBase struct {
-	ID    string
-	X, Y  float64
-	Level int
+	ID          string
+	X, Y        float64
+	HasLocation bool
+	Level       int
 }
 
 // Guilds returns every guild with its members and bases, typed (the integration-surface
@@ -1247,6 +1254,7 @@ func (s *Store) Guilds(ctx context.Context) ([]Guild, error) {
 				return nil, e
 			}
 			b.X, b.Y = x.Float64, y.Float64
+			b.HasLocation = x.Valid && y.Valid
 			g.Bases = append(g.Bases, b)
 		}
 		if e = br.Close(); e != nil {

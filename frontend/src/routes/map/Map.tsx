@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api, USE_MOCK } from "../../api/client";
-import type { MapDataset, MapDatasetLayer } from "../../api/types";
+import type { GuildBase, MapDataset, MapDatasetLayer } from "../../api/types";
 import {
   layerMapToWorld,
   MAP_SIZE,
@@ -298,7 +298,11 @@ export default function MapRoute() {
   const liveSnapshot = worldSnapshotQuery.isError || worldSnapshotQuery.isRefetchError ? undefined : worldSnapshotQuery.data;
   const playerMarkerSelection = selectPlayerMarkers(playersQuery.data ?? [], liveSnapshot);
   const playerMarkers = playerMarkerSelection.markers;
-  const bases = (guildsQuery.data ?? []).flatMap((g) => g.bases.map((b) => ({ ...b, guildName: g.name })));
+  // Bases without a decoded location cannot be plotted; drop them so every
+  // downstream base marker has a real (never (0,0)) position.
+  const bases = (guildsQuery.data ?? [])
+    .flatMap((g) => g.bases.map((b) => ({ ...b, guildName: g.name })))
+    .filter((b): b is typeof b & { location: NonNullable<GuildBase["location"]> } => b.location !== null);
   const liveMapActors = selectLiveMapActors(liveSnapshot);
   const workers = liveMapActors.workers;
   const palBoxes = liveMapActors.palBoxes;
