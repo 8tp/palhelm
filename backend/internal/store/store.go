@@ -1141,6 +1141,20 @@ type PalWithOwner struct {
 	OwnerResolved       bool
 }
 
+// PalExplorerQuery contains the viewer-safe filters used by the authenticated panel's
+// server-wide Pal explorer. The server validates the enum values before they reach the store;
+// levels are pointers so zero remains a meaningful bound.
+type PalExplorerQuery struct {
+	After       string
+	Limit       int
+	Search      string
+	OwnerSource string
+	Placement   string
+	Specimen    string
+	MinLevel    *int
+	MaxLevel    *int
+}
+
 // LivePalIndex returns the save-derived identity and ownership rows needed to reconcile one
 // Game Data API snapshot. The caller performs an exact instance-id join; this deliberately
 // avoids location/name heuristics and loads the table only once per background poll.
@@ -1287,6 +1301,81 @@ WHERE p.instance_id > ? ORDER BY p.instance_id ASC LIMIT ?`, after, limit)
 		out = append(out, p)
 	}
 	return out, rows.Err()
+}
+
+// PalsExplorerPage returns a stable, keyset-paginated slice of the server roster after applying
+// filters in SQLite. Filtering before pagination is important: a client-side filter over one page
+// would silently omit matching Pals later in the roster.
+func (s *Store) PalsExplorerPage(ctx context.Context, filter PalExplorerQuery) ([]PalWithOwner, error) {
+	const selectPals = `SELECT p.instance_id,p.character_id,p.display_name,p.level,p.is_alpha,p.is_lucky,p.in_party,p.party_slot,p.box_page,p.box_slot,p.hp,p.gender,p.talent_hp,p.talent_melee,p.talent_shot,p.talent_defense,p.passive_skill_ids,p.equipped_skill_ids,p.base_id,p.owner_uid,COALESCE(pl.name,''),p.owner_source,pl.uid IS NOT NULL
+FROM pals p LEFT JOIN players pl ON pl.uid=p.owner_uid`
+	var query strings.Builder
+	query.WriteString(selectPals)
+	query.WriteString(" WHERE p.instance_id > ?")
+	args := []any{filter.After}
+
+	if search := strings.TrimSpace(filter.Search); search != "" {
+		pattern := "%" + escapeSQLLike(strings.ToLower(search)) + "%"
+		query.WriteString(` AND (LOWER(p.display_name) LIKE ? ESCAPE '\' OR LOWER(p.character_id) LIKE ? ESCAPE '\' OR LOWER(COALESCE(pl.name,'')) LIKE ? ESCAPE '\')`)
+		args = append(args, pattern, pattern, pattern)
+	}
+	if filter.OwnerSource != "" {
+		query.WriteString(" AND p.owner_source = ?")
+		args = append(args, filter.OwnerSource)
+	}
+	switch filter.Placement {
+	case "party":
+		query.WriteString(" AND p.in_party = 1")
+	case "box":
+		query.WriteString(" AND p.in_party = 0 AND p.box_page IS NOT NULL")
+	case "base":
+		query.WriteString(" AND p.in_party = 0 AND p.box_page IS NULL AND p.base_id <> ''")
+	case "unknown":
+		query.WriteString(" AND p.in_party = 0 AND p.box_page IS NULL AND p.base_id = ''")
+	}
+	switch filter.Specimen {
+	case "standard":
+		query.WriteString(` AND p.is_alpha = 0 AND p.is_lucky = 0 AND LOWER(p.character_id) NOT LIKE 'boss\_%' ESCAPE '\'`)
+	case "alpha":
+		query.WriteString(` AND p.is_alpha = 1 AND LOWER(p.character_id) NOT LIKE 'boss\_%' ESCAPE '\'`)
+	case "lucky":
+		query.WriteString(" AND p.is_lucky = 1")
+	case "boss":
+		query.WriteString(` AND LOWER(p.character_id) LIKE 'boss\_%' ESCAPE '\'`)
+	}
+	if filter.MinLevel != nil {
+		query.WriteString(" AND p.level >= ?")
+		args = append(args, *filter.MinLevel)
+	}
+	if filter.MaxLevel != nil {
+		query.WriteString(" AND p.level <= ?")
+		args = append(args, *filter.MaxLevel)
+	}
+	query.WriteString(" ORDER BY p.instance_id ASC LIMIT ?")
+	args = append(args, filter.Limit)
+
+	rows, err := s.db.QueryContext(ctx, query.String(), args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := []PalWithOwner{}
+	for rows.Next() {
+		var p PalWithOwner
+		var passiveJSON, equippedJSON string
+		if err = rows.Scan(&p.InstanceID, &p.CharacterID, &p.DisplayName, &p.Level, &p.IsAlpha, &p.IsLucky, &p.InParty, &p.PartySlot, &p.BoxPage, &p.BoxSlot, &p.HP, &p.Gender, &p.TalentHP, &p.TalentMelee, &p.TalentShot, &p.TalentDefense, &passiveJSON, &equippedJSON, &p.BaseID, &p.OwnerUID, &p.OwnerName, &p.OwnerSource, &p.OwnerResolved); err != nil {
+			return nil, err
+		}
+		_ = json.Unmarshal([]byte(passiveJSON), &p.PassiveSkillIDs)
+		_ = json.Unmarshal([]byte(equippedJSON), &p.EquippedSkillIDs)
+		out = append(out, p)
+	}
+	return out, rows.Err()
+}
+
+func escapeSQLLike(value string) string {
+	replacer := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+	return replacer.Replace(value)
 }
 
 // Pals returns a player's save-derived pals.

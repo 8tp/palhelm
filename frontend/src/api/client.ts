@@ -20,6 +20,8 @@ import type {
   MetricsCurrent,
   MetricsHistory,
   MetricsWindow,
+  PalExplorerPage,
+  PalExplorerParams,
   PaldeckIconDataset,
   PalhelmEvent,
   Player,
@@ -121,6 +123,22 @@ export const api = {
     // Builds the <img src> for a player's proxied Steam avatar (404 = none, handled by the
     // caller's onError fallback to the placeholder mark). Proxied same-origin for CSP.
     avatarUrl: (uid: string): string => `${BASE}/players/${encodeURIComponent(uid)}/avatar`,
+  },
+  pals: {
+    list: (params: PalExplorerParams = {}): Promise<PalExplorerPage> => {
+      if (USE_MOCK) return mock.listPals(params);
+      const query = new URLSearchParams();
+      if (params.cursor) query.set("cursor", params.cursor);
+      if (params.limit !== undefined) query.set("limit", String(params.limit));
+      if (params.q) query.set("q", params.q);
+      if (params.ownerSource) query.set("ownerSource", params.ownerSource);
+      if (params.placement) query.set("placement", params.placement);
+      if (params.specimen) query.set("specimen", params.specimen);
+      if (params.minLevel !== undefined) query.set("minLevel", String(params.minLevel));
+      if (params.maxLevel !== undefined) query.set("maxLevel", String(params.maxLevel));
+      const suffix = query.size > 0 ? `?${query}` : "";
+      return request("GET", `/pals${suffix}`);
+    },
   },
   whitelist: {
     get: (): Promise<WhitelistEntry[]> => (USE_MOCK ? mock.getWhitelist() : request("GET", "/whitelist")),

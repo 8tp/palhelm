@@ -137,6 +137,35 @@ export interface PlayerDetail extends Player {
   sessions: PlayerSession[];
 }
 
+export type PalOwnerSource = "save" | "personal_container" | "last_observed" | "unresolved";
+export type PalPlacement = "party" | "box" | "base" | "unknown";
+export type PalSpecimenFilter = "standard" | "alpha" | "lucky" | "boss";
+
+export interface PalExplorerPal extends PlayerPal {
+  isBoss: boolean;
+  placement: PalPlacement;
+  ownerUid: string;
+  ownerName: string;
+  ownerSource: PalOwnerSource;
+  ownerResolved: boolean;
+}
+
+export interface PalExplorerPage {
+  data: PalExplorerPal[];
+  nextCursor: string | null;
+}
+
+export interface PalExplorerParams {
+  cursor?: string;
+  limit?: number;
+  q?: string;
+  ownerSource?: PalOwnerSource;
+  placement?: PalPlacement;
+  specimen?: PalSpecimenFilter;
+  minLevel?: number;
+  maxLevel?: number;
+}
+
 export interface WhitelistEntry {
   steamId: string;
   name?: string;

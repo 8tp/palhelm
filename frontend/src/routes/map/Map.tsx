@@ -15,13 +15,23 @@ import {
 } from "../../app/mapTransform";
 import { formatRelativeToNow, formatWorldGuid } from "../../app/format";
 import { tileZoomForScale } from "../../app/mapTiles";
+import { addContainedMapWheelListener, DEFAULT_MAP_LAYERS, wheelZoomFactor, zoomMapView } from "../../app/mapInteraction";
 import { selectLiveMapActors, selectPlayerMarkers } from "../../app/liveWorld";
 import { Card, CardBody, CardHead } from "../../components/Card";
 import { EmptyState } from "../../components/EmptyState";
 import { ToggleChip } from "../../components/ToggleChip";
 import { CodeWell } from "../../components/CodeWell";
 import { Tooltip } from "../../components/Tooltip";
-import { IconMapEmpty } from "../../components/icons";
+import {
+  IconFitView,
+  IconMapBase,
+  IconMapEmpty,
+  IconMapPalBox,
+  IconMapPlayer,
+  IconMapWorker,
+  IconZoomIn,
+  IconZoomOut,
+} from "../../components/icons";
 import "./Map.css";
 
 type TileState = "checking" | "tiles" | "mockgrid" | "missing";
@@ -101,12 +111,7 @@ interface View {
 }
 
 export default function MapRoute() {
-  const [layers, setLayers] = useState<Record<string, boolean>>({
-    Players: true,
-    Bases: true,
-    Workers: true,
-    PalBoxes: false,
-  });
+  const [layers, setLayers] = useState<Record<string, boolean>>(() => ({ ...DEFAULT_MAP_LAYERS }));
   const [tileState, setTileState] = useState<TileState>("checking");
   const [view, setView] = useState<View | null>(null);
   const [cursorGame, setCursorGame] = useState<{ x: number; y: number } | null>(null);
@@ -181,27 +186,40 @@ export default function MapRoute() {
     }
   }, [tileState, view, fitView]);
 
-  function scaleBounds(): { min: number; max: number } {
+  const scaleBounds = useCallback((): { min: number; max: number } => {
     const el = wellRef.current;
     const min = el ? (Math.min(el.clientWidth, el.clientHeight) / MAP_SIZE) * Math.pow(2, activeLayer.minZoom) : 1;
     return { min, max: min * Math.pow(2, activeLayer.maxZoom) };
-  }
+  }, [activeLayer.minZoom, activeLayer.maxZoom]);
 
-  function zoomAt(factor: number, cx?: number, cy?: number) {
+  const zoomAt = useCallback((factor: number, cx?: number, cy?: number) => {
     setView((v) => {
       if (!v) return v;
       const el = wellRef.current;
-      const { min, max } = scaleBounds();
       const px = cx ?? (el ? el.clientWidth / 2 : 0);
       const py = cy ?? (el ? el.clientHeight / 2 : 0);
-      const next = Math.min(max, Math.max(min, v.scale * factor));
-      const k = next / v.scale;
-      return { scale: next, tx: px - (px - v.tx) * k, ty: py - (py - v.ty) * k };
+      return zoomMapView(v, factor, { x: px, y: py }, scaleBounds());
     });
-  }
+  }, [scaleBounds]);
+
+  const resetView = useCallback(() => {
+    const next = fitView();
+    if (next) setView(next);
+  }, [fitView]);
+
+  useEffect(() => {
+    const el = wellRef.current;
+    const hasInteractiveMap = tileState === "tiles" || tileState === "mockgrid";
+    if (!el || !hasInteractiveMap) return;
+    return addContainedMapWheelListener(el, (event) => {
+      const rect = el.getBoundingClientRect();
+      zoomAt(wheelZoomFactor(event.deltaY), event.clientX - rect.left, event.clientY - rect.top);
+    });
+  }, [tileState, zoomAt]);
 
   function onPointerDown(e: React.PointerEvent) {
     if (!view) return;
+    if ((e.target as Element).closest("button, a, input, select, textarea")) return;
     (e.target as Element).setPointerCapture?.(e.pointerId);
     dragRef.current = { startX: e.clientX, startY: e.clientY, tx: view.tx, ty: view.ty };
   }
@@ -227,12 +245,6 @@ export default function MapRoute() {
   function onPointerUp() {
     dragRef.current = null;
   }
-  function onWheel(e: React.WheelEvent) {
-    if (!view || !wellRef.current) return;
-    const rect = wellRef.current.getBoundingClientRect();
-    zoomAt(e.deltaY < 0 ? 1.25 : 0.8, e.clientX - rect.left, e.clientY - rect.top);
-  }
-
   // Tile zoom level for the current scale: enough resolution that one tile pixel ≥ one screen pixel.
   const tileZ = view
     ? tileZoomForScale(view.scale, MAP_SIZE, activeLayer.tileSize, activeLayer.minZoom, activeLayer.maxZoom)
@@ -301,7 +313,6 @@ export default function MapRoute() {
           onPointerMove={hasMap ? onPointerMove : undefined}
           onPointerUp={hasMap ? onPointerUp : undefined}
           onPointerLeave={hasMap ? onPointerUp : undefined}
-          onWheel={hasMap ? onWheel : undefined}
         >
           {hasMap && (
             <div className="map-toggles" role="group" aria-label="Map layers">
@@ -393,7 +404,7 @@ export default function MapRoute() {
                     const s = toScreen(m.x, m.y);
                     return (
                       <div key={b.id} className="marker marker-base" style={{ left: s.x, top: s.y }}>
-                        <span className="sq" />
+                        <span className="marker-symbol"><IconMapBase /></span>
                         <span className="chip">{b.guildName}</span>
                       </div>
                     );
@@ -406,7 +417,7 @@ export default function MapRoute() {
                     const s = toScreen(m.x, m.y);
                     return (
                       <div key={p.key} className="marker marker-player" style={{ left: s.x, top: s.y }}>
-                        <span className="dot" />
+                        <span className="marker-symbol"><IconMapPlayer /></span>
                         <span className="chip">{p.name}</span>
                       </div>
                     );
@@ -420,7 +431,7 @@ export default function MapRoute() {
                     const danger = worker.activity === "incapacitated" || (worker.hpPercent !== undefined && worker.hpPercent < 25);
                     return (
                       <div key={worker.instanceId} className={`marker marker-worker${danger ? " danger" : ""}`} style={{ left: s.x, top: s.y }}>
-                        <span className="dot" />
+                        <span className="marker-symbol"><IconMapWorker /></span>
                         <span className="chip">{worker.name || worker.characterId || "Pal"} · {worker.activity}</span>
                       </div>
                     );
@@ -433,7 +444,7 @@ export default function MapRoute() {
                     const s = toScreen(m.x, m.y);
                     return (
                       <div key={`${box.guildName ?? "palbox"}-${index}`} className="marker marker-palbox" style={{ left: s.x, top: s.y }}>
-                        <span className="sq" />
+                        <span className="marker-symbol"><IconMapPalBox /></span>
                         <span className="chip">{box.guildName || "Palbox"}</span>
                       </div>
                     );
@@ -442,12 +453,17 @@ export default function MapRoute() {
               <div className="map-zoom">
                 <Tooltip label="Zoom in" side="right">
                   <button type="button" aria-label="Zoom in" onClick={() => zoomAt(1.5)}>
-                    +
+                    <IconZoomIn />
                   </button>
                 </Tooltip>
                 <Tooltip label="Zoom out" side="right">
                   <button type="button" aria-label="Zoom out" onClick={() => zoomAt(1 / 1.5)}>
-                    −
+                    <IconZoomOut />
+                  </button>
+                </Tooltip>
+                <Tooltip label="Fit map" side="right">
+                  <button type="button" aria-label="Fit map" onClick={resetView}>
+                    <IconFitView />
                   </button>
                 </Tooltip>
               </div>

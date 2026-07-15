@@ -2,6 +2,8 @@ import type { PlayerPal } from "../api/types";
 import { truncateMiddle } from "../app/format";
 import { IconInfo } from "./icons";
 import { humanizePalIdentifier, palGenderLabel, palPlacementLabel } from "./palDetails";
+import { WorkSuitabilityBadges } from "./WorkSuitabilityBadges";
+import { PAL_WORK_DATA_PROVENANCE } from "./workSuitabilities";
 import "./PalDetails.css";
 
 export function PalInfoButton({
@@ -54,6 +56,11 @@ export function PalDetailPanel({ pal, id }: { pal: PlayerPal; id: string }) {
           <Talent label="Ranged" value={talents?.shot} />
           <Talent label="Defense" value={talents?.defense} />
         </div>
+      </div>
+
+      <div className="pal-detail-section">
+        <h4>Work suitability <span className="pal-detail-section-source" title={PAL_WORK_DATA_PROVENANCE}>pinned species data</span></h4>
+        <WorkSuitabilityBadges characterId={pal.characterId} />
       </div>
 
       <SkillList title="Passive skills" values={passives} />

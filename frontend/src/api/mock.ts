@@ -27,6 +27,9 @@ import type {
   MetricsCurrent,
   MetricsHistory,
   MetricsWindow,
+  PalExplorerPage,
+  PalExplorerPal,
+  PalExplorerParams,
   PaldeckIconDataset,
   PalhelmEvent,
   Player,
@@ -314,7 +317,7 @@ export async function getServer(): Promise<ServerInfo> {
     worldGuid: "A1B2C3D4E5F6478090ABCDEF12345678",
     state: "running",
     uptimeSec: Math.floor((Date.now() - BOOT_AT) / 1000),
-    panelVersion: "0.5.0",
+    panelVersion: "0.6.0",
   };
 }
 
@@ -454,6 +457,39 @@ const palsByPlayer: Record<string, MockPalBase[]> = {
   ],
   tessellate: [{ instanceId: "pal-t1", characterId: "Depresso", displayName: "Depresso", level: 6, isAlpha: false, isLucky: false }],
 };
+
+export async function listPals(params: PalExplorerParams = {}): Promise<PalExplorerPage> {
+  requireSession();
+  await latency();
+  const q = params.q?.trim().toLowerCase() ?? "";
+  const all: PalExplorerPal[] = players
+    .flatMap((owner) => withPlacement(palsByPlayer[owner.name] ?? []).map((pal) => ({
+      ...pal,
+      isBoss: pal.characterId.toLowerCase().startsWith("boss_"),
+      placement: pal.placement ?? "unknown",
+      ownerUid: owner.uid,
+      ownerName: owner.name,
+      ownerSource: "personal_container" as const,
+      ownerResolved: true,
+    })))
+    .sort((a, b) => a.instanceId.localeCompare(b.instanceId));
+  const filtered = all.filter((pal) => {
+    if (params.cursor && pal.instanceId <= params.cursor) return false;
+    if (q && !`${pal.displayName} ${pal.characterId} ${pal.ownerName}`.toLowerCase().includes(q)) return false;
+    if (params.ownerSource && pal.ownerSource !== params.ownerSource) return false;
+    if (params.placement && pal.placement !== params.placement) return false;
+    if (params.minLevel !== undefined && pal.level < params.minLevel) return false;
+    if (params.maxLevel !== undefined && pal.level > params.maxLevel) return false;
+    if (params.specimen === "standard" && (pal.isAlpha || pal.isLucky || pal.isBoss)) return false;
+    if (params.specimen === "alpha" && (!pal.isAlpha || pal.isBoss)) return false;
+    if (params.specimen === "lucky" && !pal.isLucky) return false;
+    if (params.specimen === "boss" && !pal.isBoss) return false;
+    return true;
+  });
+  const limit = Math.max(1, Math.min(params.limit ?? 48, 100));
+  const data = filtered.slice(0, limit);
+  return { data, nextCursor: filtered.length > limit ? data.at(-1)?.instanceId ?? null : null };
+}
 
 export async function playerDetail(uid: string): Promise<PlayerDetail> {
   requireSession();

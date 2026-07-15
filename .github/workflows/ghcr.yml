@@ -1,21 +1,24 @@
 name: Docker image
 
-# Build-only for now. When the repo is public and the image should be published
-# to ghcr.io/8tp/palhelm, uncomment the login step and the push settings below.
-
 on:
   push:
     branches: [main]
-    # tags: ["v*"]
+    tags: ["v*"]
   pull_request:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: 8tp/palhelm
 
 jobs:
   build:
     name: Build image
     runs-on: ubuntu-latest
-    # permissions:
-    #   contents: read
-    #   packages: write
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -25,26 +28,66 @@ jobs:
         shell: bash
         run: echo "value=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
 
-      # - name: Log in to GHCR
-      #   uses: docker/login-action@v3
-      #   with:
-      #     registry: ghcr.io
-      #     username: ${{ github.actor }}
-      #     password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify release tag matches panel version
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: test "${GITHUB_REF_NAME#v}" = "${{ steps.panel-version.outputs.value }}"
+
+      - name: Log in to GHCR
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=ci,enable=${{ !startsWith(github.ref, 'refs/tags/v') }}
+            type=raw,value=${{ github.ref_name }},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=semver,pattern={{version}},value=${{ github.ref_name }},enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+
+      - name: Install Cosign
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: sigstore/cosign-installer@v4.1.2
 
       - name: Build
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
-          push: false
-          tags: ghcr.io/8tp/palhelm:ci
+          push: ${{ startsWith(github.ref, 'refs/tags/v') }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             VERSION=${{ steps.panel-version.outputs.value }}
+          provenance: ${{ startsWith(github.ref, 'refs/tags/v') && 'mode=max' || 'false' }}
+          sbom: ${{ startsWith(github.ref, 'refs/tags/v') }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          # To publish instead, replace `push: false` and `tags` above with:
-          # push: ${{ github.event_name != 'pull_request' }}
-          # tags: |
-          #   ghcr.io/8tp/palhelm:latest
-          #   ghcr.io/8tp/palhelm:${{ github.ref_name }}
+
+      - name: Attest published image
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/attest@v4
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+      - name: Sign published image by digest
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          images=""
+          for tag in ${TAGS}; do
+            images="${images}${tag}@${DIGEST} "
+          done
+          cosign sign --yes ${images}

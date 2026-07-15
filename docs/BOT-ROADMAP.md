@@ -80,6 +80,10 @@ Goal: make the existing command surface easy to find and support.
   follow-up observability work.
 - [x] Add safe end-to-end AI request timing and model/tool-call counts without
   logging questions, provider bodies, credentials, or `.env` data.
+- [x] Keep diagnostics in safe logs and `/diagnostics`, not in user replies:
+  alias save/player/guild/base/instance IDs before model synthesis, sanitize raw
+  IDs from final prose, retain deterministic sources, and use a concise
+  `AI Generated` footer.
 - [x] Add separate provider/thinking, deterministic-tool, and web-search stage
   timings without logging prompts or tool payloads.
 - [x] Keep admin authorization on the configured `ADMIN_ROLE_ID` runtime gate.

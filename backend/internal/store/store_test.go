@@ -974,6 +974,73 @@ func TestPalsPageJoinsOwner(t *testing.T) {
 	}
 }
 
+func TestPalsExplorerPageFiltersBeforePagination(t *testing.T) {
+	s, err := Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	ctx := context.Background()
+	w := &sav.World{
+		Players: []sav.Player{
+			{UID: "owner-a", Nickname: "Owner A", OtomoContainerID: "party-a", PalStorageContainerID: "box-a"},
+			{UID: "owner-b", Nickname: "Owner B", OtomoContainerID: "party-b", PalStorageContainerID: "box-b"},
+		},
+		Pals: []sav.Pal{
+			{InstanceID: "a-boss", OwnerUID: "owner-a", ContainerID: "box-a", SlotIndex: 31, CharacterID: "BOSS_GrassMammoth", Level: 35},
+			{InstanceID: "b-lucky", OwnerUID: "owner-b", ContainerID: "party-b", SlotIndex: 2, CharacterID: "SheepBall", Level: 12, IsLucky: true},
+			{InstanceID: "c-alpha", OwnerUID: "owner-a", CharacterID: "Anubis", Level: 44, IsBoss: true},
+			{InstanceID: "d-base", CharacterID: "Foxparks", Level: 4, BaseID: "base-one"},
+		},
+	}
+	if err = s.ReplaceWorld(ctx, w, time.Now(), 0); err != nil {
+		t.Fatal(err)
+	}
+
+	level := 30
+	tests := []struct {
+		name   string
+		filter PalExplorerQuery
+		want   []string
+	}{
+		{"search owner", PalExplorerQuery{Search: "owner a", Limit: 10}, []string{"aboss", "calpha"}},
+		{"search wildcard literal", PalExplorerQuery{Search: "%", Limit: 10}, []string{}},
+		{"owner provenance", PalExplorerQuery{OwnerSource: "personal_container", Limit: 10}, []string{"aboss", "blucky"}},
+		{"party", PalExplorerQuery{Placement: "party", Limit: 10}, []string{"blucky"}},
+		{"box", PalExplorerQuery{Placement: "box", Limit: 10}, []string{"aboss"}},
+		{"base", PalExplorerQuery{Placement: "base", Limit: 10}, []string{"dbase"}},
+		{"unknown", PalExplorerQuery{Placement: "unknown", Limit: 10}, []string{"calpha"}},
+		{"boss", PalExplorerQuery{Specimen: "boss", Limit: 10}, []string{"aboss"}},
+		{"alpha excludes boss prefix", PalExplorerQuery{Specimen: "alpha", Limit: 10}, []string{"calpha"}},
+		{"lucky", PalExplorerQuery{Specimen: "lucky", Limit: 10}, []string{"blucky"}},
+		{"minimum level", PalExplorerQuery{MinLevel: &level, Limit: 10}, []string{"aboss", "calpha"}},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := s.PalsExplorerPage(ctx, tc.filter)
+			if err != nil {
+				t.Fatal(err)
+			}
+			ids := make([]string, 0, len(got))
+			for _, pal := range got {
+				ids = append(ids, pal.InstanceID)
+			}
+			if fmt.Sprint(ids) != fmt.Sprint(tc.want) {
+				t.Fatalf("ids = %v, want %v", ids, tc.want)
+			}
+		})
+	}
+
+	page, err := s.PalsExplorerPage(ctx, PalExplorerQuery{Specimen: "standard", Limit: 1})
+	if err != nil || len(page) != 1 || page[0].InstanceID != "dbase" {
+		t.Fatalf("filtered first page = %#v, %v", page, err)
+	}
+	next, err := s.PalsExplorerPage(ctx, PalExplorerQuery{After: page[0].InstanceID, Specimen: "standard", Limit: 1})
+	if err != nil || len(next) != 0 {
+		t.Fatalf("filtered next page = %#v, %v", next, err)
+	}
+}
+
 // TestGuildsTypedIncludesMembersAndBases proves the integration /guilds endpoint's typed
 // query (spec §4/§6), which must not reuse GuildJSON's map[string]any shape.
 func TestGuildsTypedIncludesMembersAndBases(t *testing.T) {

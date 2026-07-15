@@ -1,6 +1,6 @@
 # Palhelm Panel Roadmap
 
-Last updated: 2026-07-14
+Last updated: 2026-07-15
 
 ## Direction
 
@@ -16,8 +16,9 @@ maturity before adding broader control over the host or game process.
   reviewed commits and tagged releases.
 - [x] Use one backend/build-provided panel version everywhere; remove hardcoded
   login and navigation versions.
-- [ ] Publish immutable image tags/digests and document migration/rollback evidence.
-- [ ] Add release smoke checks for auth, health, players, backups, config
+- [x] Prepare tag-only semantic-version GHCR publishing with digest signing,
+  provenance/SBOM attestations, and a tag-to-`VERSION` consistency gate.
+- [x] Add read-only release smoke checks for auth, health, players, backups, config
   capabilities, OpenAPI, and the Integration API.
 
 Exit: an operator can identify, rebuild, deploy, and roll back the exact running
@@ -41,8 +42,12 @@ happened without reading container logs.
 - [ ] Add current-session duration plus daily/weekly/monthly player activity.
 - [ ] Add concurrency, peak-hours, new/returning-player, and guild-activity views
   with explicit tracking coverage.
-- [ ] Add a server-wide Pal explorer with search, owner provenance, party/box/base
-  placement, Alpha/Lucky/Boss filters, and current records.
+- [x] Add a server-wide Pal explorer with search, owner provenance, party/box/base
+  placement, and Alpha/Lucky/Boss and level filters.
+- [ ] Link current and historical records directly into filtered Pal explorer views.
+- [x] Add numeric, version-pinned work-suitability badges with distinct SVGs to
+  the shared party and Palbox detail view, without presenting species metadata
+  as individual save data.
 - [ ] Add Paldeck/capture progression and dedicated guild detail pages linking
   members, bases, Pals, activity, and map locations.
 
@@ -62,6 +67,9 @@ the Discord bot instead of limiting it to player detail dialogs.
   and graceful version mismatch handling.
 - [ ] Add focus-current-player, fit-online-players/bases, marker clustering, map
   search, shareable coordinates, and mobile controls.
+- [x] Add contained wheel/trackpad zoom, explicit zoom and fit controls, distinct
+  SVG player/base/worker/Palbox markers, and keep dense worker markers off by
+  default.
 - [ ] Add automated landmark fixtures across Palpagos and the World Tree so axis,
   offset, layer-boundary, and inverse-coordinate regressions fail in CI.
 
@@ -98,9 +106,10 @@ in-game map across every installed world layer.
 
 ## Phase 3 — diagnostics and integrations
 
-- [ ] Add an admin diagnostics page for poller lag, parser duration/drift, last
-  successful REST/RCON/save operations, backup freshness, database/schema size,
-  disk pressure, asset datasets, and background operations.
+- [x] Add an authenticated diagnostics page for REST/RCON/save health, parser
+  duration/drift, Game Data freshness and link coverage, and backup freshness.
+- [ ] Extend diagnostics with last successful REST/RCON operations, asset datasets,
+  database/schema size, and filesystem headroom after defining safe backend contracts.
 - [ ] Add a Prometheus exporter for server and Palhelm health metrics.
 - [ ] Add generic/Discord webhooks for bounded allowlisted backup, outage,
   join/leave, and configuration events.
@@ -137,7 +146,7 @@ reviewable and reversible.
 - [ ] Add Playwright coverage for login, roles, moderation, backup/restore,
   configuration conflicts, keyboard access, and responsive layouts.
 - [ ] Route-split the frontend bundle; the current production build emits a
-  roughly 611 kB minified entry chunk before gzip.
+  roughly 677 kB minified entry chunk before gzip.
 - [ ] Consider multi-server/multi-world support only after the single-server
   deployment and migration lifecycle is reproducible.
 
