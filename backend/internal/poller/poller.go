@@ -92,6 +92,12 @@ type Service struct {
 	gameDataTruncated                       bool
 	gameDataCollapsePending                 bool
 	gameDataInFlight                        atomic.Bool
+	gameDataLastRequestDuration             time.Duration
+	gameDataLastAcceptedActorCount          int
+	gameDataLastErrorCategory               GameDataErrorCategory
+	gameDataScheduledDelay                  time.Duration
+	gameDataNextAttemptAt                   time.Time
+	gameDataNow                             func() time.Time
 }
 
 // New constructs the poller service.
@@ -108,7 +114,7 @@ func New(c *palworld.Client, s *store.Store, p Publisher, h *Health, metricsEver
 	if h.SaveState == "" {
 		h.SaveState = "unavailable"
 	}
-	return &Service{client: c, gameDataSource: c, store: s, pub: p, health: h, log: log, metricsEvery: metricsEvery, playersEvery: playersEvery, saveEvery: saveEvery, saveDir: saveDir, online: make(map[string]palworld.Player), gameDataState: GameDataDisabled}
+	return &Service{client: c, gameDataSource: c, store: s, pub: p, health: h, log: log, metricsEvery: metricsEvery, playersEvery: playersEvery, saveEvery: saveEvery, saveDir: saveDir, online: make(map[string]palworld.Player), gameDataState: GameDataDisabled, gameDataLastErrorCategory: GameDataErrorNone, gameDataNow: time.Now}
 }
 
 // Run launches pollers and blocks until cancellation.

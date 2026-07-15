@@ -61,7 +61,7 @@ func TestIntegrationWorldSummaryIsAggregateOnly(t *testing.T) {
 		t.Fatalf("summary = %#v", doc.Data)
 	}
 	body := strings.ToLower(rr.Body.String())
-	for _, forbidden := range []string{"192.0.2.55", "private-", "hunter", "bes pals", "mammorest", "purplespider", "location", "action", "userid", "trainer"} {
+	for _, forbidden := range []string{"192.0.2.55", "private-", "hunter", "bes pals", "mammorest", "purplespider", "location", "action", "userid", "trainer", "diagnostics", "requestduration", "acceptedactor", "nextattempt", "errorcategory"} {
 		if strings.Contains(body, forbidden) {
 			t.Errorf("Integration summary leaked %q: %s", forbidden, rr.Body.String())
 		}
@@ -90,6 +90,9 @@ func TestSessionWorldSnapshotProjectsUsefulActorsWithoutCredentialFields(t *test
 	}
 	if len(doc.Actors) != 3 || doc.Counts.WildPals != 1 || doc.Counts.NPCs != 1 {
 		t.Fatalf("session snapshot = %#v", doc)
+	}
+	if doc.State != "ready" || doc.Truncated || doc.Diagnostics.LastAcceptedActorCount != 5 || doc.Diagnostics.LastErrorCategory != "none" || doc.Diagnostics.LastRequestDurationMS < 0 || doc.Diagnostics.ScheduledDelayMS != 0 || doc.Diagnostics.NextAttemptAt != nil {
+		t.Fatalf("session diagnostics = %#v", doc.Diagnostics)
 	}
 	pal := doc.Actors[1]
 	if pal.CharacterID != "Mammorest" || !pal.IsBoss || pal.Activity != "transporting" || pal.HPPercent == nil || *pal.HPPercent != 50 {
@@ -130,5 +133,8 @@ func TestSessionWorldSnapshotClearsExactActorsAfterTerminalFailure(t *testing.T)
 	}
 	if doc.State != "unsupported" || len(doc.Actors) != 0 || doc.Counts.Players != 0 || strings.Contains(strings.ToLower(rr.Body.String()), "hunter") {
 		t.Fatalf("terminal response retained exact data: %s", rr.Body.String())
+	}
+	if doc.Diagnostics.LastAcceptedActorCount != 5 || doc.Diagnostics.LastErrorCategory != "unsupported" || doc.Diagnostics.LastRequestDurationMS < 0 {
+		t.Fatalf("terminal diagnostics = %#v", doc.Diagnostics)
 	}
 }

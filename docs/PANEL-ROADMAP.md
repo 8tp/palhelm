@@ -77,6 +77,9 @@ the Discord bot instead of limiting it to player detail dialogs.
 - [x] Let the map reconcile sanitized coordinates from a complete `ready`
   snapshot onto the authoritative REST roster by exact unique active-player
   name, while retaining REST/save fallback for partial, stale, or ambiguous data.
+- [x] Expose session-only rollout diagnostics for request duration, accepted
+  actor count, bounded failure category, truncation, and retry schedule without
+  extending the public Integration summary.
 - [ ] Verify endpoint support and coordinate semantics against a disposable or
   explicitly approved server session before enabling it in production.
 - [ ] Join `BaseCampPal.InstanceID` to save-derived Pals and WorkerDirector base
@@ -104,6 +107,9 @@ or granting an integration administrator credentials.
 
 ## Phase 4 — backup and configuration maturity
 
+- [x] Exclude the game wrapper's direct per-world `backup/` subtree from Palhelm
+  archives so scheduled backups do not recursively embed redundant restore
+  points; retain active world, player, option, and configuration files.
 - [ ] Add optional encrypted offsite replication through an operator-configured
   S3-compatible/restic/rclone adapter.
 - [ ] Verify manifests/checksums and support scheduled restore drills into a

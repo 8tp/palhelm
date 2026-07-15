@@ -63,6 +63,9 @@ func TestGameDataCacheReadyDeepCopyAndStaleLastGood(t *testing.T) {
 	if stale.State != GameDataStale || stale.Actors[0].Name != "Hunter" || stale.CapturedAt != first.CapturedAt {
 		t.Fatalf("stale cache did not retain last good: %#v", stale)
 	}
+	if stale.Diagnostics.LastAcceptedActorCount != 1 || stale.Diagnostics.LastErrorCategory != GameDataErrorUnknown {
+		t.Fatalf("stale diagnostics = %#v", stale.Diagnostics)
+	}
 }
 
 func TestGameDataCacheClassifiesTerminalFailuresWithoutGlobalHealth(t *testing.T) {
@@ -85,8 +88,12 @@ func TestGameDataCacheClassifiesTerminalFailuresWithoutGlobalHealth(t *testing.T
 			if err := s.pollGameData(context.Background()); err == nil {
 				t.Fatal("expected terminal error")
 			}
-			if got := s.GameData(); got.State != tc.state || len(got.Actors) != 0 || got.Counts.total() != 0 {
+			got := s.GameData()
+			if got.State != tc.state || len(got.Actors) != 0 || got.Counts.total() != 0 {
 				t.Fatalf("terminal cache = %#v, want state %s and no retained data", got, tc.state)
+			}
+			if got.Diagnostics.LastAcceptedActorCount != 1 || string(got.Diagnostics.LastErrorCategory) != tc.name {
+				t.Fatalf("terminal diagnostics = %#v", got.Diagnostics)
 			}
 			rest, _, _, _ := s.health.Snapshot()
 			if rest != "ok" {
@@ -137,11 +144,102 @@ func TestGameDataCollapsedSnapshotRequiresConfirmation(t *testing.T) {
 	if got := s.GameData(); got.Counts.WildPals != 20 || got.State != GameDataStale {
 		t.Fatalf("first collapse replaced last-good data: %#v", got)
 	}
+	if got := s.GameData().Diagnostics; got.LastAcceptedActorCount != 20 || got.LastErrorCategory != GameDataErrorCollapsed {
+		t.Fatalf("collapsed diagnostics = %#v", got)
+	}
 	if err := s.pollGameData(context.Background()); err != nil {
 		t.Fatal(err)
 	}
 	if got := s.GameData(); got.Counts.Players != 1 || got.Counts.WildPals != 0 || got.State != GameDataReady {
 		t.Fatalf("confirmed collapse not accepted: %#v", got)
+	}
+	if got := s.GameData().Diagnostics; got.LastAcceptedActorCount != 1 || got.LastErrorCategory != GameDataErrorNone {
+		t.Fatalf("confirmed diagnostics = %#v", got)
+	}
+}
+
+func TestGameDataDiagnosticsDurationAndScheduleAreDeterministic(t *testing.T) {
+	s, _, _ := testService(t, palworld.NewClient("", "", ""))
+	s.ConfigureGameData(true, 30*time.Second)
+	started := time.Date(2026, 7, 15, 12, 0, 0, 0, time.UTC)
+	completed := started.Add(1250 * time.Millisecond)
+	clockCalls := 0
+	s.gameDataNow = func() time.Time {
+		clockCalls++
+		if clockCalls == 1 {
+			return started
+		}
+		return completed
+	}
+	s.gameDataSource = &fakeGameDataSource{snapshots: []palworld.GameDataSnapshot{{ActorData: []palworld.GameDataActor{
+		{Type: "Character", UnitType: "Player"},
+		{Type: "Character", UnitType: "WildPal"},
+	}}}}
+	if err := s.pollGameData(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	diagnostics := s.GameData().Diagnostics
+	if diagnostics.LastRequestDuration != 1250*time.Millisecond || diagnostics.LastAcceptedActorCount != 2 || diagnostics.LastErrorCategory != GameDataErrorNone {
+		t.Fatalf("accepted diagnostics = %#v", diagnostics)
+	}
+
+	s.gameDataNow = func() time.Time { return completed }
+	s.setGameDataSchedule(45 * time.Second)
+	diagnostics = s.GameData().Diagnostics
+	if diagnostics.ScheduledDelay != 45*time.Second || !diagnostics.NextAttemptAt.Equal(completed.Add(45*time.Second)) {
+		t.Fatalf("scheduled diagnostics = %#v", diagnostics)
+	}
+	s.setGameDataSchedule(0)
+	diagnostics = s.GameData().Diagnostics
+	if diagnostics.ScheduledDelay != 0 || !diagnostics.NextAttemptAt.IsZero() {
+		t.Fatalf("cleared schedule diagnostics = %#v", diagnostics)
+	}
+}
+
+func TestClassifyGameDataErrorUsesOnlyBoundedCategories(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		err  error
+		want GameDataErrorCategory
+	}{
+		{"none", nil, GameDataErrorNone},
+		{"collapsed", ErrGameDataCollapsed, GameDataErrorCollapsed},
+		{"timeout", context.DeadlineExceeded, GameDataErrorTimeout},
+		{"canceled", context.Canceled, GameDataErrorCanceled},
+		{"unreachable", &palworld.APIError{Kind: palworld.ErrorUnreachable, Err: errors.New("PRIVATE upstream detail")}, GameDataErrorUnreachable},
+		{"unauthorized", &palworld.APIError{Kind: palworld.ErrorUnauthorized, Err: errors.New("PRIVATE upstream detail")}, GameDataErrorUnauthorized},
+		{"unsupported", &palworld.APIError{Kind: palworld.ErrorUnsupported, Err: errors.New("PRIVATE upstream detail")}, GameDataErrorUnsupported},
+		{"response", &palworld.APIError{Kind: palworld.ErrorResponse, Err: errors.New("PRIVATE upstream detail")}, GameDataErrorResponse},
+		{"unknown", errors.New("PRIVATE upstream detail"), GameDataErrorUnknown},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := classifyGameDataError(tc.err)
+			if got != tc.want {
+				t.Fatalf("category = %q, want %q", got, tc.want)
+			}
+			if strings.Contains(string(got), "PRIVATE") {
+				t.Fatalf("category leaked raw detail: %q", got)
+			}
+		})
+	}
+}
+
+func TestNextGameDataDelayBackoffIsDeterministicAndBounded(t *testing.T) {
+	transient := errors.New("transient")
+	if got := nextGameDataDelay(30*time.Second, 30*time.Second, nil); got != 30*time.Second {
+		t.Fatalf("successful delay = %s", got)
+	}
+	if got := nextGameDataDelay(time.Minute, 30*time.Second, ErrGameDataCollapsed); got != 30*time.Second {
+		t.Fatalf("collapsed delay = %s", got)
+	}
+	if got := nextGameDataDelay(30*time.Second, 30*time.Second, transient); got != time.Minute {
+		t.Fatalf("first failure delay = %s", got)
+	}
+	if got := nextGameDataDelay(8*time.Minute, 30*time.Second, transient); got != 10*time.Minute {
+		t.Fatalf("capped failure delay = %s", got)
+	}
+	if got := nextGameDataDelay(0, time.Second, nil); got != 15*time.Second {
+		t.Fatalf("minimum interval = %s", got)
 	}
 }
 

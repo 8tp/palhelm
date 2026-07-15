@@ -78,6 +78,62 @@ func TestRoundTripDryRunRestore(t *testing.T) {
 	}
 }
 
+func TestBackupExcludesNestedWorldBackupsAndRetainsActiveSaveTree(t *testing.T) {
+	e, _, world := testEngine(t)
+	active := map[string]string{
+		"Level.sav":                    "active-level",
+		"LevelMeta.sav":                "active-level-meta",
+		"Players/0000000000000001.sav": "active-player",
+		"WorldOption.sav":              "active-world-option",
+		"Config/WorldSettings.ini":     "active-config",
+		"backup-old/keep.sav":          "not-the-wrapper-backup",
+		"Players/backup/keep.sav":      "nested-non-wrapper-directory",
+	}
+	for rel, contents := range active {
+		path := filepath.Join(world, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for rel, contents := range map[string]string{
+		"backup/2026-07-15/Level.sav":                    "stale-level",
+		"backup/2026-07-15/Players/0000000000000001.sav": "stale-player",
+	} {
+		path := filepath.Join(world, filepath.FromSlash(rel))
+		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(contents), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	b, err := e.Create(context.Background(), "manual")
+	if err != nil {
+		t.Fatal(err)
+	}
+	entries, err := e.Contents(context.Background(), b.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	archived := make(map[string]bool, len(entries))
+	for _, entry := range entries {
+		archived[entry.Path] = true
+		if strings.HasPrefix(entry.Path, "SaveGames/0/GUID/backup/") || entry.Path == "SaveGames/0/GUID/backup/" {
+			t.Fatalf("nested wrapper backup was archived: %q", entry.Path)
+		}
+	}
+	for rel := range active {
+		want := "SaveGames/0/GUID/" + rel
+		if !archived[want] {
+			t.Errorf("active save entry %q is missing from archive", want)
+		}
+	}
+}
+
 func TestRestoreExtractFailurePreservesOriginal(t *testing.T) {
 	e, st, world := testEngine(t)
 	ctx := context.Background()

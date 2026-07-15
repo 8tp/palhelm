@@ -24,7 +24,7 @@
     "/api/v1/whitelist": {"get": {"responses": {"200": {"description": "Whitelist"}}}, "put": {"responses": {"200": {"description": "Whitelist replaced"}}}},
     "/api/v1/guilds": {"get": {"responses": {"200": {"description": "Guilds"}}}},
     "/api/v1/world": {"get": {"responses": {"200": {"description": "Save parse status"}}}},
-    "/api/v1/world/snapshot": {"get": {"responses": {"200": {"description": "Sanitized, memory-only live actor snapshot for the authenticated panel"}}}},
+    "/api/v1/world/snapshot": {"get": {"responses": {"200": {"description": "Sanitized, memory-only live actor snapshot plus bounded session-only poller diagnostics for the authenticated panel"}}}},
     "/api/v1/world/parse": {"post": {"responses": {"200": {"description": "Save parsed"}}}},
     "/api/v1/map/dataset": {"get": {"responses": {"200": {"description": "Map tile pyramid provenance (fetched_at/game_version/source), defaulted to a pre-1.0 marker when unset"}}}},
     "/api/v1/paldeck/icon/{characterId}": {"get": {"parameters": [{"name":"characterId","in":"path","required":true,"schema":{"type":"string"}}], "responses": {"200": {"description": "Pal preview icon image (webp or png), matched case-insensitively"}, "404": {"description": "No icon installed for this CharacterID; the frontend should fall back to an initials avatar"}}}},

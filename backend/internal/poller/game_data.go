@@ -36,6 +36,22 @@ const (
 	GameDataUnavailable  GameDataState = "unavailable"
 )
 
+// GameDataErrorCategory is a bounded operational classification. It deliberately never carries
+// an upstream error string or response body into the cache or authenticated API.
+type GameDataErrorCategory string
+
+const (
+	GameDataErrorNone         GameDataErrorCategory = "none"
+	GameDataErrorCollapsed    GameDataErrorCategory = "collapsed"
+	GameDataErrorUnreachable  GameDataErrorCategory = "unreachable"
+	GameDataErrorUnauthorized GameDataErrorCategory = "unauthorized"
+	GameDataErrorUnsupported  GameDataErrorCategory = "unsupported"
+	GameDataErrorResponse     GameDataErrorCategory = "response"
+	GameDataErrorTimeout      GameDataErrorCategory = "timeout"
+	GameDataErrorCanceled     GameDataErrorCategory = "canceled"
+	GameDataErrorUnknown      GameDataErrorCategory = "unknown"
+)
+
 // GameDataCounts contains aggregate actor counts computed once per accepted upstream poll.
 type GameDataCounts struct {
 	Players   int `json:"players"`
@@ -80,6 +96,17 @@ type CachedGameData struct {
 	Counts        GameDataCounts
 	Actors        []LiveWorldActor
 	Truncated     bool
+	Diagnostics   GameDataDiagnostics
+}
+
+// GameDataDiagnostics is session-only rollout evidence. Durations and categories are bounded,
+// and LastAcceptedActorCount describes only the accepted response size, never actor contents.
+type GameDataDiagnostics struct {
+	LastRequestDuration    time.Duration
+	LastAcceptedActorCount int
+	LastErrorCategory      GameDataErrorCategory
+	ScheduledDelay         time.Duration
+	NextAttemptAt          time.Time
 }
 
 // GameDataSummary is the O(1) aggregate view used by bearer-token requests.
@@ -107,6 +134,11 @@ func (s *Service) ConfigureGameData(enabled bool, every time.Duration) {
 		s.gameDataStaleAfter = 10 * time.Minute
 	}
 	s.clearGameDataLocked()
+	s.gameDataLastRequestDuration = 0
+	s.gameDataLastAcceptedActorCount = 0
+	s.gameDataLastErrorCategory = GameDataErrorNone
+	s.gameDataScheduledDelay = 0
+	s.gameDataNextAttemptAt = time.Time{}
 	if enabled {
 		s.gameDataState = GameDataPending
 	} else {
@@ -115,11 +147,10 @@ func (s *Service) ConfigureGameData(enabled bool, every time.Duration) {
 }
 
 func (s *Service) gameDataLoop(ctx context.Context) {
-	backoff := s.gameDataEvery
-	if backoff < 15*time.Second {
-		backoff = 15 * time.Second
-	}
+	defer s.setGameDataSchedule(0)
+	backoff := normalizedGameDataInterval(s.gameDataEvery)
 	for {
+		s.setGameDataSchedule(0)
 		err := s.pollGameData(ctx)
 		if ctx.Err() != nil {
 			return
@@ -128,17 +159,8 @@ func (s *Service) gameDataLoop(ctx context.Context) {
 		if state == GameDataUnsupported || state == GameDataUnauthorized {
 			return
 		}
-		if err == nil || errors.Is(err, ErrGameDataCollapsed) {
-			backoff = s.gameDataEvery
-			if backoff < 15*time.Second {
-				backoff = 15 * time.Second
-			}
-		} else {
-			backoff *= 2
-			if backoff > 10*time.Minute {
-				backoff = 10 * time.Minute
-			}
-		}
+		backoff = nextGameDataDelay(backoff, s.gameDataEvery, err)
+		s.setGameDataSchedule(backoff)
 		timer := time.NewTimer(backoff)
 		select {
 		case <-ctx.Done():
@@ -151,16 +173,44 @@ func (s *Service) gameDataLoop(ctx context.Context) {
 	}
 }
 
+func normalizedGameDataInterval(every time.Duration) time.Duration {
+	if every < 15*time.Second {
+		return 15 * time.Second
+	}
+	return every
+}
+
+func nextGameDataDelay(current, every time.Duration, err error) time.Duration {
+	base := normalizedGameDataInterval(every)
+	if err == nil || errors.Is(err, ErrGameDataCollapsed) {
+		return base
+	}
+	if current < base {
+		current = base
+	}
+	current *= 2
+	if current > 10*time.Minute {
+		return 10 * time.Minute
+	}
+	return current
+}
+
 func (s *Service) pollGameData(ctx context.Context) error {
 	if !s.gameDataInFlight.CompareAndSwap(false, true) {
 		return nil
 	}
 	defer s.gameDataInFlight.Store(false)
+	startedAt := s.gameDataTime()
 	snapshot, err := s.gameDataSource.GameData(ctx)
-	completedAt := time.Now().UTC()
+	completedAt := s.gameDataTime()
+	duration := completedAt.Sub(startedAt)
+	if duration < 0 {
+		duration = 0
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.gameDataLastAttempt = completedAt
+	s.gameDataLastRequestDuration = duration
 	if err == nil {
 		counts, actors, truncated := projectGameData(snapshot.ActorData)
 		previousTotal := s.gameDataCounts.total()
@@ -168,17 +218,21 @@ func (s *Service) pollGameData(ctx context.Context) error {
 		if collapsed && !s.gameDataCollapsePending {
 			s.gameDataCollapsePending = true
 			s.gameDataState = GameDataStale
+			s.gameDataLastErrorCategory = GameDataErrorCollapsed
 			return ErrGameDataCollapsed
 		}
 		s.gameDataCollapsePending = false
 		s.gameDataSourceTime = boundedClean(snapshot.Time, 32)
 		s.gameDataFPS, s.gameDataFPSAvg = snapshot.FPS, snapshot.AverageFPS
 		s.gameDataCounts, s.gameDataActors, s.gameDataTruncated = counts, actors, truncated
+		s.gameDataLastAcceptedActorCount = len(snapshot.ActorData)
+		s.gameDataLastErrorCategory = GameDataErrorNone
 		s.gameDataCapturedAt = completedAt
 		s.gameDataState = GameDataReady
 		return nil
 	}
 	s.gameDataCollapsePending = false
+	s.gameDataLastErrorCategory = classifyGameDataError(err)
 	switch {
 	case palworld.IsKind(err, palworld.ErrorUnsupported):
 		s.clearGameDataLocked()
@@ -194,6 +248,50 @@ func (s *Service) pollGameData(ctx context.Context) error {
 		s.gameDataState = GameDataUnavailable
 	}
 	return err
+}
+
+func classifyGameDataError(err error) GameDataErrorCategory {
+	switch {
+	case err == nil:
+		return GameDataErrorNone
+	case errors.Is(err, ErrGameDataCollapsed):
+		return GameDataErrorCollapsed
+	case errors.Is(err, context.DeadlineExceeded):
+		return GameDataErrorTimeout
+	case errors.Is(err, context.Canceled):
+		return GameDataErrorCanceled
+	case palworld.IsKind(err, palworld.ErrorUnauthorized):
+		return GameDataErrorUnauthorized
+	case palworld.IsKind(err, palworld.ErrorUnsupported):
+		return GameDataErrorUnsupported
+	case palworld.IsKind(err, palworld.ErrorUnreachable):
+		return GameDataErrorUnreachable
+	case palworld.IsKind(err, palworld.ErrorResponse):
+		return GameDataErrorResponse
+	default:
+		return GameDataErrorUnknown
+	}
+}
+
+func (s *Service) gameDataTime() time.Time {
+	if s.gameDataNow != nil {
+		return s.gameDataNow().UTC()
+	}
+	return time.Now().UTC()
+}
+
+func (s *Service) setGameDataSchedule(delay time.Duration) {
+	if delay < 0 {
+		delay = 0
+	}
+	now := s.gameDataTime()
+	s.mu.Lock()
+	s.gameDataScheduledDelay = delay
+	s.gameDataNextAttemptAt = time.Time{}
+	if delay > 0 {
+		s.gameDataNextAttemptAt = now.Add(delay)
+	}
+	s.mu.Unlock()
 }
 
 func (s *Service) clearGameDataLocked() {
@@ -253,6 +351,11 @@ func (s *Service) GameData() CachedGameData {
 		State: state, CapturedAt: s.gameDataCapturedAt, LastAttemptAt: s.gameDataLastAttempt,
 		SourceTime: s.gameDataSourceTime, FPS: s.gameDataFPS, FPSAvg: s.gameDataFPSAvg,
 		Counts: s.gameDataCounts, Actors: actors, Truncated: s.gameDataTruncated,
+		Diagnostics: GameDataDiagnostics{
+			LastRequestDuration: s.gameDataLastRequestDuration, LastAcceptedActorCount: s.gameDataLastAcceptedActorCount,
+			LastErrorCategory: s.gameDataLastErrorCategory, ScheduledDelay: s.gameDataScheduledDelay,
+			NextAttemptAt: s.gameDataNextAttemptAt,
+		},
 	}
 }
 

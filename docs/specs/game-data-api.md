@@ -37,6 +37,12 @@ Primary source: <https://docs.palworldgame.com/api/rest-api/game-data/>
   least ten actors must repeat on the next poll before replacing last-good data. This avoids a
   one-off streaming/capture collapse masquerading as an authoritative empty world.
 - The upstream non-ISO `Time` stays opaque. Palhelm's UTC `capturedAt` is the freshness authority.
+- The authenticated snapshot carries bounded rollout diagnostics: the last request duration, the
+  raw actor count of the last accepted generation, one allowlisted error category, and the current
+  scheduled delay/next-attempt timestamp. The category is one of `none`, `collapsed`,
+  `unreachable`, `unauthorized`, `unsupported`, `response`, `timeout`, `canceled`, or `unknown`;
+  raw errors and response bodies are never retained or returned. State and projection truncation
+  remain explicit top-level fields.
 
 ## Privacy boundary
 
@@ -60,7 +66,8 @@ truncated, inactive, or ambiguous actors.
 
 The bearer endpoint `/api/integration/v1/world/summary` is aggregate only. It exposes state,
 freshness timestamps, FPS, and actor counts. It contains no actor identities or locations and
-inherits Integration API authentication, ETag, no-store, and per-key rate limits.
+inherits Integration API authentication, ETag, no-store, and per-key rate limits. Poller rollout
+diagnostics remain session-only and are deliberately absent from this public contract.
 
 ## Follow-on contracts
 

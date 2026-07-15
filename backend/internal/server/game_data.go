@@ -40,15 +40,24 @@ type sessionLiveActorView struct {
 }
 
 type sessionWorldSnapshotView struct {
-	State         poller.GameDataState   `json:"state"`
-	CapturedAt    any                    `json:"capturedAt"`
-	LastAttemptAt any                    `json:"lastAttemptAt"`
-	SourceTime    string                 `json:"sourceTime,omitempty"`
-	FPS           float64                `json:"fps"`
-	FPSAvg        float64                `json:"fpsAvg"`
-	Counts        gameDataCountsView     `json:"counts"`
-	Actors        []sessionLiveActorView `json:"actors"`
-	Truncated     bool                   `json:"truncated"`
+	State         poller.GameDataState    `json:"state"`
+	CapturedAt    any                     `json:"capturedAt"`
+	LastAttemptAt any                     `json:"lastAttemptAt"`
+	SourceTime    string                  `json:"sourceTime,omitempty"`
+	FPS           float64                 `json:"fps"`
+	FPSAvg        float64                 `json:"fpsAvg"`
+	Counts        gameDataCountsView      `json:"counts"`
+	Actors        []sessionLiveActorView  `json:"actors"`
+	Truncated     bool                    `json:"truncated"`
+	Diagnostics   gameDataDiagnosticsView `json:"diagnostics"`
+}
+
+type gameDataDiagnosticsView struct {
+	LastRequestDurationMS  int64                        `json:"lastRequestDurationMs"`
+	LastAcceptedActorCount int                          `json:"lastAcceptedActorCount"`
+	LastErrorCategory      poller.GameDataErrorCategory `json:"lastErrorCategory"`
+	ScheduledDelayMS       int64                        `json:"scheduledDelayMs"`
+	NextAttemptAt          any                          `json:"nextAttemptAt"`
 }
 
 type integrationWorldSummaryView struct {
@@ -75,6 +84,13 @@ func (s *Server) worldSnapshot(w http.ResponseWriter, _ *http.Request) {
 		State: cached.State, CapturedAt: nullableTime(cached.CapturedAt), LastAttemptAt: nullableTime(cached.LastAttemptAt),
 		SourceTime: cached.SourceTime, FPS: cached.FPS, FPSAvg: cached.FPSAvg,
 		Counts: newGameDataCountsView(cached.Counts), Actors: actors, Truncated: cached.Truncated,
+		Diagnostics: gameDataDiagnosticsView{
+			LastRequestDurationMS:  cached.Diagnostics.LastRequestDuration.Milliseconds(),
+			LastAcceptedActorCount: cached.Diagnostics.LastAcceptedActorCount,
+			LastErrorCategory:      cached.Diagnostics.LastErrorCategory,
+			ScheduledDelayMS:       cached.Diagnostics.ScheduledDelay.Milliseconds(),
+			NextAttemptAt:          nullableTime(cached.Diagnostics.NextAttemptAt),
+		},
 	})
 }
 
