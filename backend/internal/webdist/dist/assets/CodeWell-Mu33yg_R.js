@@ -1,0 +1,1 @@
+import{q as e}from"./icons-CpYMTu_k.js";var t=e();function n({children:e}){return(0,t.jsx)(`div`,{className:`code-well`,children:e})}export{n as t};

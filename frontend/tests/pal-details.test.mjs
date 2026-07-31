@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
-import { humanizePalIdentifier, palGenderLabel, palPlacementLabel } from "../src/components/palDetails.ts";
+import { humanizePalIdentifier, palGenderLabel, palPlacementLabel } from "../src/components/PalDetailsModel.ts";
 import { PAL_WORK_DATA_PROVENANCE, workSuitabilitiesFor, workSuitabilityKind } from "../src/components/workSuitabilities.ts";
 
 test("Pal detail labels humanize save identifiers and preserve unknown data honestly", () => {

@@ -74,6 +74,12 @@ function PaldeckContent({ data, search, setSearch, filter, setFilter, species }:
   setFilter: (value: PaldeckSpeciesFilter) => void;
   species: PaldeckSpecies[];
 }) {
+  const iconDatasetQuery = useQuery({
+    queryKey: ["paldeck", "icon-dataset"],
+    queryFn: () => api.paldeck.iconDataset(),
+    staleTime: Infinity,
+  });
+  const serverQuery = useQuery({ queryKey: ["server"], queryFn: () => api.server.get() });
   const isPlayer = "player" in data;
   const captureAvailable = isPlayer ? data.coverage.captureCountsAvailable : data.coverage.playersWithCaptureCounts > 0;
   const captureTruncated = data.coverage.captureCountsTruncated;
@@ -96,6 +102,11 @@ function PaldeckContent({ data, search, setSearch, filter, setFilter, species }:
           : `Capture data covers ${data.coverage.playersWithCaptureCounts} of ${data.coverage.playersTotal} players.`}
         {captureTruncated ? " The capture map was truncated, so “unseen” is not conclusive." : " Missing data is never counted as zero."}
       </Banner>
+      {iconDatasetQuery.data?.count === 0 && (
+        <Banner tone="warn">
+          Pal icons are not installed. Initials are shown instead. Run <code>{serverQuery.data?.palIconsCommand ?? "docker compose exec palhelm palhelm fetch-pal-icons"}</code> to add portraits.
+        </Banner>
+      )}
 
       <div className="paldeck-stats" aria-label="Paldeck summary">
         <ProgressStat label="Species captured" value={pinnedCaptured} denominator={data.catalog.knownSpecies} percent={paldeckPercent(pinnedCaptured, data.catalog.knownSpecies)} />

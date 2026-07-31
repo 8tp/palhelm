@@ -41,6 +41,8 @@ export interface ServerInfo {
   // rather than static reference numbers. Optional so older backends still type-check.
   sessionDays?: number;
   saveSyncMinutes?: number;
+  mapTilesCommand?: string;
+  palIconsCommand?: string;
 }
 
 export type HealthState = "ok" | "error";

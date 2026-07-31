@@ -1,4 +1,4 @@
-import { condensedStars, MAX_CONDENSE_STARS } from "./palStars";
+import { condensedStars, MAX_CONDENSE_STARS } from "./PalStarsModel";
 import "./PalStars.css";
 
 /**

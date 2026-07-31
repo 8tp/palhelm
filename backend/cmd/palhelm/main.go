@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"strings"
@@ -23,6 +24,14 @@ import (
 
 // version is stamped at build time via -ldflags "-X main.version=...".
 var version = "dev"
+
+var fetchMapTilesCommand = func(args ...string) *exec.Cmd {
+	return exec.Command("/usr/local/bin/fetch-map-tiles", args...)
+}
+
+var fetchPalIconsCommand = func(args ...string) *exec.Cmd {
+	return exec.Command("/usr/local/bin/fetch-pal-icons", args...)
+}
 
 func main() {
 	server.PanelVersion = version
@@ -49,9 +58,47 @@ func run() error {
 			return errors.New("usage: palhelm parse <file.sav>")
 		}
 		return parse(args[0])
+	case "fetch-map-tiles":
+		return fetchMapTiles(args)
+	case "fetch-pal-icons":
+		return fetchPalIcons(args)
 	default:
-		return fmt.Errorf("unknown subcommand %q (expected serve or parse)", command)
+		return fmt.Errorf("unknown subcommand %q (expected serve, parse, fetch-map-tiles, or fetch-pal-icons)", command)
 	}
+}
+func fetchMapTiles(args []string) error {
+	if len(args) == 0 {
+		dataDir := os.Getenv("PALHELM_DATA_DIR")
+		if dataDir == "" {
+			dataDir = "/data"
+		}
+		args = []string{filepath.Join(dataDir, "map-tiles")}
+	}
+	cmd := fetchMapTilesCommand(args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("fetch map tiles: %w", err)
+	}
+	return nil
+}
+func fetchPalIcons(args []string) error {
+	if len(args) == 0 {
+		dataDir := os.Getenv("PALHELM_DATA_DIR")
+		if dataDir == "" {
+			dataDir = "/data"
+		}
+		args = []string{filepath.Join(dataDir, "pal-icons")}
+	}
+	cmd := fetchPalIconsCommand(args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("fetch pal icons: %w", err)
+	}
+	return nil
 }
 func parse(path string) error {
 	var v any

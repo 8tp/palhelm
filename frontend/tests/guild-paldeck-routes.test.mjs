@@ -28,5 +28,17 @@ test("Paldeck screen distinguishes partial save observations from pinned progres
   assert.match(source, /Species captured/);
   assert.match(source, /Unique species counter/);
   assert.match(source, /Missing data is never counted as zero/);
+  assert.match(source, /api\.paldeck\.iconDataset/);
+  assert.match(source, /Pal icons are not installed/);
   assert.match(source, /Unseen \(needs full data\)/);
+});
+
+test("Paldeck icon notice uses the container downloader command", async () => {
+  const source = await readFile(new URL("../src/routes/paldeck/Paldeck.tsx", import.meta.url), "utf8");
+  assert.match(source, /docker compose exec palhelm palhelm fetch-pal-icons/);
+});
+
+test("Paldeck icon notice uses the server-resolved Compose container command", async () => {
+  const source = await readFile(new URL("../src/routes/paldeck/Paldeck.tsx", import.meta.url), "utf8");
+  assert.match(source, /serverQuery\.data\?\.palIconsCommand/);
 });

@@ -37,3 +37,7 @@ oo2core*
 
 # wrangler local cache
 .wrangler/
+
+AGENTS.md
+CLAUDE.md
+.claude/

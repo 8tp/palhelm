@@ -18,7 +18,7 @@ import (
 type Config struct {
 	Addr, DataDir, AdminPassword, ViewerPassword, SessionSecret string
 	RESTURL, RESTUser, PalworldPassword, RCONAddr, SaveDir      string
-	ComposeFile, GameService                                    string
+	ComposeFile, GameService, PanelService                      string
 	// SteamWebAPIKey is optional; when empty, player avatars resolve via Steam's
 	// keyless public community endpoint instead of the Web API.
 	SteamWebAPIKey                                     string
@@ -40,6 +40,7 @@ func Load() (Config, error) {
 		PalworldPassword: os.Getenv("PALWORLD_ADMIN_PASSWORD"), RCONAddr: os.Getenv("PALWORLD_RCON_ADDR"),
 		SaveDir:     os.Getenv("PALWORLD_SAVE_DIR"),
 		ComposeFile: os.Getenv("PALHELM_COMPOSE_FILE"), GameService: env("PALHELM_GAME_SERVICE", "palworld"),
+		PanelService:   env("PALHELM_PANEL_SERVICE", "palhelm"),
 		SteamWebAPIKey: strings.TrimSpace(os.Getenv("STEAM_WEB_API_KEY")),
 	}
 	var err error
