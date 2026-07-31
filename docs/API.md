@@ -14,7 +14,7 @@ Operation-specific recovery details, such as Config's `manualCommand`, stay insi
 | GET  | `/auth/session` | `{role, username}` or 401 |
 
 ## Server
-| GET | `/server` | `{name, description, version, worldGuid, state, uptimeSec, panelVersion, sessionDays, saveSyncMinutes}`. `sessionDays` is the login-session lifetime in whole days (`PALHELM_SESSION_DAYS`, now honored); `saveSyncMinutes` is the save-sync poll interval in whole minutes (`PALHELM_SAVE_SYNC_INTERVAL`). |
+| GET | `/server` | `{name, description, version, worldGuid, state, uptimeSec, panelVersion, sessionDays, saveSyncMinutes, mapTilesCommand}`. `sessionDays` is the login-session lifetime in whole days (`PALHELM_SESSION_DAYS`, now honored); `saveSyncMinutes` is the save-sync poll interval in whole minutes (`PALHELM_SAVE_SYNC_INTERVAL`). `mapTilesCommand` uses the panel service's explicit Compose `container_name`, falling back to `docker compose exec`. |
 | GET | `/server/health` | `{rest: "ok"\|"error", rcon: "ok"\|"error", save: {state, lastSyncAt}}` |
 | POST | `/server/announce` | `{message}` |
 | POST | `/server/save` | trigger world save |

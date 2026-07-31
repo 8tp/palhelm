@@ -17,6 +17,26 @@ func TestLoadTrustedProxyAndSecureCookieSettings(t *testing.T) {
 	}
 }
 
+func TestLoadPanelService(t *testing.T) {
+	t.Setenv("PALHELM_PANEL_SERVICE", "")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.PanelService != "palhelm" {
+		t.Fatalf("PanelService = %q, want palhelm", cfg.PanelService)
+	}
+
+	t.Setenv("PALHELM_PANEL_SERVICE", "dashboard")
+	cfg, err = Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.PanelService != "dashboard" {
+		t.Fatalf("PanelService = %q, want dashboard", cfg.PanelService)
+	}
+}
+
 func TestLoadRejectsInvalidTrustedProxy(t *testing.T) {
 	t.Setenv("PALHELM_TRUSTED_PROXIES", "not-a-cidr")
 	t.Setenv("PALHELM_SECURE_COOKIES", "")

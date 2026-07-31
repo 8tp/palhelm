@@ -76,6 +76,7 @@ services:
       PALWORLD_SAVE_DIR: "/game/Saved"
       PALHELM_COMPOSE_FILE: "/compose/docker-compose.yml"  # enables the config editor
       PALHELM_GAME_SERVICE: "palworld"
+      PALHELM_PANEL_SERVICE: "palhelm"
       # PALHELM_TRUSTED_PROXIES: "10.0.0.0/8"  # proxy CIDRs allowed to supply forwarded IP/HTTPS
       # PALHELM_SECURE_COOKIES: "true"          # force Secure cookies behind TLS termination
     volumes:
@@ -106,6 +107,7 @@ These are the ones you set most often. The full table is in the project README.
 | `PALWORLD_SAVE_DIR` | yes | The mounted save directory, `/game/Saved` above. |
 | `PALHELM_COMPOSE_FILE` | no | Path to the Compose file inside the container. Enables the config editor. |
 | `PALHELM_GAME_SERVICE` | no | The service name of the game server in that Compose file. Defaults to `palworld`. |
+| `PALHELM_PANEL_SERVICE` | no | The Palhelm service in that Compose file. Defaults to `palhelm` and lets the UI resolve its explicit `container_name`. |
 | `PALHELM_DATA_DIR` | no | The data directory. Defaults to `/data`. |
 | `PALHELM_GAME_DATA_ENABLED` | no | Turns on the optional live game-data poller for live map positions, base workers, and activity diagnostics. Defaults to off. |
 | `PALHELM_ADDR` | no | Listen address. Defaults to `:8080`. |

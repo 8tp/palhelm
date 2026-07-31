@@ -124,3 +124,9 @@ test("map route wires search, focus, fit, sharing, and mobile-safe controls", as
   assert.match(css, /@media \(max-width: 600px\)/);
   assert.match(css, /touch-action: none/);
 });
+
+test("map tile install command comes from server runtime metadata", async () => {
+  const route = await readFile(new URL("../src/routes/map/Map.tsx", import.meta.url), "utf8");
+  assert.match(route, /serverQuery\.data\?\.mapTilesCommand/);
+  assert.doesNotMatch(route, /docker exec palhelm palhelm fetch-map-tiles/);
+});

@@ -1,0 +1,1 @@
+function e(e){let t=(e??``).trim();return t===``||t.toLowerCase()===`unnamed guild`}function t(t){let n=(t.name??``).trim();if(!e(n))return n;let r=(t.members??[]).filter(e=>(e.name??``).trim()!==``);return r.length===0?`Unnamed guild`:`${((t.adminUid?r.find(e=>e.uid===t.adminUid):void 0)??r[0]).name.trim()}'s guild`}export{t};

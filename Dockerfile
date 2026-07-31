@@ -23,9 +23,10 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${VERSION}"
 FROM alpine:3.22
 # gcompat + libstdc++: the runtime-downloaded Oodle decompressor is a glibc
 # binary; gcompat lets musl-based Alpine dlopen it.
-RUN apk add --no-cache ca-certificates tzdata gcompat libstdc++ \
+RUN apk add --no-cache ca-certificates tzdata gcompat libstdc++ curl \
     && addgroup -S palhelm && adduser -S -G palhelm palhelm
 COPY --from=backend /out/palhelm /usr/local/bin/palhelm
+COPY --chmod=755 scripts/fetch-map-tiles.sh /usr/local/bin/fetch-map-tiles
 USER palhelm
 ENV PALHELM_ADDR=:8080 PALHELM_DATA_DIR=/data
 VOLUME /data

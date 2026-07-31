@@ -10,7 +10,7 @@ import { EmptyState } from "../../components/EmptyState";
 import { PalDetailPanel, PalInfoButton } from "../../components/PalDetails";
 import { PalIcon } from "../../components/PalIcon";
 import { PalStars } from "../../components/PalStars";
-import { palPlacementLabel } from "../../components/palDetails";
+import { palPlacementLabel } from "../../components/PalDetailsModel";
 import { SearchField } from "../../components/Field";
 import {
   PAL_EXPLORER_CLIENT_CAP,

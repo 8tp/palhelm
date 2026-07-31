@@ -1,0 +1,1 @@
+import{D as e,p as t,q as n}from"./icons-CpYMTu_k.js";var r=n();function i({tone:n,children:i}){return(0,r.jsxs)(`div`,{className:`banner banner-${n}`,children:[n===`info`?(0,r.jsx)(`span`,{className:`stamp-i`,"aria-hidden":`true`,children:(0,r.jsx)(t,{})}):(0,r.jsx)(e,{}),(0,r.jsx)(`span`,{children:i})]})}export{i as t};

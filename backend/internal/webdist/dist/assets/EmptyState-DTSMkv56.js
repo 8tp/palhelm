@@ -1,0 +1,1 @@
+import{q as e}from"./icons-CpYMTu_k.js";var t=e();function n({icon:e,title:n,description:r,children:i}){return(0,t.jsxs)(`div`,{className:`empty`,children:[e,(0,t.jsx)(`h3`,{children:n}),r&&(0,t.jsx)(`p`,{children:r}),i]})}export{n as t};

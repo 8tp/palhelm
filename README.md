@@ -64,6 +64,7 @@ Palhelm slots into the Compose project you already run your server from. Minimal
       # config editor (optional): let Palhelm edit this compose file's env block
       PALHELM_COMPOSE_FILE: "/compose/docker-compose.yml"
       PALHELM_GAME_SERVICE: "palworld"
+      PALHELM_PANEL_SERVICE: "palhelm"
     volumes:
       - ../data/Pal/Saved:/game/Saved   # rw: restore writes here
       - ../palhelm-data:/data           # panel DB, backups, map tiles, Oodle lib
@@ -94,6 +95,7 @@ scripts/fetch-pal-icons.sh ./palhelm-data/pal-icons   # pal preview icons
 | `PALWORLD_RCON_ADDR` | — | e.g. `palworld:25575` |
 | `PALWORLD_SAVE_DIR` | — | the mounted `Saved/` directory |
 | `PALHELM_COMPOSE_FILE` / `PALHELM_GAME_SERVICE` | unset / `palworld` | enable Config when the containing directory supports safe atomic writes |
+| `PALHELM_PANEL_SERVICE` | `palhelm` | panel service in the Compose file; resolves its `container_name` for host commands shown in the UI |
 | `PALHELM_DOCKER_CONTROL` | ignored | retained for v0.2 compatibility; one-click apply is disabled in v0.3.0 |
 | `PALHELM_METRICS_INTERVAL` | `5s` | metrics sampling |
 | `PALHELM_SAVE_SYNC_INTERVAL` | `10m` | save parsing cadence |

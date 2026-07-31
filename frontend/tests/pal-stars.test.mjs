@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readFile } from "node:fs/promises";
-import { condensedStars, MAX_CONDENSE_STARS } from "../src/components/palStars.ts";
+import { condensedStars, MAX_CONDENSE_STARS } from "../src/components/PalStarsModel.ts";
 
 test("condensed stars map rank 1..5 to 0..4 filled stars", () => {
   assert.equal(MAX_CONDENSE_STARS, 4);

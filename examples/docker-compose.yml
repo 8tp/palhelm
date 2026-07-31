@@ -52,6 +52,7 @@ services:
       # config editor: let Palhelm edit this compose file's env block
       PALHELM_COMPOSE_FILE: "/compose/docker-compose.yml"
       PALHELM_GAME_SERVICE: "palworld"
+      PALHELM_PANEL_SERVICE: "palhelm"
       # One-click Docker apply is intentionally disabled. Palhelm displays the host command.
     volumes:
       - ../data/Pal/Saved:/game/Saved           # rw: restore writes here

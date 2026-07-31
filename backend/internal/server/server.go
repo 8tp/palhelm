@@ -321,7 +321,7 @@ func (s *Server) serverInfo(w http.ResponseWriter, r *http.Request) {
 	if days < 1 {
 		days = 7
 	}
-	writeJSON(w, 200, map[string]any{"name": i.ServerName, "description": i.Description, "version": i.Version, "worldGuid": i.WorldGUID, "state": state, "uptimeSec": i.Uptime, "panelVersion": PanelVersion, "sessionDays": days, "saveSyncMinutes": int(s.cfg.SaveSyncInterval.Minutes())})
+	writeJSON(w, 200, map[string]any{"name": i.ServerName, "description": i.Description, "version": i.Version, "worldGuid": i.WorldGUID, "state": state, "uptimeSec": i.Uptime, "panelVersion": PanelVersion, "sessionDays": days, "saveSyncMinutes": int(s.cfg.SaveSyncInterval.Minutes()), "mapTilesCommand": mapTilesInstallCommand(s.cfg)})
 }
 func (s *Server) serverHealth(w http.ResponseWriter, r *http.Request) {
 	rest, rcon, save, at := s.health.Snapshot()

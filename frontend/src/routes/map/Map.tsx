@@ -642,7 +642,7 @@ export default function MapRoute() {
                   Map tiles come from the game's own assets, which Palhelm can't ship (they're Pocketpair's).
                   Generate them once from your server's install:
                 </p>
-                <CodeWell>docker exec palhelm palhelm fetch-map-tiles</CodeWell>
+                <CodeWell>{serverQuery.data?.mapTilesCommand ?? "docker compose exec palhelm palhelm fetch-map-tiles"}</CodeWell>
               </EmptyState>
             </div>
           )}
