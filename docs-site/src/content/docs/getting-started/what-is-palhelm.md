@@ -9,7 +9,7 @@ This page covers what Palhelm is, the two parts you can run, and the limits it i
 
 Palhelm is a self-hosted web admin panel for Palworld dedicated servers. It ships as one Docker image that runs one process with no external database. You run it next to the game server you already have, and you manage the server from a web browser on your own network.
 
-Palhelm targets Palworld 1.0. It talks to the server over three channels: the official REST API, RCON, and the on-disk save files. The save reader is a pure-Go parser for the 1.0 Oodle-compressed `Level.sav` format.
+Palhelm targets Palworld 1.0. Its three core channels are the official REST API, RCON, and the on-disk save files. The save reader is a pure-Go parser for the 1.0 Oodle-compressed `Level.sav` format. An optional fourth channel, a local UE4SS bridge, can perform tightly bounded item grants when an operator explicitly installs, validates, and enables it.
 
 ## The two parts
 
@@ -27,6 +27,7 @@ Palhelm has two parts. You can run the panel alone, or add the bot later.
 - Takes scheduled and manual backups, and restores a snapshot after a dry-run diff and a typed confirmation.
 - Edits your Compose file's `environment:` block for server settings, then shows you the exact host command to apply the change.
 - Offers an admin login and an optional read-only viewer login.
+- Optionally queues allowlisted item grants for online players through a separate, audited UE4SS bridge. The bridge is disabled by default and never edits saves.
 
 ## What it does not do
 
@@ -37,6 +38,7 @@ Palhelm is deliberately honest about its edges.
 - **It does not work around vanilla RCON limits.** Vanilla RCON has no whisper, and `Broadcast` mangles spaces. Palhelm prefers the REST API for moderation and says so in the UI.
 - **It does not apply Docker changes for you.** One-click apply is intentionally disabled, because a container cannot safely preserve arbitrary host project paths. Palhelm prints the command; you run it on the host.
 - **It does not degrade silently on a game update.** If a future patch drifts the save format, the affected feature shows a "format drift" badge instead of showing wrong data.
+- **It does not assume an item bridge is safe on a new game build.** Item grants stay unavailable until the operator-installed catalogue, heartbeat, protocol, and exact-build validation marker all agree. The source bridge ships fail-closed.
 
 ## Next steps
 

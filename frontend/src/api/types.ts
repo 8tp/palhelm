@@ -171,6 +171,53 @@ export interface PlayerDetail extends Player {
   activity: PlayerActivity;
 }
 
+// ---------- Item grants (admin-only mutation boundary) ----------
+export interface ItemGrantCapability {
+  enabled: boolean;
+  ready: boolean;
+  reason: string;
+  protocolVersion: number;
+  gameVersion?: string;
+  catalogVersion?: string;
+  catalogItems: number;
+  lastHeartbeatAt?: string;
+}
+
+export interface GrantableItem {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  rarity?: string;
+  icon?: string;
+  maxQuantity: number;
+  grantable: boolean;
+}
+
+export interface ItemCatalogPage {
+  items: GrantableItem[];
+  total: number;
+  gameVersion: string;
+  source: { name: string; url?: string; generatedAt?: string } | null;
+}
+
+export interface ItemGrant {
+  requestId: string;
+  createdAt: string;
+  updatedAt: string;
+  actor: string;
+  playerUid: string;
+  playerName: string;
+  itemId: string;
+  itemName: string;
+  quantity: number;
+  grantedQuantity?: number | null;
+  reason: string;
+  status: "queued" | "succeeded" | "failed";
+  errorCode?: string;
+  errorMessage?: string;
+}
+
 export type ServerActivityWindow = "24h" | "7d" | "30d";
 
 export interface ActivityConcurrencyBucket {

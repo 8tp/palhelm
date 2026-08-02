@@ -41,6 +41,30 @@ Each action opens a confirm dialog first. Kick and ban let you type an optional 
 A viewer has read-only access. Viewers see the list and the detail panel, but none of the moderation actions.
 :::
 
+### Optional item grants
+
+When the item-grant provider reports ready, an admin can select **Give item…** for
+an online player. The dialog searches the operator-installed allowlist, applies
+the per-item quantity ceiling, requires a reason, and shows a final confirmation.
+Every accepted request receives an idempotency key and a durable audit record.
+
+This action does not edit the world save and does not run through RCON. Palhelm
+writes a bounded request to a local spool shared with the optional UE4SS bridge;
+the bridge performs the authoritative in-game inventory mutation and writes one
+result. Palhelm never automatically retries an uncertain result.
+
+The action fails closed and cannot be submitted unless all of these are true:
+
+- `PALHELM_ITEM_GRANTS_ENABLED=true` was set explicitly.
+- The installed item catalogue and bridge allowlist match and pass validation.
+- A fresh heartbeat reports the expected protocol and game version.
+- The bridge package marks that exact game build as production-validated.
+
+The source bridge currently ships with production validation disabled. Operators
+must complete the maintenance-window checklist for their exact game build before
+enabling it. Item-grant endpoints are admin-only and are intentionally absent from
+the read-only Integration API.
+
 ### The Pal box
 
 The detail panel shows the player's active party first, up to five Pals from the save. Each entry has an info button that expands to show level, individual HP, gender, condenser star rating, talents, passive skill ids, and equipped skill ids, plus alpha and lucky markers. A never-condensed Pal shows an empty four-star row (the game omits the rank until a Pal is condensed); **Unavailable** appears only for data parsed before rank decoding shipped. It also joins the Pal's CharacterID to the bundled, version-pinned species catalogue and shows every available work suitability as a labeled SVG badge with its numeric level, such as **Handiwork Lv 4**. Save observations and species metadata remain labeled separately.
@@ -75,4 +99,4 @@ Lists the players you have banned so a ban can be reviewed or lifted. Each row h
 
 ## Data sources
 
-This screen reads `GET /api/v1/players`, `GET /api/v1/players/{uid}` for detail, `GET /api/v1/guilds`, and `GET/PUT /api/v1/whitelist` for player notes. Moderation uses `POST /api/v1/players/{uid}/kick`, `/ban`, and `/unban`. Messaging uses `POST /api/v1/server/announce`.
+This screen reads `GET /api/v1/players`, `GET /api/v1/players/{uid}` for detail, `GET /api/v1/guilds`, and `GET/PUT /api/v1/whitelist` for player notes. Moderation uses `POST /api/v1/players/{uid}/kick`, `/ban`, and `/unban`. Messaging uses `POST /api/v1/server/announce`. Optional item grants use `GET /api/v1/items`, `GET /api/v1/items/capability`, `POST /api/v1/players/{uid}/item-grants`, and the admin-only `/api/v1/item-grants` audit endpoints.

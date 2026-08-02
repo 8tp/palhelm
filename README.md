@@ -9,7 +9,7 @@
   <a href="https://github.com/8tp/palhelm/actions/workflows/ci.yml"><img src="https://github.com/8tp/palhelm/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
 </p>
 
-Palhelm is a self-hosted web admin panel for Palworld dedicated servers. It is one Docker image and one process with no external database. It talks to your server three ways: the official REST API, RCON, and the world save file itself, which it parses directly (the 1.0 Oodle-compressed format) with a pure-Go parser. You get a live dashboard, player and pal data, a map, safe backups and restores, and a config editor that edits the thing your server actually reads.
+Palhelm is a self-hosted web admin panel for Palworld dedicated servers. It is one Docker image and one process with no external database. Its three core channels are the official REST API, RCON, and the world save file itself, which it parses directly (the 1.0 Oodle-compressed format) with a pure-Go parser. An optional, separately installed UE4SS bridge can perform tightly bounded item grants after exact-build validation. You get a live dashboard, player and pal data, a map, safe backups and restores, and a config editor that edits the thing your server actually reads.
 
 Full documentation lives at [docs.palhelm.com](https://docs.palhelm.com). The showcase site is [palhelm.com](https://palhelm.com). A companion Discord bot lives at [github.com/8tp/palhelm-bot](https://github.com/8tp/palhelm-bot).
 
@@ -19,6 +19,7 @@ Full documentation lives at [docs.palhelm.com](https://docs.palhelm.com). The sh
 
 - **Live dashboard.** Server FPS and frame-time history with charts, players-online history, per-channel health (REST, RCON, save sync), and an event feed.
 - **Players and Pals.** Online and offline players merged from the live API and save data. Kick, ban, unban. Inspect per-player parties and Palboxes or search the server-wide Pal explorer by owner, placement, level, and Alpha/Lucky/Boss status. Expand a Pal for individual save stats plus version-pinned numeric work-suitability badges.
+- **Optional item grants.** Admins can queue bounded, allowlisted item grants for an online player through a separate UE4SS server bridge. The provider is disabled by default, audited, never edits saves, and stays unavailable until its catalogue and exact game build are validated.
 - **Command palette.** Players, actions, navigation, and saved RCON commands from one keystroke. Destructive entries are hidden from read-only viewers.
 - **Console.** A real RCON session with history, saved commands, and an honest note about what vanilla RCON cannot do.
 - **Live map.** Player and base markers on Palworld 1.0 tiles with Palpagos and World Tree layers. The optional Game Data capability adds ready-only PalBox and exact-linked base-worker health/activity layers; stale or truncated snapshots are never drawn as current. Tiles are game-derived art, so they are never shipped; a one-shot script downloads them into your data volume.
@@ -100,6 +101,10 @@ scripts/fetch-pal-icons.sh ./palhelm-data/pal-icons   # pal preview icons
 | `PALHELM_GAME_DATA_ENABLED` | `false` | opt in to the Palworld 1.0 live world-actor snapshot poller; requires server-side game-data support |
 | `PALHELM_GAME_DATA_INTERVAL` | `30s` | shared game-data snapshot cadence (minimum `15s`; never polled per browser/bot request) |
 | `PALHELM_GAME_DATA_TIMEOUT` | `10s` | large snapshot request deadline (`1s`–`30s`) |
+| `PALHELM_ITEM_GRANTS_ENABLED` | `false` | explicitly enable the admin-only item mutation provider; still requires a matching validated catalogue and fresh ready bridge |
+| `PALHELM_ITEM_CATALOG_PATH` | `<data>/item-catalog.json` | operator-installed versioned item catalogue; game data/art are not distributed |
+| `PALHELM_ITEM_ICON_DIR` | `<data>/item-icons` | operator-installed same-origin item icons |
+| `PALHELM_ITEM_GRANT_SPOOL_DIR` | `<data>/item-grants` | local-only request/result directory shared with a compatible server bridge |
 | `PALHELM_OODLE_LIB` | unset | path to `liboo2corelinux64.so.9` if you provide your own |
 | `PALHELM_INTEGRATION_RATE_LIMIT` | `60` | requests/minute per Integration API key |
 
@@ -108,6 +113,14 @@ base-camp names, and Pal Condenser rank), advancing the schema from version 10 t
 complete `/data` volume before upgrading; rollback to a 0.8.x image requires restoring that
 pre-upgrade backup, because the older binary fails closed against the newer schema. See
 [the v0.9.0 release notes](docs/releases/v0.9.0.md).
+
+The unreleased item-grant work adds migration 013 for a durable audit ledger. The
+provider remains disabled by default and is not part of the read-only Integration API.
+Its UE4SS bridge remains `validation_required` until an exact-build maintenance-window
+test proves the inventory mutation and persistence behavior. See
+[the server-mod integration plan](docs/SERVER-MOD-INTEGRATIONS-PLAN.md) before testing
+the bridge; Palworld's official server mod loader does not support the native Linux
+dedicated-server binary.
 
 ## Known limits
 
