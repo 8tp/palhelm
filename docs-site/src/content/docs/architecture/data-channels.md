@@ -1,19 +1,21 @@
 ---
 title: Data channels
-description: The three ways Palhelm reads and controls a Palworld server, and which feature uses which.
+description: The core channels Palhelm uses to read and control a server, plus the optional item-grant bridge.
 sidebar:
   order: 2
 ---
 
-This page covers the three channels Palhelm uses to talk to a Palworld dedicated
-server: the official REST API, RCON, and the read-only save files. It also maps each
+This page covers the three core channels Palhelm uses to talk to a Palworld dedicated
+server: the official REST API, RCON, and the read-only save files. It also covers the
+optional, local-only UE4SS item-grant bridge and maps each
 Palhelm feature to the channel it draws from, and explains the read-only guarantee on
 save files.
 
-## The three channels
+## The core channels
 
 Palhelm never runs game logic itself. Everything it shows or does comes through one of
-three channels into the running server.
+these core channels into the running server. Item grants are the one optional
+exception and use the separate bridge described below.
 
 ### 1. Official REST API
 
@@ -62,29 +64,44 @@ save-sync interval and on demand to populate offline players, pals, guilds, and 
 The `Players/` directory does not exist until the first player joins. Palhelm treats
 that as a normal state, not an error.
 
+### 4. Optional UE4SS item bridge
+
+Item grants do not fit the vanilla REST, RCON, or save-file channels. When an
+operator explicitly installs and enables the feature, Palhelm and a small UE4SS
+server bridge exchange versioned request, result, and heartbeat files through a
+local-only spool. The bridge mutates the online player's authoritative inventory;
+the save parser remains read-only.
+
+This channel is disabled by default and fails closed. A ready capability requires
+a matching item catalogue and allowlist, a fresh heartbeat, the expected protocol,
+and an exact game build marked production-validated by the bridge. Requests use
+stable player and item IDs, bounded quantities, required reasons, idempotency, and
+a durable audit ledger. Palhelm does not retry an uncertain mutation.
+
 ## Read-only guarantee on saves
 
 Palhelm's save parser is decode only. It reads bytes and builds typed structs; it never
 re-encodes or writes a save file. In-place save editing, such as giving items or pals,
-is an explicit non-goal. The only component that writes into the save directory area is
+is not used for item grants. The only component that writes into the save directory area is
 the backup engine, which copies and archives save files and, on restore, swaps them in
 through a guided flow that requires the server to be stopped. Parsing itself only reads.
 
 ## Which feature uses which channel
 
-| Feature | REST API | RCON | Save files |
-|---|---|---|---|
-| Dashboard metrics and charts | Yes | | |
-| Live player list and positions | Yes | | |
-| Optional live Pal/base activity | Yes | | |
-| Announce, kick, ban, unban | Yes | | |
-| Save now | Yes | | |
-| Graceful shutdown and stop | Yes | | |
-| Console screen | | Yes | |
-| Teleport and other RCON-only actions | | Yes | |
-| Offline players, pals, guilds, bases | | | Yes |
-| Live map markers | Yes | | Yes |
-| Backups and restore | Yes | | Reads and copies files |
+| Feature | REST API | RCON | Save files | Optional UE4SS bridge |
+|---|---|---|---|---|
+| Dashboard metrics and charts | Yes | | | |
+| Live player list and positions | Yes | | | |
+| Optional live Pal/base activity | Yes | | | |
+| Announce, kick, ban, unban | Yes | | | |
+| Save now | Yes | | | |
+| Graceful shutdown and stop | Yes | | | |
+| Console screen | | Yes | | |
+| Teleport and other RCON-only actions | | Yes | | |
+| Offline players, pals, guilds, bases | | | Yes | |
+| Live map markers | Yes | | Yes | |
+| Backups and restore | Yes | | Reads and copies files | |
+| Allowlisted item grant | | | | Yes, when validated |
 
 The live map is the one screen that blends channels. Live player positions come from the
 REST API, while guild bases and other placement data come from the parsed save. The

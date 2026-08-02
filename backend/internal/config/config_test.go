@@ -1,6 +1,7 @@
 package config
 
 import (
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -78,6 +79,46 @@ func TestLoadGameDataDefaultsDisabled(t *testing.T) {
 	}
 	if cfg.GameDataEnabled || cfg.GameDataInterval != 30*time.Second || cfg.GameDataTimeout != 10*time.Second {
 		t.Fatalf("game-data defaults = enabled:%v interval:%s timeout:%s", cfg.GameDataEnabled, cfg.GameDataInterval, cfg.GameDataTimeout)
+	}
+}
+
+func TestLoadItemGrantsDefaultsFailClosed(t *testing.T) {
+	dataDir := t.TempDir()
+	t.Setenv("PALHELM_DATA_DIR", dataDir)
+	t.Setenv("PALHELM_ITEM_GRANTS_ENABLED", "")
+	t.Setenv("PALHELM_ITEM_CATALOG_PATH", "")
+	t.Setenv("PALHELM_ITEM_ICON_DIR", "")
+	t.Setenv("PALHELM_ITEM_GRANT_SPOOL_DIR", "")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.ItemGrantsEnabled {
+		t.Fatal("item grants defaulted enabled")
+	}
+	if cfg.ItemCatalogPath != filepath.Join(dataDir, "item-catalog.json") || cfg.ItemIconDir != filepath.Join(dataDir, "item-icons") || cfg.ItemGrantSpoolDir != filepath.Join(dataDir, "item-grants") {
+		t.Fatalf("item grant paths = %#v", cfg)
+	}
+}
+
+func TestLoadItemGrantOverrides(t *testing.T) {
+	t.Setenv("PALHELM_ITEM_GRANTS_ENABLED", "true")
+	t.Setenv("PALHELM_ITEM_CATALOG_PATH", "/catalog/items.json")
+	t.Setenv("PALHELM_ITEM_ICON_DIR", "/catalog/icons")
+	t.Setenv("PALHELM_ITEM_GRANT_SPOOL_DIR", "/bridge/spool")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !cfg.ItemGrantsEnabled || cfg.ItemCatalogPath != "/catalog/items.json" || cfg.ItemIconDir != "/catalog/icons" || cfg.ItemGrantSpoolDir != "/bridge/spool" {
+		t.Fatalf("item grant overrides = %#v", cfg)
+	}
+}
+
+func TestLoadRejectsInvalidItemGrantBoolean(t *testing.T) {
+	t.Setenv("PALHELM_ITEM_GRANTS_ENABLED", "sometimes")
+	if _, err := Load(); err == nil {
+		t.Fatal("expected invalid item grant boolean to fail")
 	}
 }
 

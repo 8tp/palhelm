@@ -42,6 +42,10 @@ viewer does not see destructive controls, but the enforcement is server-side. A 
 who crafts a request by hand still cannot perform an admin action. The UI adapting is a
 convenience, not the control.
 
+Item-grant creation and audit endpoints are admin-only. Their capability and catalogue
+views reveal only bounded operational metadata; no Integration API key can invoke or
+inspect a grant.
+
 ## Two API surfaces that never cross
 
 Palhelm has two HTTP surfaces, and they are kept apart structurally, not just by policy:
@@ -94,6 +98,20 @@ Two operator features touch the host, and both fail closed:
   operator to run the printed command from the host; Palhelm does not run Docker Compose
   itself.
 
+## Optional item-grant bridge
+
+The UE4SS item bridge is a separate, disabled-by-default mutation surface. Palhelm
+accepts only stable player IDs and operator-allowlisted item IDs, enforces bounded
+quantities and a required reason, writes a durable audit row before dispatch, and
+uses idempotency keys to prevent duplicate delivery. It exposes no arbitrary Lua,
+shell, RCON, asset path, or command input.
+
+The provider reports unavailable unless its configured catalogue, generated bridge
+allowlist, protocol version, game version, heartbeat freshness, and exact-build
+production-validation marker agree. A missing result is an uncertain outcome, not
+permission to retry. The bridge mutates live authoritative inventory and never edits
+the world save.
+
 ## Honest threat model
 
 What Palhelm defends against:
@@ -111,7 +129,9 @@ What Palhelm does not defend against, and does not claim to:
 
 - Exposure to the open internet. The trusted-edge assumption is load-bearing.
 - A compromised admin session. An attacker with a live admin session can do what an admin
-  can do, including using the config editor as a write primitive against the Compose file.
+  can do, including using the config editor as a write primitive against the Compose file
+  and, when an operator has separately enabled a validated item bridge, granting allowlisted
+  items within its limits.
 - The security of the game server itself, or of the host it runs on. Those are the
   operator's responsibility.
 

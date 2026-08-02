@@ -19,6 +19,7 @@ import (
 	"github.com/8tp/palhelm/internal/backup"
 	"github.com/8tp/palhelm/internal/config"
 	"github.com/8tp/palhelm/internal/gameconfig"
+	"github.com/8tp/palhelm/internal/itemgrant"
 	"github.com/8tp/palhelm/internal/palworld"
 	"github.com/8tp/palhelm/internal/poller"
 	"github.com/8tp/palhelm/internal/steamavatar"
@@ -45,6 +46,8 @@ type Server struct {
 	gamecfg     *gameconfig.Editor
 	integration *integrationAuth
 	avatars     *steamavatar.Resolver
+	itemCatalog *itemgrant.Catalog
+	itemSpool   itemgrant.Spool
 	diskStat    diskStatFunc
 	started     time.Time
 	log         *slog.Logger
@@ -68,7 +71,17 @@ func New(cfg config.Config, st *store.Store, log *slog.Logger) (*Server, http.Ha
 		// than taking down session/admin routes too.
 		log.Error("load active integration API keys", "error", err)
 	}
-	s := &Server{cfg: cfg, store: st, pal: pal, rcon: palworld.NewRCONClient(cfg.RCONAddr, cfg.PalworldPassword), poll: p, health: health, hub: hub, auth: newAuth(cfg.SessionSecret, cfg.AdminPassword, cfg.ViewerPassword, cfg.TrustedProxies...), shutdown: newOrchestrator(pal), integration: newIntegrationAuth(st, activeKeys, cfg.IntegrationRateLimit, log), avatars: steamavatar.New(cfg.SteamWebAPIKey), diskStat: statfsDiskUsage, started: time.Now(), log: log}
+	s := &Server{cfg: cfg, store: st, pal: pal, rcon: palworld.NewRCONClient(cfg.RCONAddr, cfg.PalworldPassword), poll: p, health: health, hub: hub, auth: newAuth(cfg.SessionSecret, cfg.AdminPassword, cfg.ViewerPassword, cfg.TrustedProxies...), shutdown: newOrchestrator(pal), integration: newIntegrationAuth(st, activeKeys, cfg.IntegrationRateLimit, log), avatars: steamavatar.New(cfg.SteamWebAPIKey), itemSpool: itemgrant.Spool{Dir: cfg.ItemGrantSpoolDir}, diskStat: statfsDiskUsage, started: time.Now(), log: log}
+	if catalog, catalogErr := itemgrant.LoadCatalog(cfg.ItemCatalogPath); catalogErr != nil {
+		if cfg.ItemGrantsEnabled {
+			log.Error("item grants unavailable: catalogue failed validation", "error", catalogErr, "path", cfg.ItemCatalogPath)
+		} else if !errors.Is(catalogErr, os.ErrNotExist) {
+			log.Warn("optional item catalogue failed validation", "error", catalogErr, "path", cfg.ItemCatalogPath)
+		}
+	} else {
+		s.itemCatalog = catalog
+		log.Info("item catalogue loaded", "gameVersion", catalog.GameVersion(), "items", catalog.Count())
+	}
 	emitBackup := func(message string, meta any) {
 		e := store.Event{At: time.Now().UTC(), Kind: "backup", Message: message, Meta: meta}
 		_ = st.AddEvent(context.Background(), e)
@@ -191,6 +204,9 @@ func (s *Server) routes() http.Handler {
 			api.Get("/map/dataset", s.mapDataset)
 			api.Get("/paldeck/icon/{characterId}", s.paldeckIcon)
 			api.Get("/paldeck/icon-dataset", s.paldeckIconDataset)
+			api.Get("/items", s.items)
+			api.Get("/items/capability", s.itemGrantCapability)
+			api.Get("/items/{itemId}/icon", s.itemIcon)
 			api.Get("/console/log", s.consoleLog)
 			api.Get("/console/saved", s.savedCommands)
 			api.Get("/events", s.events)
@@ -212,6 +228,9 @@ func (s *Server) routes() http.Handler {
 				m.Post("/players/{uid}/kick", s.kick)
 				m.Post("/players/{uid}/ban", s.ban)
 				m.Post("/players/{uid}/unban", s.unban)
+				m.Post("/players/{uid}/item-grants", s.createItemGrant)
+				m.Get("/item-grants", s.listItemGrants)
+				m.Get("/item-grants/{requestId}", s.getItemGrant)
 				m.Put("/whitelist", s.putWhitelist)
 				m.Post("/world/parse", s.parseWorld)
 				m.Post("/console/exec", s.consoleExec)
@@ -241,7 +260,7 @@ func (s *Server) securityHeaders(next http.Handler) http.Handler {
 		w.Header().Set("X-Frame-Options", "DENY")
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
-		if strings.HasPrefix(r.URL.Path, "/api/v1/auth/") || r.URL.Path == "/api/v1/config" || r.URL.Path == "/api/v1/config/raw" || r.URL.Path == "/api/v1/world/snapshot" || strings.HasPrefix(r.URL.Path, "/api/v1/integration-keys") {
+		if strings.HasPrefix(r.URL.Path, "/api/v1/auth/") || r.URL.Path == "/api/v1/config" || r.URL.Path == "/api/v1/config/raw" || r.URL.Path == "/api/v1/world/snapshot" || r.URL.Path == "/api/v1/items/capability" || strings.HasPrefix(r.URL.Path, "/api/v1/item-grants") || strings.HasPrefix(r.URL.Path, "/api/v1/integration-keys") {
 			w.Header().Set("Cache-Control", "no-store")
 		}
 		next.ServeHTTP(w, r)

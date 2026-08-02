@@ -1,0 +1,26 @@
+{
+  "gameVersion": "1.0.1",
+  "source": {
+    "name": "Operator export from the matching Palworld build",
+    "generatedAt": "2026-07-18T00:00:00Z"
+  },
+  "items": [
+    {
+      "id": "Wood",
+      "name": "Wood",
+      "description": "Material gathered from trees.",
+      "category": "Material",
+      "rarity": "Common",
+      "iconPath": "/operator/export/icons/Wood.webp",
+      "maxQuantity": 9999,
+      "grantable": true
+    },
+    {
+      "id": "Example_Internal_Item",
+      "name": "Example internal item",
+      "category": "Internal",
+      "maxQuantity": 1,
+      "grantable": false
+    }
+  ]
+}

@@ -35,6 +35,12 @@ Operation-specific recovery details, such as Config's `manualCommand`, stay insi
 | POST | `/players/{uid}/kick` | `{message?}` |
 | POST | `/players/{uid}/ban` | `{message?}` |
 | POST | `/players/{uid}/unban` | |
+| GET | `/items?q=&limit=50&offset=0` | Viewer-safe, paginated operator-installed grant catalogue. Returns only entries explicitly marked `grantable`; at most 100 rows. |
+| GET | `/items/capability` | Fail-closed provider state: `{enabled, ready, reason, protocolVersion, gameVersion?, catalogVersion?, catalogItems, lastHeartbeatAt?}`. `ready` requires explicit enablement, a validated matching catalogue/allowlist, and a fresh bridge heartbeat. |
+| GET | `/items/{itemId}/icon` | Same-origin operator-installed icon for a known catalogue item. Game artwork is not distributed with Palhelm. |
+| POST | `/players/{uid}/item-grants` | **Admin only.** `{itemId, quantity, reason, idempotencyKey}` → `202` durable queued grant. Online players and allowlisted items only. Never accepts a display-name target or arbitrary command. |
+| GET | `/item-grants` | **Admin only.** Newest 100 durable audit records, reconciling any bridge result files. |
+| GET | `/item-grants/{requestId}` | **Admin only.** One audited grant and its current `queued`, `succeeded`, or `failed` state. A missing/late result is never retried automatically. |
 | GET/PUT | `/whitelist` | Legacy path for the local player-annotation ledger: `[{steamId, name?}]`; PUT replaces. It does **not** enforce who may join. |
 
 ## Guilds

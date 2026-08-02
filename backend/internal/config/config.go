@@ -27,6 +27,12 @@ type Config struct {
 	MetricsInterval, PlayersInterval, SaveSyncInterval time.Duration
 	GameDataInterval, GameDataTimeout                  time.Duration
 	IntegrationRateLimit                               int
+	// Item grants are an optional, fail-closed mutation integration. The panel
+	// never enables them merely because a spool or catalogue happens to exist.
+	ItemGrantsEnabled bool
+	ItemCatalogPath   string
+	ItemIconDir       string
+	ItemGrantSpoolDir string
 	// SessionDays is how long a login session cookie stays valid, in whole days.
 	SessionDays int
 }
@@ -60,6 +66,21 @@ func Load() (Config, error) {
 	}
 	if c.GameDataEnabled, err = optionalBool("PALHELM_GAME_DATA_ENABLED", false); err != nil {
 		return c, err
+	}
+	if c.ItemGrantsEnabled, err = optionalBool("PALHELM_ITEM_GRANTS_ENABLED", false); err != nil {
+		return c, err
+	}
+	c.ItemCatalogPath = strings.TrimSpace(os.Getenv("PALHELM_ITEM_CATALOG_PATH"))
+	if c.ItemCatalogPath == "" {
+		c.ItemCatalogPath = filepath.Join(c.DataDir, "item-catalog.json")
+	}
+	c.ItemIconDir = strings.TrimSpace(os.Getenv("PALHELM_ITEM_ICON_DIR"))
+	if c.ItemIconDir == "" {
+		c.ItemIconDir = filepath.Join(c.DataDir, "item-icons")
+	}
+	c.ItemGrantSpoolDir = strings.TrimSpace(os.Getenv("PALHELM_ITEM_GRANT_SPOOL_DIR"))
+	if c.ItemGrantSpoolDir == "" {
+		c.ItemGrantSpoolDir = filepath.Join(c.DataDir, "item-grants")
 	}
 	if c.MetricsInterval, err = duration("PALHELM_METRICS_INTERVAL", 5*time.Second); err != nil {
 		return c, err

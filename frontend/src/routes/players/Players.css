@@ -110,3 +110,58 @@ dialog.dialog.pal-box-dialog { width: min(780px, 94vw); }
 }
 .pal-box-tab:hover { color: var(--ink-2); background: var(--surface-2); }
 .pal-box-tab.is-active { color: var(--accent-ink); border-color: color-mix(in srgb, var(--accent) 55%, transparent); background: var(--accent-soft); }
+
+/* ---------- audited item grants ---------- */
+dialog.dialog.item-grant-dialog { width: min(900px, 94vw); max-height: 92vh; }
+dialog.dialog.item-grant-dialog .dialog-body { overflow-y: auto; overscroll-behavior: contain; }
+.item-grant-form { display: flex; flex-direction: column; gap: var(--space-3); }
+.item-grant-note { margin: 0; color: var(--ink-3); font-size: var(--text-xs); }
+.item-grant-results {
+  min-height: 180px; max-height: 330px; overflow: auto;
+  border: 1px solid var(--line); border-radius: var(--radius-ctl);
+}
+.item-grant-item {
+  display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  width: 100%; padding: 8px 10px; border: 0; border-bottom: 1px solid var(--line);
+  color: var(--ink-1); background: var(--surface); text-align: left; cursor: pointer;
+}
+.item-grant-item:last-child { border-bottom: 0; }
+.item-grant-item:hover { background: var(--surface-2); }
+.item-grant-item.is-selected { background: var(--accent-soft); box-shadow: inset 3px 0 var(--accent); }
+.item-grant-item img { width: 42px; height: 42px; object-fit: contain; border-radius: 6px; background: var(--surface-3); }
+.item-grant-item .item-grant-summary { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
+.item-grant-meta { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.item-grant-item strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-sm); }
+.item-grant-item small { color: var(--ink-3); font-size: 10px; }
+.item-grant-item code { color: var(--ink-3); font-size: 10px; }
+.item-rarity {
+  display: inline-flex; align-items: center; width: fit-content; padding: 1px 7px;
+  border: 1px solid currentColor; border-radius: 999px; font-size: 10px; font-weight: 700;
+  line-height: 1.45; letter-spacing: .02em; background: color-mix(in srgb, currentColor 10%, transparent);
+}
+.item-rarity-common { color: var(--ink-3); }
+.item-rarity-uncommon { color: var(--ok-ink); }
+.item-rarity-rare { color: var(--accent-ink); }
+.item-rarity-epic { color: var(--warn-ink); }
+.item-rarity-legendary { color: var(--warn-ink); }
+.item-rarity-other { color: var(--accent); }
+.item-grant-fields { display: grid; grid-template-columns: minmax(110px, .35fr) 1fr; gap: var(--space-3); }
+.item-grant-review { display: grid; grid-template-columns: 72px 1fr; gap: var(--space-3); align-items: center; }
+.item-grant-review > img { width: 72px; height: 72px; object-fit: contain; border-radius: var(--radius-ctl); background: var(--surface-3); }
+.item-grant-review > div { display: flex; flex-direction: column; gap: 5px; }
+.item-grant-review-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.item-grant-review span { color: var(--ink-2); font-size: var(--text-sm); }
+.item-grant-review .item-rarity { font-size: 10px; }
+.item-grant-review code { color: var(--ink-3); font-size: 10px; }
+.item-grant-review .banner { grid-column: 1 / -1; }
+.item-grant-history { border-top: 1px solid var(--line); }
+.item-grant-history > div { display: flex; align-items: center; gap: 10px; padding: 8px 16px; border-bottom: 1px solid var(--line); }
+.item-grant-history > div:last-child { border-bottom: 0; }
+.item-grant-history span { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 2px; }
+.item-grant-history strong { font-size: var(--text-xs); }
+.item-grant-history small { overflow: hidden; color: var(--ink-3); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 560px) {
+  .item-grant-item { grid-template-columns: 38px minmax(0, 1fr); }
+  .item-grant-item code { display: none; }
+	.item-grant-fields { grid-template-columns: 1fr; }
+}

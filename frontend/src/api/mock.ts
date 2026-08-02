@@ -24,6 +24,9 @@ import type {
   GuildDetail,
   IntegrationKey,
   IntegrationKeyCreated,
+  ItemCatalogPage,
+  ItemGrant,
+  ItemGrantCapability,
   LiveWorldActor,
   LiveWorldSnapshot,
   MapDataset,
@@ -1326,6 +1329,57 @@ export async function applyConfig(): Promise<void> {
     "One-click Docker apply is intentionally disabled; run the manual command from the host directory containing the compose file.",
     { manualCommand: "docker compose up -d palworld" },
   );
+}
+
+// ---------- item grants ----------
+
+const mockItems = [
+  { id: "Wood", name: "Wood", description: "Material gathered from trees.", category: "Material", rarity: "Common", icon: "wood.webp", maxQuantity: 9999, grantable: true },
+  { id: "PalSphere", name: "Pal Sphere", description: "A basic sphere used to capture Pals.", category: "Sphere", rarity: "Common", icon: "pal-sphere.webp", maxQuantity: 999, grantable: true },
+  { id: "MedicalSupplies_01", name: "Low Grade Medical Supplies", description: "Medicine for minor ailments.", category: "Medicine", rarity: "Common", icon: "medicine.webp", maxQuantity: 99, grantable: true },
+];
+const mockGrants = new Map<string, ItemGrant>();
+
+export async function itemGrantCapability(): Promise<ItemGrantCapability> {
+  requireSession();
+  await latency();
+  return { enabled: true, ready: true, reason: "", protocolVersion: 1, gameVersion: "1.0.1", catalogVersion: "1.0.1", catalogItems: 2466, lastHeartbeatAt: new Date().toISOString() };
+}
+
+export async function searchItems(q: string, limit: number): Promise<ItemCatalogPage> {
+  requireSession();
+  await latency();
+  const needle = q.trim().toLowerCase();
+  const items = mockItems.filter((item) => !needle || `${item.name} ${item.id} ${item.category}`.toLowerCase().includes(needle));
+  return { items: items.slice(0, limit), total: items.length, gameVersion: "1.0.1", source: { name: "Mock operator catalogue" } };
+}
+
+export async function grantItem(uid: string, itemId: string, quantity: number, reason: string, idempotencyKey: string): Promise<ItemGrant> {
+  requireAdmin();
+  await latency(150, 300);
+  const existing = mockGrants.get(idempotencyKey);
+  if (existing) return existing;
+  const item = mockItems.find((candidate) => candidate.id === itemId);
+  const player = players.find((candidate) => candidate.uid === uid);
+  if (!item || !player) throw new ApiRequestError(400, "invalid_grant", "The mock grant is invalid.");
+  const now = new Date().toISOString();
+  const grant: ItemGrant = { requestId: crypto.randomUUID().replaceAll("-", ""), createdAt: now, updatedAt: now, actor: "admin", playerUid: uid, playerName: player.name, itemId, itemName: item.name, quantity, grantedQuantity: null, reason, status: "queued" };
+  mockGrants.set(idempotencyKey, grant);
+  return grant;
+}
+
+export async function itemGrantStatus(requestId: string): Promise<ItemGrant> {
+  requireAdmin();
+  await latency();
+  const grant = [...mockGrants.values()].find((candidate) => candidate.requestId === requestId);
+  if (!grant) throw new ApiRequestError(404, "grant_not_found", "Item grant not found.");
+  return grant;
+}
+
+export async function listItemGrants(): Promise<ItemGrant[]> {
+  requireAdmin();
+  await latency();
+  return [...mockGrants.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 // ---------- events ----------

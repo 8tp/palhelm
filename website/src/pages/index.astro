@@ -36,8 +36,8 @@ const composeYaml = `palhelm:
 const fieldNotes = [
   {
     eyebrow: "01",
-    title: "Read-only by design",
-    body: "Palhelm never writes to your world. It reads the save file, watches the player list, and sends only the commands you tell it to. If a game update changes the save format, Palhelm says so and keeps working instead of breaking.",
+    title: "Read-only saves, explicit mutations",
+    body: "Palhelm's save parser never writes to your world. Optional item grants use a separate, disabled-by-default server bridge with an allowlist, admin confirmation, and an audit trail. If the exact game build is not validated, the action stays unavailable.",
   },
   {
     eyebrow: "02",
@@ -62,11 +62,12 @@ const fieldNotes = [
   {
     eyebrow: "06",
     title: "One container",
-    body: "The whole panel is a single Docker image with its data in one folder. No database to run, nothing extra to install. It sits beside the Palworld container you already have.",
+    body: "The core panel is a single Docker image with its data in one folder. No database to run. Optional item grants require a separately installed UE4SS bridge on the game server; everything else works without it.",
   },
 ];
 
 const ledger = [
+  { quote: "Save parsing stays read-only. Item grants use a separate audited bridge.", src: "item grants · security" },
   { quote: "Restarts stay in your hands. Palhelm won't pretend it can restart your server.", src: "README.md" },
   { quote: "Vanilla RCON mangles spaces in Broadcast; the console says so inline.", src: "console" },
   { quote: "Never expose the panel to the open internet.", src: "README · security" },
@@ -74,7 +75,7 @@ const ledger = [
 ];
 
 const tallies = [
-  { n: "50", label: "documented endpoints" },
+  { n: "67", label: "documented endpoints" },
   { n: "32", label: "slash commands" },
   { n: "400+", label: "tests" },
   { n: "9", label: "screens" },
@@ -116,8 +117,8 @@ const tallies = [
       <h1 id="hero-title" class="hero-title">Take the helm.</h1>
       <p class="hero-lead">
         Palhelm is a control panel and Discord companion for your Palworld
-        server. You host it yourself, in one container. It reads your world and
-        never writes to it.
+        server. You host it yourself, in one container. Save parsing is read-only;
+        optional item grants use a separate, audited server bridge.
       </p>
       <div class="hero-cta">
         <Button variant="primary" href={INSTALL_GUIDE_URL}>Deploy the panel</Button>

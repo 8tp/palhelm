@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
-import type { Player, PlayerActivity, PlayerActivityWindow, WhitelistEntry } from "../../api/types";
+import type { GrantableItem, Player, PlayerActivity, PlayerActivityWindow, WhitelistEntry } from "../../api/types";
 import { useIsAdmin } from "../../app/AuthProvider";
 import { usePaletteBridge } from "../../app/paletteBridge";
 import { formatDuration, formatRelativeToNow, truncateMiddle } from "../../app/format";
@@ -31,6 +31,22 @@ type PendingAction = { kind: ActionKind; player: Player } | null;
 
 function initials(name: string): string {
   return name.slice(0, 2).toUpperCase();
+}
+
+function newIdempotencyKey(): string {
+  const bytes = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(bytes);
+  return `panel-${Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("")}`;
+}
+
+const knownItemRarities = new Set(["common", "uncommon", "rare", "epic", "legendary"]);
+
+function ItemRarityBadge({ rarity }: { rarity?: string }) {
+  const label = rarity?.trim();
+  if (!label) return null;
+  const normalized = label.toLowerCase();
+  const tone = knownItemRarities.has(normalized) ? normalized : "other";
+  return <span className={`item-rarity item-rarity-${tone}`}>{label}</span>;
 }
 
 function lastSeenLabel(p: Player): string {
@@ -289,6 +305,7 @@ function PlayerDetailPanel({ uid, onAction }: { uid: string | null; onAction: (k
   const navigate = useNavigate();
   const [showAllPals, setShowAllPals] = useState(false);
   const [messageOpen, setMessageOpen] = useState(false);
+  const [itemGrantOpen, setItemGrantOpen] = useState(false);
   const [expandedPalId, setExpandedPalId] = useState<string | null>(null);
 
   useEffect(() => setExpandedPalId(null), [uid]);
@@ -298,6 +315,12 @@ function PlayerDetailPanel({ uid, onAction }: { uid: string | null; onAction: (k
     queryFn: () => api.players.detail(uid!),
     enabled: uid !== null,
     refetchInterval: 60_000,
+  });
+  const grantsQuery = useQuery({
+    queryKey: ["item-grants"],
+    queryFn: () => api.items.grants(),
+    enabled: isAdmin && uid !== null,
+    refetchInterval: 30_000,
   });
 
   if (!uid) {
@@ -426,6 +449,9 @@ function PlayerDetailPanel({ uid, onAction }: { uid: string | null; onAction: (k
                 <button type="button" className="btn btn-sm" onClick={() => setMessageOpen(true)}>
                   Message
                 </button>
+                <button type="button" className="btn btn-sm" disabled={!d.online} onClick={() => setItemGrantOpen(true)}>
+                  Give item…
+                </button>
                 <button
                   type="button"
                   className="btn btn-sm"
@@ -449,13 +475,181 @@ function PlayerDetailPanel({ uid, onAction }: { uid: string | null; onAction: (k
                   </>
                 )}
               </CardBody>
+              {(grantsQuery.data ?? []).filter((grant) => grant.playerUid === d.uid).slice(0, 5).length > 0 && (
+                <div className="item-grant-history" aria-label={`Recent item grants for ${d.name}`}>
+                  {(grantsQuery.data ?? []).filter((grant) => grant.playerUid === d.uid).slice(0, 5).map((grant) => (
+                    <div key={grant.requestId}>
+                      <span><strong>{grant.quantity} × {grant.itemName}</strong><small>{grant.reason}</small></span>
+                      <Pill tone={grant.status === "succeeded" ? "ok" : grant.status === "failed" ? "danger" : "idle"}>{grant.status}</Pill>
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           )}
 
           <MessageDialog open={messageOpen} onClose={() => setMessageOpen(false)} playerName={d.name} />
+          <ItemGrantDialog open={itemGrantOpen} onClose={() => setItemGrantOpen(false)} player={d} />
         </>
       )}
     </aside>
+  );
+}
+
+function ItemGrantDialog({ open, onClose, player }: { open: boolean; onClose: () => void; player: Player }) {
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<GrantableItem | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [reason, setReason] = useState("");
+  const [reviewing, setReviewing] = useState(false);
+  const [idempotencyKey, setIdempotencyKey] = useState("");
+  const toast = useToast();
+  const queryClient = useQueryClient();
+
+  const capability = useQuery({
+    queryKey: ["items", "capability"],
+    queryFn: () => api.items.capability(),
+    enabled: open,
+    refetchInterval: open ? 15_000 : false,
+  });
+  const catalog = useQuery({
+    queryKey: ["items", "search", search],
+    queryFn: () => api.items.search(search, 50),
+    enabled: open && capability.data?.ready === true,
+    staleTime: 30_000,
+  });
+  const mutation = useMutation({
+    mutationFn: () => {
+      if (!selected) throw new Error("No item selected");
+      if (!idempotencyKey) throw new Error("Grant confirmation expired; review it again.");
+      return api.items.grant(player.uid, selected.id, quantity, reason.trim(), idempotencyKey);
+    },
+    onSuccess: (grant) => {
+      toast.push(`${grant.quantity} × ${grant.itemName} queued for ${grant.playerName}.`, "ok");
+      void queryClient.invalidateQueries({ queryKey: ["item-grants"] });
+      void (async () => {
+        for (let attempt = 0; attempt < 15; attempt += 1) {
+          await new Promise((resolve) => window.setTimeout(resolve, 2_000));
+          try {
+            const status = await api.items.grantStatus(grant.requestId);
+            if (status.status === "succeeded") {
+              void queryClient.invalidateQueries({ queryKey: ["item-grants"] });
+              toast.push(`${status.grantedQuantity ?? status.quantity} × ${status.itemName} delivered to ${status.playerName}.`, "ok");
+              return;
+            }
+            if (status.status === "failed") {
+              void queryClient.invalidateQueries({ queryKey: ["item-grants"] });
+              toast.push(status.errorMessage || `Item grant for ${status.playerName} failed.`, "danger");
+              return;
+            }
+          } catch {
+            // The durable audit record remains authoritative; a transient status
+            // read must never cause a second mutation submission.
+          }
+        }
+      })();
+      setSelected(null);
+      setQuantity(1);
+      setReason("");
+      setReviewing(false);
+      setIdempotencyKey("");
+      onClose();
+    },
+    onError: (error) => toast.push(error instanceof Error ? error.message : "Item grant failed.", "danger"),
+  });
+
+  useEffect(() => {
+    if (!open) {
+      setReviewing(false);
+      setIdempotencyKey("");
+    }
+  }, [open]);
+
+  const canReview = selected !== null && quantity >= 1 && quantity <= selected.maxQuantity && reason.trim().length >= 3;
+  const close = () => {
+    if (!mutation.isPending) onClose();
+  };
+
+  return (
+    <Dialog
+      open={open}
+      title={reviewing ? "Confirm item grant" : `Give item to ${player.name}`}
+      onClose={close}
+      className="item-grant-dialog"
+      footer={
+        <>
+          <button type="button" className="btn btn-ghost" onClick={reviewing ? () => { setReviewing(false); setIdempotencyKey(""); } : close} disabled={mutation.isPending}>
+            {reviewing ? "Back" : "Cancel"}
+          </button>
+          {reviewing ? (
+            <button type="button" className="btn btn-primary" onClick={() => mutation.mutate()} disabled={mutation.isPending || capability.data?.ready !== true}>
+              {mutation.isPending ? "Queuing…" : "Confirm grant"}
+            </button>
+          ) : (
+            <button type="button" className="btn btn-primary" onClick={() => { setIdempotencyKey(newIdempotencyKey()); setReviewing(true); }} disabled={!canReview || capability.data?.ready !== true}>
+              Review grant
+            </button>
+          )}
+        </>
+      }
+    >
+      {capability.isLoading ? (
+        <p className="item-grant-note">Checking the server bridge…</p>
+      ) : capability.data?.ready !== true ? (
+        <Banner tone="warn">{capability.data?.reason ?? "The item grant bridge is unavailable."}</Banner>
+      ) : reviewing && selected ? (
+        <div className="item-grant-review">
+          <img src={api.items.iconUrl(selected.id)} alt="" />
+          <div>
+            <div className="item-grant-review-title">
+              <strong>{quantity} × {selected.name}</strong>
+              <ItemRarityBadge rarity={selected.rarity} />
+            </div>
+            <span>{selected.category || "Item"} · <code>{selected.id}</code></span>
+            <span>Recipient: {player.name}</span>
+            <span>Reason: {reason.trim()}</span>
+          </div>
+          <Banner tone="warn">This changes a live player inventory. Palhelm will submit it once and keep an audit record.</Banner>
+        </div>
+      ) : (
+        <div className="item-grant-form">
+          <p className="item-grant-note">
+            Online players only · catalogue {capability.data.catalogVersion} · {capability.data.catalogItems.toLocaleString()} validated items
+          </p>
+          <SearchField value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search item name, ID, or category…" autoFocus />
+          <div className="item-grant-results" role="listbox" aria-label="Grantable items">
+            {catalog.isLoading && <span className="item-grant-note">Searching catalogue…</span>}
+            {catalog.data?.items.map((item) => (
+              <button
+                type="button"
+                key={item.id}
+                role="option"
+                aria-selected={selected?.id === item.id}
+                className={selected?.id === item.id ? "item-grant-item is-selected" : "item-grant-item"}
+                onClick={() => { setSelected(item); setQuantity(Math.min(quantity, item.maxQuantity)); }}
+              >
+                <img src={api.items.iconUrl(item.id)} alt="" onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} />
+                <span className="item-grant-summary">
+                  <strong>{item.name}</strong>
+                  <span className="item-grant-meta">
+                    <small>{item.category || "Item"}</small>
+                    <ItemRarityBadge rarity={item.rarity} />
+                  </span>
+                </span>
+                <code>{item.id}</code>
+              </button>
+            ))}
+            {catalog.data && catalog.data.items.length === 0 && <span className="item-grant-note">No grantable items match that search.</span>}
+          </div>
+          {selected && (
+            <div className="item-grant-fields">
+              <Field label="Quantity" type="number" min={1} max={selected.maxQuantity} value={quantity} onChange={(event) => setQuantity(Number(event.target.value))} hint={<small>Maximum {selected.maxQuantity.toLocaleString()}</small>} />
+              <Field label="Reason" value={reason} maxLength={200} onChange={(event) => setReason(event.target.value)} placeholder="Why is this being granted?" />
+            </div>
+          )}
+        </div>
+      )}
+    </Dialog>
   );
 }
 

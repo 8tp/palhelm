@@ -18,6 +18,9 @@ import type {
   GuildDetail,
   IntegrationKey,
   IntegrationKeyCreated,
+  ItemCatalogPage,
+  ItemGrant,
+  ItemGrantCapability,
   MapDataset,
   MetricsCurrent,
   MetricsHistory,
@@ -133,6 +136,24 @@ export const api = {
     // Builds the <img src> for a player's proxied Steam avatar (404 = none, handled by the
     // caller's onError fallback to the placeholder mark). Proxied same-origin for CSP.
     avatarUrl: (uid: string): string => `${BASE}/players/${encodeURIComponent(uid)}/avatar`,
+  },
+  items: {
+    capability: (): Promise<ItemGrantCapability> =>
+      USE_MOCK ? mock.itemGrantCapability() : request("GET", "/items/capability"),
+    search: (q = "", limit = 50): Promise<ItemCatalogPage> => {
+      if (USE_MOCK) return mock.searchItems(q, limit);
+      const query = new URLSearchParams({ q, limit: String(limit) });
+      return request("GET", `/items?${query}`);
+    },
+    iconUrl: (itemId: string): string => `${BASE}/items/${encodeURIComponent(itemId)}/icon`,
+    grant: (uid: string, itemId: string, quantity: number, reason: string, idempotencyKey: string): Promise<ItemGrant> =>
+      USE_MOCK
+        ? mock.grantItem(uid, itemId, quantity, reason, idempotencyKey)
+        : request("POST", `/players/${encodeURIComponent(uid)}/item-grants`, { itemId, quantity, reason, idempotencyKey }),
+    grantStatus: (requestId: string): Promise<ItemGrant> =>
+      USE_MOCK ? mock.itemGrantStatus(requestId) : request("GET", `/item-grants/${encodeURIComponent(requestId)}`),
+    grants: (): Promise<ItemGrant[]> =>
+      USE_MOCK ? mock.listItemGrants() : request<{ grants: ItemGrant[] }>("GET", "/item-grants").then((result) => result.grants),
   },
   pals: {
     list: (params: PalExplorerParams = {}): Promise<PalExplorerPage> => {

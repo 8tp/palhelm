@@ -96,8 +96,9 @@ const DOCS_URL = "https://docs.palhelm.com/";
           <p>
             Online players come from the live server, everyone else from the
             save file. See each player's level, playtime, guild and pal party,
-            with their Steam avatar. Kick, ban or whitelist from the same
-            screen.
+            with their Steam avatar. Kick, ban, or—when the disabled-by-default
+            UE4SS bridge has passed its exact-build checks—queue an allowlisted
+            item grant from the same screen.
           </p>
           <p>
             Shown with demo data; pal art appears once icons are fetched.
@@ -360,7 +361,9 @@ const DOCS_URL = "https://docs.palhelm.com/";
       <p class="ledger-body">
         Under the hood: one program for the panel, one web UI, shipped as a
         single Docker image. Your data stays in one folder on the host. No
-        separate database to install or run. Full details are in
+        separate database to install or run. The optional item-grant bridge is
+        installed separately on the game server and is not required for the
+        ordinary read-only panel. Full details are in
         <a href={DOCS_URL}>the docs</a>.
       </p>
     </section>
