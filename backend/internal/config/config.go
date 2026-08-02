@@ -33,6 +33,10 @@ type Config struct {
 	ItemCatalogPath   string
 	ItemIconDir       string
 	ItemGrantSpoolDir string
+	// Pal grants are independently gated because their bridge creates a complex
+	// persistent game object. Installing the panel code never enables mutation.
+	PalGrantsEnabled bool
+	PalGrantSpoolDir string
 	// SessionDays is how long a login session cookie stays valid, in whole days.
 	SessionDays int
 }
@@ -70,6 +74,9 @@ func Load() (Config, error) {
 	if c.ItemGrantsEnabled, err = optionalBool("PALHELM_ITEM_GRANTS_ENABLED", false); err != nil {
 		return c, err
 	}
+	if c.PalGrantsEnabled, err = optionalBool("PALHELM_PAL_GRANTS_ENABLED", false); err != nil {
+		return c, err
+	}
 	c.ItemCatalogPath = strings.TrimSpace(os.Getenv("PALHELM_ITEM_CATALOG_PATH"))
 	if c.ItemCatalogPath == "" {
 		c.ItemCatalogPath = filepath.Join(c.DataDir, "item-catalog.json")
@@ -81,6 +88,10 @@ func Load() (Config, error) {
 	c.ItemGrantSpoolDir = strings.TrimSpace(os.Getenv("PALHELM_ITEM_GRANT_SPOOL_DIR"))
 	if c.ItemGrantSpoolDir == "" {
 		c.ItemGrantSpoolDir = filepath.Join(c.DataDir, "item-grants")
+	}
+	c.PalGrantSpoolDir = strings.TrimSpace(os.Getenv("PALHELM_PAL_GRANT_SPOOL_DIR"))
+	if c.PalGrantSpoolDir == "" {
+		c.PalGrantSpoolDir = filepath.Join(c.DataDir, "pal-grants")
 	}
 	if c.MetricsInterval, err = duration("PALHELM_METRICS_INTERVAL", 5*time.Second); err != nil {
 		return c, err

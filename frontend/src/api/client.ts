@@ -21,6 +21,11 @@ import type {
   ItemCatalogPage,
   ItemGrant,
   ItemGrantCapability,
+	PalGrant,
+	PalGrantCapability,
+	PalGrantCatalog,
+	PalPassiveCatalog,
+	PalGenerationSpec,
   MapDataset,
   MetricsCurrent,
   MetricsHistory,
@@ -155,6 +160,28 @@ export const api = {
     grants: (): Promise<ItemGrant[]> =>
       USE_MOCK ? mock.listItemGrants() : request<{ grants: ItemGrant[] }>("GET", "/item-grants").then((result) => result.grants),
   },
+	palGrants: {
+		capability: (): Promise<PalGrantCapability> =>
+			USE_MOCK ? mock.palGrantCapability() : request("GET", "/pal-grants/capability"),
+		catalog: (q = "", limit = 50): Promise<PalGrantCatalog> => {
+			if (USE_MOCK) return mock.searchGrantablePals(q, limit);
+			const query = new URLSearchParams({ q, limit: String(limit) });
+			return request("GET", `/pal-grants/catalog?${query}`);
+		},
+		passives: (q = "", limit = 200): Promise<PalPassiveCatalog> => {
+			if (USE_MOCK) return mock.searchGrantablePassives(q, limit);
+			const query = new URLSearchParams({ q, limit: String(limit) });
+			return request("GET", `/pal-grants/passives?${query}`);
+		},
+		grant: (uid: string, characterId: string, spec: PalGenerationSpec, reason: string, idempotencyKey: string): Promise<PalGrant> =>
+			USE_MOCK
+				? mock.grantPal(uid, characterId, spec, reason, idempotencyKey)
+				: request("POST", `/players/${encodeURIComponent(uid)}/pal-grants`, { characterId, spec, reason, idempotencyKey }),
+		grantStatus: (requestId: string): Promise<PalGrant> =>
+			USE_MOCK ? mock.palGrantStatus(requestId) : request("GET", `/pal-grants/${encodeURIComponent(requestId)}`),
+		grants: (): Promise<PalGrant[]> =>
+			USE_MOCK ? mock.listPalGrants() : request<{ grants: PalGrant[] }>("GET", "/pal-grants").then((result) => result.grants),
+	},
   pals: {
     list: (params: PalExplorerParams = {}): Promise<PalExplorerPage> => {
       if (USE_MOCK) return mock.listPals(params);

@@ -105,6 +105,8 @@ scripts/fetch-pal-icons.sh ./palhelm-data/pal-icons   # pal preview icons
 | `PALHELM_ITEM_CATALOG_PATH` | `<data>/item-catalog.json` | operator-installed versioned item catalogue; game data/art are not distributed |
 | `PALHELM_ITEM_ICON_DIR` | `<data>/item-icons` | operator-installed same-origin item icons |
 | `PALHELM_ITEM_GRANT_SPOOL_DIR` | `<data>/item-grants` | local-only request/result directory shared with a compatible server bridge |
+| `PALHELM_PAL_GRANTS_ENABLED` | `false` | explicitly enable the admin-only Pal creation provider; still requires an exact-build validated bridge heartbeat |
+| `PALHELM_PAL_GRANT_SPOOL_DIR` | `<data>/pal-grants` | local-only Pal creation request/result directory shared with a compatible server bridge |
 | `PALHELM_OODLE_LIB` | unset | path to `liboo2corelinux64.so.9` if you provide your own |
 | `PALHELM_INTEGRATION_RATE_LIMIT` | `60` | requests/minute per Integration API key |
 
@@ -114,12 +116,12 @@ complete `/data` volume before upgrading; rollback to a 0.8.x image requires res
 pre-upgrade backup, because the older binary fails closed against the newer schema. See
 [the v0.9.0 release notes](docs/releases/v0.9.0.md).
 
-The unreleased item-grant work adds migration 013 for a durable audit ledger. The
-provider remains disabled by default and is not part of the read-only Integration API.
-Its UE4SS bridge remains `validation_required` until an exact-build maintenance-window
-test proves the inventory mutation and persistence behavior. See
+The unreleased grant work adds migrations 013–014 for durable item- and Pal-grant audit
+ledgers. Both providers remain independently disabled by default and are not part of the
+read-only Integration API. The Pal bridge is only a reflection probe until an exact-build
+maintenance-window validation proves the creation and Palbox-delivery signatures. See
 [the server-mod integration plan](docs/SERVER-MOD-INTEGRATIONS-PLAN.md) before testing
-the bridge; Palworld's official server mod loader does not support the native Linux
+the bridges; Palworld's official server mod loader does not support the native Linux
 dedicated-server binary.
 
 ## Known limits

@@ -20,6 +20,7 @@ import (
 	"github.com/8tp/palhelm/internal/config"
 	"github.com/8tp/palhelm/internal/gameconfig"
 	"github.com/8tp/palhelm/internal/itemgrant"
+	"github.com/8tp/palhelm/internal/palgrant"
 	"github.com/8tp/palhelm/internal/palworld"
 	"github.com/8tp/palhelm/internal/poller"
 	"github.com/8tp/palhelm/internal/steamavatar"
@@ -33,24 +34,27 @@ var openapi []byte
 
 // Server owns routing and application services.
 type Server struct {
-	cfg         config.Config
-	store       *store.Store
-	pal         *palworld.Client
-	rcon        *palworld.RCONClient
-	poll        *poller.Service
-	health      *poller.Health
-	hub         *Hub
-	auth        *auth
-	shutdown    *orchestrator
-	backups     *backup.Engine
-	gamecfg     *gameconfig.Editor
-	integration *integrationAuth
-	avatars     *steamavatar.Resolver
-	itemCatalog *itemgrant.Catalog
-	itemSpool   itemgrant.Spool
-	diskStat    diskStatFunc
-	started     time.Time
-	log         *slog.Logger
+	cfg               config.Config
+	store             *store.Store
+	pal               *palworld.Client
+	rcon              *palworld.RCONClient
+	poll              *poller.Service
+	health            *poller.Health
+	hub               *Hub
+	auth              *auth
+	shutdown          *orchestrator
+	backups           *backup.Engine
+	gamecfg           *gameconfig.Editor
+	integration       *integrationAuth
+	avatars           *steamavatar.Resolver
+	itemCatalog       *itemgrant.Catalog
+	itemSpool         itemgrant.Spool
+	palCatalog        *palgrant.Catalog
+	palPassiveCatalog *palgrant.PassiveCatalog
+	palSpool          palgrant.Spool
+	diskStat          diskStatFunc
+	started           time.Time
+	log               *slog.Logger
 }
 
 // New creates a fully wired HTTP server and poller service.
@@ -71,7 +75,7 @@ func New(cfg config.Config, st *store.Store, log *slog.Logger) (*Server, http.Ha
 		// than taking down session/admin routes too.
 		log.Error("load active integration API keys", "error", err)
 	}
-	s := &Server{cfg: cfg, store: st, pal: pal, rcon: palworld.NewRCONClient(cfg.RCONAddr, cfg.PalworldPassword), poll: p, health: health, hub: hub, auth: newAuth(cfg.SessionSecret, cfg.AdminPassword, cfg.ViewerPassword, cfg.TrustedProxies...), shutdown: newOrchestrator(pal), integration: newIntegrationAuth(st, activeKeys, cfg.IntegrationRateLimit, log), avatars: steamavatar.New(cfg.SteamWebAPIKey), itemSpool: itemgrant.Spool{Dir: cfg.ItemGrantSpoolDir}, diskStat: statfsDiskUsage, started: time.Now(), log: log}
+	s := &Server{cfg: cfg, store: st, pal: pal, rcon: palworld.NewRCONClient(cfg.RCONAddr, cfg.PalworldPassword), poll: p, health: health, hub: hub, auth: newAuth(cfg.SessionSecret, cfg.AdminPassword, cfg.ViewerPassword, cfg.TrustedProxies...), shutdown: newOrchestrator(pal), integration: newIntegrationAuth(st, activeKeys, cfg.IntegrationRateLimit, log), avatars: steamavatar.New(cfg.SteamWebAPIKey), itemSpool: itemgrant.Spool{Dir: cfg.ItemGrantSpoolDir}, palCatalog: palgrant.NewCatalog(), palPassiveCatalog: palgrant.MustPassiveCatalog(), palSpool: palgrant.Spool{Dir: cfg.PalGrantSpoolDir}, diskStat: statfsDiskUsage, started: time.Now(), log: log}
 	if catalog, catalogErr := itemgrant.LoadCatalog(cfg.ItemCatalogPath); catalogErr != nil {
 		if cfg.ItemGrantsEnabled {
 			log.Error("item grants unavailable: catalogue failed validation", "error", catalogErr, "path", cfg.ItemCatalogPath)
@@ -207,6 +211,9 @@ func (s *Server) routes() http.Handler {
 			api.Get("/items", s.items)
 			api.Get("/items/capability", s.itemGrantCapability)
 			api.Get("/items/{itemId}/icon", s.itemIcon)
+			api.Get("/pal-grants/catalog", s.palGrantCatalog)
+			api.Get("/pal-grants/passives", s.palGrantPassives)
+			api.Get("/pal-grants/capability", s.palGrantCapability)
 			api.Get("/console/log", s.consoleLog)
 			api.Get("/console/saved", s.savedCommands)
 			api.Get("/events", s.events)
@@ -231,6 +238,9 @@ func (s *Server) routes() http.Handler {
 				m.Post("/players/{uid}/item-grants", s.createItemGrant)
 				m.Get("/item-grants", s.listItemGrants)
 				m.Get("/item-grants/{requestId}", s.getItemGrant)
+				m.Post("/players/{uid}/pal-grants", s.createPalGrant)
+				m.Get("/pal-grants", s.listPalGrants)
+				m.Get("/pal-grants/{requestId}", s.getPalGrant)
 				m.Put("/whitelist", s.putWhitelist)
 				m.Post("/world/parse", s.parseWorld)
 				m.Post("/console/exec", s.consoleExec)

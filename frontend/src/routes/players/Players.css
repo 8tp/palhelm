@@ -160,8 +160,69 @@ dialog.dialog.item-grant-dialog .dialog-body { overflow-y: auto; overscroll-beha
 .item-grant-history span { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 2px; }
 .item-grant-history strong { font-size: var(--text-xs); }
 .item-grant-history small { overflow: hidden; color: var(--ink-3); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.pal-grant-results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; }
+.pal-grant-item {
+  display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 10px; align-items: center;
+  padding: 9px 10px; border: 0; border-bottom: 1px solid var(--line); color: var(--ink-1);
+  background: var(--surface); text-align: left; cursor: pointer;
+}
+.pal-grant-item:nth-child(odd) { border-right: 1px solid var(--line); }
+.pal-grant-item:hover { background: var(--surface-2); }
+.pal-grant-item.is-selected { background: var(--accent-soft); box-shadow: inset 3px 0 var(--accent); }
+.pal-grant-item .pal-chip { width: 46px; height: 46px; }
+.pal-grant-item > span { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.pal-grant-item strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-sm); }
+.pal-grant-item small { overflow: hidden; color: var(--ink-3); font: 10px var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.pal-grant-fields { display: grid; grid-template-columns: 130px 130px minmax(180px, 1fr); gap: var(--space-3); }
+.pal-grant-mode { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: 10px 12px; border: var(--border-ctl) solid var(--line); border-radius: var(--radius-ctl); background: var(--surface-2); }
+.pal-grant-mode > div:first-child { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.pal-grant-mode strong, .pal-specimen-kind > strong { font-size: var(--text-sm); font-weight: 600; color: var(--ink-2); }
+.pal-grant-mode small { color: var(--ink-3); font-size: var(--text-xs); }
+.pal-grant-mode > div:last-child, .pal-specimen-kind > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.pal-grant-advanced { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-ctl); background: var(--surface-2); }
+.pal-grant-advanced > .item-grant-note { grid-column: 1 / -1; }
+.pal-specimen-kind { display: flex; grid-column: 1 / -1; flex-direction: column; gap: 6px; }
+.pal-grant-ivs { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); }
+.pal-passive-editor { display: flex; grid-column: 1 / -1; min-width: 0; flex-direction: column; gap: 10px; padding-top: var(--space-2); border-top: 1px solid var(--line); }
+.pal-passive-editor-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pal-passive-editor-head > div { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.pal-passive-editor-head small, .pal-passive-source { color: var(--ink-3); font-size: 10px; }
+.pal-passive-selected { display: flex; flex-wrap: wrap; gap: 7px; }
+.pal-passive-chip { display: flex; flex-direction: column; gap: 1px; padding: 6px 9px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink-1); background: var(--surface); text-align: left; cursor: pointer; }
+.pal-passive-chip span { font-size: var(--text-xs); font-weight: 650; }
+.pal-passive-chip small { color: var(--ink-3); font-size: 9px; }
+.pal-passive-results { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: 280px; overflow: auto; border: 1px solid var(--line); border-radius: var(--radius-ctl); background: var(--surface); }
+.pal-passive-option { display: flex; min-width: 0; flex-direction: column; gap: 5px; padding: 10px; border: 0; border-bottom: 1px solid var(--line); color: var(--ink-1); background: transparent; text-align: left; cursor: pointer; }
+.pal-passive-option:nth-child(odd) { border-right: 1px solid var(--line); }
+.pal-passive-option:hover:not(:disabled) { background: var(--surface-2); }
+.pal-passive-option:disabled { opacity: .45; cursor: not-allowed; }
+.pal-passive-option.is-selected { background: var(--accent-soft); box-shadow: inset 3px 0 var(--accent); }
+.pal-passive-option-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pal-passive-option-title strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-xs); }
+.pal-passive-option-title em { flex: none; font-size: 9px; font-style: normal; font-weight: 750; letter-spacing: .04em; text-transform: uppercase; }
+.pal-passive-option > span:not(.pal-passive-option-title) { white-space: pre-line; color: var(--ink-2); font-size: 11px; line-height: 1.35; }
+.pal-passive-option > small { overflow: hidden; color: var(--ink-3); font: 9px var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.tier-rainbow .pal-passive-option-title em, .pal-passive-chip.tier-rainbow span { color: var(--accent-ink); }
+.tier-world-tree .pal-passive-option-title em, .pal-passive-chip.tier-world-tree span { color: var(--ok-ink); }
+.tier-gold .pal-passive-option-title em, .pal-passive-chip.tier-gold span { color: var(--warn-ink); }
+.tier-silver .pal-passive-option-title em, .pal-passive-chip.tier-silver span { color: var(--ink-3); }
+.tier-bronze .pal-passive-option-title em, .pal-passive-chip.tier-bronze span { color: var(--warn-ink); }
+.tier-negative .pal-passive-option-title em, .pal-passive-chip.tier-negative span { color: var(--danger-ink); }
+.pal-passive-chip.tier-rainbow { border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); background: linear-gradient(110deg, var(--accent-soft), var(--warn-soft), var(--ok-soft)); }
+.pal-passive-chip.tier-world-tree { border-color: color-mix(in srgb, var(--ok) 60%, var(--line)); }
+.pal-grant-review { display: grid; grid-template-columns: 76px 1fr; gap: var(--space-3); align-items: center; }
+.pal-grant-review .pal-chip { width: 72px; height: 72px; }
+.pal-grant-review > div { display: flex; flex-direction: column; gap: 5px; }
+.pal-grant-review span { color: var(--ink-2); font-size: var(--text-sm); }
+.pal-grant-review .banner { grid-column: 1 / -1; }
 @media (max-width: 560px) {
   .item-grant-item { grid-template-columns: 38px minmax(0, 1fr); }
   .item-grant-item code { display: none; }
 	.item-grant-fields { grid-template-columns: 1fr; }
+	.pal-grant-mode { align-items: stretch; flex-direction: column; }
+	.pal-grant-results { grid-template-columns: 1fr; }
+	.pal-grant-item:nth-child(odd) { border-right: 0; }
+	.pal-grant-fields, .pal-grant-advanced, .pal-grant-ivs { grid-template-columns: 1fr; }
+	.pal-passive-results { grid-template-columns: 1fr; }
+	.pal-passive-option:nth-child(odd) { border-right: 0; }
 }

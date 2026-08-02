@@ -41,6 +41,12 @@ Operation-specific recovery details, such as Config's `manualCommand`, stay insi
 | POST | `/players/{uid}/item-grants` | **Admin only.** `{itemId, quantity, reason, idempotencyKey}` → `202` durable queued grant. Online players and allowlisted items only. Never accepts a display-name target or arbitrary command. |
 | GET | `/item-grants` | **Admin only.** Newest 100 durable audit records, reconciling any bridge result files. |
 | GET | `/item-grants/{requestId}` | **Admin only.** One audited grant and its current `queued`, `succeeded`, or `failed` state. A missing/late result is never retried automatically. |
+| GET | `/pal-grants/catalog?q=&limit=50` | Viewer-safe Pal creation allowlist from the version-pinned Paldeck. Excludes humans and `BOSS_` save variants; Alpha is a specimen flag. Returns the current supported level cap and passive-catalogue version/count. |
+| GET | `/pal-grants/passives?q=&limit=100` | Viewer-safe pinned standard-passive catalogue. Returns up to 200 searchable IDs with display name, description, numeric rank, normal inheritance flag, source provenance, and catalogue version. Includes negative through rainbow and World Tree traits; it does not itself authorize mutation. |
+| GET | `/pal-grants/capability` | Fail-closed Pal creation provider state. `ready` requires explicit enablement, a matching safe catalogue, a fresh heartbeat, and exact-build bridge validation. |
+| POST | `/players/{uid}/pal-grants` | **Admin only.** `{characterId, spec, reason, idempotencyKey}` → `202` durable queued Palbox grant. Online players and bounded version-pinned specs only. `passiveSkillIds` accepts at most four unique IDs and each must exist in the pinned standard-passive catalogue. |
+| GET | `/pal-grants` | **Admin only.** Newest 100 durable Pal-grant audit records, reconciling result files without retrying a creation. |
+| GET | `/pal-grants/{requestId}` | **Admin only.** One audited Pal grant and its current `queued`, `succeeded`, or `failed` state. |
 | GET/PUT | `/whitelist` | Legacy path for the local player-annotation ledger: `[{steamId, name?}]`; PUT replaces. It does **not** enforce who may join. |
 
 ## Guilds
