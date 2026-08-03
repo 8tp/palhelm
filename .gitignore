@@ -37,3 +37,4 @@ oo2core*
 
 # wrangler local cache
 .wrangler/
+mods/palhelm-pal-native/dist/

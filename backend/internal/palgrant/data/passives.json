@@ -1,0 +1,817 @@
+{
+  "schemaVersion": 1,
+  "catalogVersion": "palcalc_v23_b5e13e90fedc",
+  "source": {
+    "name": "PalCalc",
+    "version": "v23",
+    "commit": "b5e13e90fedc2e95d54fa223da77be464c313001",
+    "url": "https://github.com/tylercamp/palcalc/tree/b5e13e90fedc2e95d54fa223da77be464c313001"
+  },
+  "passives": [
+    {
+      "id": "WorldTree_CraftSpeed",
+      "name": "Demon’s Hand",
+      "description": "Work Speed +90%\nSAN dreceases +15.0% faster\nWorld Tree harvestables won't vanish when approached.",
+      "rank": 5,
+      "inheritable": false
+    },
+    {
+      "id": "WorldTree_MoveSpeed",
+      "name": "Dimensional Leap",
+      "description": "Movement Speed +50%\nIncreases Hunger depletion rate by +15.0%\nWorld Tree resources will not vanish when approached.",
+      "rank": 5,
+      "inheritable": false
+    },
+    {
+      "id": "WorldTree_ATK_DEF",
+      "name": "God of Destruction",
+      "description": "Attack +40%\nDefense +20%\nMax Health -50%\nWorld Tree resources will not vanish when approached.",
+      "rank": 5,
+      "inheritable": false
+    },
+    {
+      "id": "WorldTree_Sanity",
+      "name": "Hermit Sage",
+      "description": "SAN depletion rate -50.0%\nWork Speed -20%\nWorld Tree resources will not vanish when approached.",
+      "rank": 5,
+      "inheritable": false
+    },
+    {
+      "id": "WorldTree_DEF",
+      "name": "Sanctified Meat Shield",
+      "description": "Defense +50%\nAttack -30%\nWorld Tree resources will not vanish when approached.",
+      "rank": 5,
+      "inheritable": false
+    },
+    {
+      "id": "WorldTree_ATK",
+      "name": "Twin-Edged Holy Blade",
+      "description": "Attack +50%\nDefense -30%\nWorld Tree resources will not vanish when approached.",
+      "rank": 5,
+      "inheritable": false
+    },
+    {
+      "id": "WorldTree_FullStomach",
+      "name": "World Tree Seedbed",
+      "description": "Decrease Hunger depletion rate by +50.0%\nHP -20%\nWorld Tree resources will not vanish when approached.",
+      "rank": 5,
+      "inheritable": false
+    },
+    {
+      "id": "MutationPal_Babysitter",
+      "name": "Babysitter",
+      "description": "While at a base, increases egg production speed by +30% and incubation speed by +30% for Pals assigned to a Breeding Farm.",
+      "rank": 4,
+      "inheritable": false
+    },
+    {
+      "id": "PAL_ALLAttack_up3",
+      "name": "Demon God",
+      "description": "Attack +30%\nDefense +5%",
+      "rank": 4,
+      "inheritable": true
+    },
+    {
+      "id": "Deffence_up3",
+      "name": "Diamond Body",
+      "description": "Defense +30%\nImmune to Flinch\nImmune to Knockback",
+      "rank": 4,
+      "inheritable": true
+    },
+    {
+      "id": "Stamina_Up_3",
+      "name": "Eternal Engine",
+      "description": "Max stamina +75%\n*This effect is only valid for rideable pals.",
+      "rank": 4,
+      "inheritable": true
+    },
+    {
+      "id": "EternalFlame",
+      "name": "Eternal Flame",
+      "description": "30% increase to Fire attack damage.\n30% increase to Lightning attack damage.",
+      "rank": 4,
+      "inheritable": false
+    },
+    {
+      "id": "PAL_Sanity_Down_3",
+      "name": "Heart of the Immovable King",
+      "description": "SAN drops +20.0% slower.",
+      "rank": 4,
+      "inheritable": true
+    },
+    {
+      "id": "MutationPal_ExplosionResist",
+      "name": "Heavily Armored",
+      "description": "Immune to Explosion Damage",
+      "rank": 4,
+      "inheritable": false
+    },
+    {
+      "id": "MutationPal_Mutant",
+      "name": "Idiosyncratic",
+      "description": "Pal and Player Auto Health Regeneration Rate +50%\nDefense +25%\nImmune to Poison Damage\nImmune to Burn Damage",
+      "rank": 4,
+      "inheritable": false
+    },
+    {
+      "id": "MutationPal_Immortal",
+      "name": "Immortality",
+      "description": "Life Steal +5%\nPal Auto Health Regeneration Rate +100%\nAttack +15%",
+      "rank": 4,
+      "inheritable": false
+    },
+    {
+      "id": "Invader",
+      "name": "Invader",
+      "description": "30% increase in Dark attack damage.\n30% increase in Dragon attack damage.",
+      "rank": 4,
+      "inheritable": false
+    },
+    {
+      "id": "SwimSpeed_up_3",
+      "name": "King of the Waves",
+      "description": "50% increase movement speed on water.",
+      "rank": 4,
+      "inheritable": true
+    },
+    {
+      "id": "SelfDeathAddItemDrop_up_3",
+      "name": "Lavish Hospitality",
+      "description": "Your Dropped Items + 100%",
+      "rank": 4,
+      "inheritable": true
+    },
+    {
+      "id": "Legend",
+      "name": "Legend",
+      "description": "Attack +20%\nDefense +20%\nMovement Speed increases 20%",
+      "rank": 4,
+      "inheritable": false
+    },
+    {
+      "id": "RideJumpCount_Increase1",
+      "name": "Lightfooted",
+      "description": "Mounted Jump Count +1",
+      "rank": 4,
+      "inheritable": true
+    },
+    {
+      "id": "Rare",
+      "name": "Lucky",
+      "description": "Attack +15%\nDefense +15%\nWork Speed +20%",
+      "rank": 4,
+      "inheritable": false
+    },
+    {
+      "id": "Nushi",
+      "name": "Lunker",
+      "description": "20% increase to Water attack damage \n20% increase to Ice attack damage \n20% increase to defense.",
+      "rank": 4,
+      "inheritable": false
+    },
+    {
+      "id": "PAL_FullStomach_Down_3",
+      "name": "Mastery of Fasting",
+      "description": "Hunger decreases +20.0% slower.",
+      "rank": 4,
+      "inheritable": true
+    },
+    {
+      "id": "WorkSuitabilityAddRank_MonsterFarm_2",
+      "name": "Ranch Master",
+      "description": "Farming's Work Suitability +2",
+      "rank": 4,
+      "inheritable": true
+    },
+    {
+      "id": "CraftSpeed_up3",
+      "name": "Remarkable Craftsmanship",
+      "description": "Work Speed +75%",
+      "rank": 4,
+      "inheritable": true
+    },
+    {
+      "id": "Salvation",
+      "name": "Savior",
+      "description": "30% increase in Neutral attack damage.\n30% increase in Grass attack damage.",
+      "rank": 4,
+      "inheritable": false
+    },
+    {
+      "id": "Witch",
+      "name": "Siren of the Void",
+      "description": "30% increase in Dark attack damage.\n30% increase in Ice attack damage.",
+      "rank": 4,
+      "inheritable": false
+    },
+    {
+      "id": "RideJumpCount_Increase2",
+      "name": "Skymarcher",
+      "description": "Mounted Jump Count +2",
+      "rank": 4,
+      "inheritable": false
+    },
+    {
+      "id": "MoveSpeed_up_3",
+      "name": "Swift",
+      "description": "30% increase to movement speed.",
+      "rank": 4,
+      "inheritable": true
+    },
+    {
+      "id": "Vampire",
+      "name": "Vampiric",
+      "description": "Absorbs a portion of the damage dealt to restore Health. \nDoes not sleep at night and continues to work.",
+      "rank": 4,
+      "inheritable": true
+    },
+    {
+      "id": "SwimSpeed_up_2",
+      "name": "Ace Swimmer",
+      "description": "40% increase movement speed on water.",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "CraftSpeed_up2",
+      "name": "Artisan",
+      "description": "Work Speed +50%",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "Deffence_up2",
+      "name": "Burly Body",
+      "description": "Defense +20%\nImmune to Flinch",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "ElementBoost_Normal_2_PAL",
+      "name": "Celestial Emperor",
+      "description": "30% increase in Neutral attack damage.",
+      "rank": 3,
+      "inheritable": false
+    },
+    {
+      "id": "PAL_FullStomach_Down_2",
+      "name": "Diet Lover",
+      "description": "Hunger decreases +15.0% slower.",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "ElementBoost_Dragon_2_PAL",
+      "name": "Divine Dragon",
+      "description": "30% increase in Dragon attack damage.",
+      "rank": 3,
+      "inheritable": false
+    },
+    {
+      "id": "ElementBoost_Earth_2_PAL",
+      "name": "Earth Emperor",
+      "description": "30% increase in Earth attack damage.",
+      "rank": 3,
+      "inheritable": false
+    },
+    {
+      "id": "WorkSuitabilityAddRank_MonsterFarm_1",
+      "name": "Farmhand",
+      "description": "Farming's Work Suitability +1",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "PAL_ALLAttack_up2",
+      "name": "Ferocious",
+      "description": "Attack +20%",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "ElementBoost_Fire_2_PAL",
+      "name": "Flame Emperor",
+      "description": "30% increase in Fire attack damage.",
+      "rank": 3,
+      "inheritable": false
+    },
+    {
+      "id": "AutoHPRegeneRate_Passive",
+      "name": "Healing Coach",
+      "description": "Player Auto Health Regeneration Rate +5%",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "ElementBoost_Ice_2_PAL",
+      "name": "Ice Emperor",
+      "description": "30% increase in Ice attack damage.",
+      "rank": 3,
+      "inheritable": false
+    },
+    {
+      "id": "Stamina_Up_1",
+      "name": "Infinite Stamina",
+      "description": "Max stamina +50%\n*This effect is only valid for rideable pals.",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "TrainerLogging_up1",
+      "name": "Logging Foreman",
+      "description": "25% increase in Player Logging Efficiency.",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "ElementBoost_Thunder_2_PAL",
+      "name": "Lord of Lightning",
+      "description": "30% increase in Lightning attack damage.",
+      "rank": 3,
+      "inheritable": false
+    },
+    {
+      "id": "ElementBoost_Aqua_2_PAL",
+      "name": "Lord of the Sea",
+      "description": "30% increase in Water attack damage.",
+      "rank": 3,
+      "inheritable": false
+    },
+    {
+      "id": "ElementBoost_Dark_2_PAL",
+      "name": "Lord of the Underworld",
+      "description": "30% increase in Dark attack damage.",
+      "rank": 3,
+      "inheritable": false
+    },
+    {
+      "id": "TrainerMining_up1",
+      "name": "Mine Foreman",
+      "description": "25% increase in Player Mining Efficiency.",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "TrainerWorkSpeed_UP_1",
+      "name": "Motivational Leader",
+      "description": "25% increase in Player Work Speed.",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "SalePrice_Up_1",
+      "name": "Noble",
+      "description": "Increases the value of items when sold by +5%",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "Test_PalEgg_HatchingSpeed_Up",
+      "name": "Philanthropist",
+      "description": "When assigned to a Breeding Farm, breeding speed is increased by 100%.",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "ReloadSpeedUp_Passive",
+      "name": "Reload Master",
+      "description": "Player Reload Speed +4%",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "MoveSpeed_up_2",
+      "name": "Runner",
+      "description": "20% increase to movement speed.",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "CoolTimeReduction_Up_1",
+      "name": "Serenity",
+      "description": "Active skill cooldown reduction 30%\nAttack +10%",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "SelfDeathAddItemDrop_up_2",
+      "name": "Service-Minded",
+      "description": "Your Dropped Items + 50%",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "ElementBoost_Leaf_2_PAL",
+      "name": "Spirit Emperor",
+      "description": "30% increase in Grass attack damage.",
+      "rank": 3,
+      "inheritable": false
+    },
+    {
+      "id": "TrainerDEF_UP_1",
+      "name": "Stronghold Strategist",
+      "description": "10% increase in Player Defense.",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "TrainerATK_UP_1",
+      "name": "Vanguard",
+      "description": "10% increase in Player Attack.",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "PlayerSP_DecreaseRate_Passive",
+      "name": "Wellness Watcher",
+      "description": "Player Stamina Consumption -5.0%",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "MiniNushi",
+      "name": "Whopper",
+      "description": "5% increase to Water attack damage \n5% increase to Ice attack damage \n5% increase to defense.",
+      "rank": 3,
+      "inheritable": false
+    },
+    {
+      "id": "PAL_Sanity_Down_2",
+      "name": "Workaholic",
+      "description": "SAN drops +15.0% slower.",
+      "rank": 3,
+      "inheritable": true
+    },
+    {
+      "id": "Deffence_up2_2",
+      "name": "Heavyweight",
+      "description": "Defense +20%\nImmune to Knockback",
+      "rank": 2,
+      "inheritable": true
+    },
+    {
+      "id": "Noukin",
+      "name": "Musclehead",
+      "description": "Attack +30%\nWork Speed -50%",
+      "rank": 2,
+      "inheritable": true
+    },
+    {
+      "id": "ElementResist_Normal_1_PAL",
+      "name": "Abnormal",
+      "description": "10% decrease in incoming Neutral damage.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "PAL_oraora",
+      "name": "Aggressive",
+      "description": "Attack +10%\nDefense -10%",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "ElementBoost_Dragon_1_PAL",
+      "name": "Blood of the Dragon",
+      "description": "10% increase in Dragon attack damage.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "ElementResist_Leaf_1_PAL",
+      "name": "Botanical Barrier",
+      "description": "10% decrease in incoming Grass damage.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "PAL_ALLAttack_up1",
+      "name": "Brave",
+      "description": "Attack +10%",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "ElementBoost_Thunder_1_PAL",
+      "name": "Capacitor",
+      "description": "10% increase in Lightning attack damage.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "ElementResist_Dark_1_PAL",
+      "name": "Cheery",
+      "description": "10% decrease in incoming Dark damage.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "ElementBoost_Ice_1_PAL",
+      "name": "Coldblooded",
+      "description": "10% increase in Ice attack damage.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "PAL_conceited",
+      "name": "Conceited",
+      "description": "Work Speed +10%\nDefense -10%",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "PAL_FullStomach_Down_1",
+      "name": "Dainty Eater",
+      "description": "Hunger decreases +10.0% slower.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "ElementResist_Dragon_1_PAL",
+      "name": "Dragonkiller",
+      "description": "10% decrease in incoming Dragon damage.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "ElementResist_Earth_1_PAL",
+      "name": "Earthquake Resistant",
+      "description": "10% decrease in incoming Earth damage.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "SalePrice_Up_2",
+      "name": "Fine Furs",
+      "description": "Increases the value of items when sold by +3%",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "Stamina_Up_2",
+      "name": "Fit as a Fiddle",
+      "description": "Max stamina +25%\n*This effect is only valid for rideable pals.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "ElementBoost_Leaf_1_PAL",
+      "name": "Fragrant Foliage",
+      "description": "10% increase in Grass attack damage.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "Deffence_up1",
+      "name": "Hard Skin",
+      "description": "Defense +10%",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "ElementResist_Ice_1_PAL",
+      "name": "Heated Body",
+      "description": "10% decrease in incoming Ice damage.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "PAL_rude",
+      "name": "Hooligan",
+      "description": "Attack +15%\nWork Speed -10%",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "ElementBoost_Aqua_1_PAL",
+      "name": "Hydromaniac",
+      "description": "10% increase in Water attack damage.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "CoolTimeReduction_Up_2",
+      "name": "Impatient",
+      "description": "Active skill cooldown reduction 15%",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "Nocturnal",
+      "name": "Insomnia",
+      "description": "Does not sleep and continues to work even at night.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "ElementResist_Thunder_1_PAL",
+      "name": "Insulated Body",
+      "description": "10% decrease in incoming Lightning damage.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "PAL_masochist",
+      "name": "Masochist",
+      "description": "Defense +15%\nAttack -15%",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "MoveSpeed_up_1",
+      "name": "Nimble",
+      "description": "10% increase to movement speed.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "Alien",
+      "name": "Otherworldly Cells",
+      "description": "Attack +10%\nFire damage reduction 15%\nLightning damage reduction 15%",
+      "rank": 1,
+      "inheritable": false
+    },
+    {
+      "id": "PAL_Sanity_Down_1",
+      "name": "Positive Thinker",
+      "description": "SAN drops +10.0% slower.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "ElementBoost_Earth_1_PAL",
+      "name": "Power of Gaia",
+      "description": "10% increase in Earth attack damage.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "ElementBoost_Fire_1_PAL",
+      "name": "Pyromaniac",
+      "description": "10% increase in Fire attack damage.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "PAL_sadist",
+      "name": "Sadist",
+      "description": "Attack +15%\nDefense -15%",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "CraftSpeed_up1",
+      "name": "Serious",
+      "description": "Work Speed +20%",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "SwimSpeed_up_1",
+      "name": "Sleek Stroke",
+      "description": "30% increase movement speed on water.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "ElementBoost_Normal_1_PAL",
+      "name": "Spirit of Zen",
+      "description": "10% increase in Neutral attack damage.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "ElementResist_Fire_1_PAL",
+      "name": "Suntan Lover",
+      "description": "10% decrease in incoming Fire damage.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "ElementBoost_Dark_1_PAL",
+      "name": "Veil of Darkness",
+      "description": "10% increase in Dark attack damage.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "ElementResist_Aqua_1_PAL",
+      "name": "Waterproof",
+      "description": "10% decrease in incoming Water damage.",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "PAL_CorporateSlave",
+      "name": "Work Slave",
+      "description": "Work Speed +30%\nAttack -30%",
+      "rank": 1,
+      "inheritable": true
+    },
+    {
+      "id": "CraftSpeed_down1",
+      "name": "Clumsy",
+      "description": "Work Speed -10%",
+      "rank": -1,
+      "inheritable": true
+    },
+    {
+      "id": "PAL_ALLAttack_down1",
+      "name": "Coward",
+      "description": "Attack -10%",
+      "rank": -1,
+      "inheritable": true
+    },
+    {
+      "id": "Deffence_down1",
+      "name": "Downtrodden",
+      "description": "Defense -10%",
+      "rank": -1,
+      "inheritable": true
+    },
+    {
+      "id": "CoolTimeReduction_Down_1",
+      "name": "Easygoing",
+      "description": "Active skill cooldown extension -15%",
+      "rank": -1,
+      "inheritable": true
+    },
+    {
+      "id": "PAL_FullStomach_Up_1",
+      "name": "Glutton",
+      "description": "Hunger decreases +10.0% faster.",
+      "rank": -1,
+      "inheritable": true
+    },
+    {
+      "id": "NonKilling",
+      "name": "Mercy Hit",
+      "description": "Pacifist.\nWill not reduce the target's Health below 1.",
+      "rank": -1,
+      "inheritable": true
+    },
+    {
+      "id": "NightOwl",
+      "name": "Night Owl",
+      "description": "Tends to nap through the day, due to being nocturnal.",
+      "rank": -1,
+      "inheritable": true
+    },
+    {
+      "id": "SalePrice_Down_1",
+      "name": "Shabby",
+      "description": "Decrease the value of items when sold by -10%",
+      "rank": -1,
+      "inheritable": true
+    },
+    {
+      "id": "Stamina_Down_1",
+      "name": "Sickly",
+      "description": "Max Stamina -25%\n*This effect is only valid for rideable pals.",
+      "rank": -1,
+      "inheritable": true
+    },
+    {
+      "id": "PAL_Sanity_Up_1",
+      "name": "Unstable",
+      "description": "SAN drops +10.0% faster.",
+      "rank": -1,
+      "inheritable": true
+    },
+    {
+      "id": "PAL_FullStomach_Up_2",
+      "name": "Bottomless Stomach",
+      "description": "Hunger decreases +15.0% faster.",
+      "rank": -2,
+      "inheritable": true
+    },
+    {
+      "id": "PAL_Sanity_Up_2",
+      "name": "Destructive",
+      "description": "SAN drops +15.0% faster.",
+      "rank": -2,
+      "inheritable": true
+    },
+    {
+      "id": "Deffence_down2",
+      "name": "Brittle",
+      "description": "Defense -20%",
+      "rank": -3,
+      "inheritable": true
+    },
+    {
+      "id": "PAL_ALLAttack_down2",
+      "name": "Pacifist",
+      "description": "Attack -20%",
+      "rank": -3,
+      "inheritable": true
+    },
+    {
+      "id": "CraftSpeed_down2",
+      "name": "Slacker",
+      "description": "Work Speed -30%",
+      "rank": -3,
+      "inheritable": true
+    }
+  ]
+}

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
-import type { GrantableItem, Player, PlayerActivity, PlayerActivityWindow, WhitelistEntry } from "../../api/types";
+import type { GrantableItem, GrantablePalSpecies, GrantablePassiveSkill, PalGenerationSpec, Player, PlayerActivity, PlayerActivityWindow, WhitelistEntry } from "../../api/types";
 import { useIsAdmin } from "../../app/AuthProvider";
 import { usePaletteBridge } from "../../app/paletteBridge";
 import { formatDuration, formatRelativeToNow, truncateMiddle } from "../../app/format";
@@ -11,11 +11,12 @@ import { guildDisplayName } from "../../app/guildDisplay";
 import { Card, CardBody, CardHead } from "../../components/Card";
 import { Tabs } from "../../components/Tabs";
 import { Pill } from "../../components/Pill";
+import { ToggleChip } from "../../components/ToggleChip";
 import { Banner } from "../../components/Banner";
 import { EmptyState } from "../../components/EmptyState";
 import { Dialog, ConfirmDialog } from "../../components/ConfirmDialog";
 import { DropdownMenu, DropdownMenuItem } from "../../components/DropdownMenu";
-import { Field, SearchField } from "../../components/Field";
+import { Field, SearchField, SelectField } from "../../components/Field";
 import { useToast } from "../../components/Toast";
 import { IconPlayers } from "../../components/icons";
 import { PlayerAvatar } from "../../components/PlayerAvatar";
@@ -47,6 +48,15 @@ function ItemRarityBadge({ rarity }: { rarity?: string }) {
   const normalized = label.toLowerCase();
   const tone = knownItemRarities.has(normalized) ? normalized : "other";
   return <span className={`item-rarity item-rarity-${tone}`}>{label}</span>;
+}
+
+function passiveTier(passive: Pick<GrantablePassiveSkill, "rank">): { label: string; className: string } {
+  if (passive.rank >= 5) return { label: "World Tree", className: "world-tree" };
+  if (passive.rank === 4) return { label: "Rainbow", className: "rainbow" };
+  if (passive.rank === 3) return { label: "Gold", className: "gold" };
+  if (passive.rank === 2) return { label: "Silver", className: "silver" };
+  if (passive.rank === 1) return { label: "Bronze", className: "bronze" };
+  return { label: "Negative", className: "negative" };
 }
 
 function lastSeenLabel(p: Player): string {
@@ -306,6 +316,7 @@ function PlayerDetailPanel({ uid, onAction }: { uid: string | null; onAction: (k
   const [showAllPals, setShowAllPals] = useState(false);
   const [messageOpen, setMessageOpen] = useState(false);
   const [itemGrantOpen, setItemGrantOpen] = useState(false);
+	const [palGrantOpen, setPalGrantOpen] = useState(false);
   const [expandedPalId, setExpandedPalId] = useState<string | null>(null);
 
   useEffect(() => setExpandedPalId(null), [uid]);
@@ -322,6 +333,12 @@ function PlayerDetailPanel({ uid, onAction }: { uid: string | null; onAction: (k
     enabled: isAdmin && uid !== null,
     refetchInterval: 30_000,
   });
+	const palGrantsQuery = useQuery({
+		queryKey: ["pal-grants"],
+		queryFn: () => api.palGrants.grants(),
+		enabled: isAdmin && uid !== null,
+		refetchInterval: 30_000,
+	});
 
   if (!uid) {
     return (
@@ -452,6 +469,9 @@ function PlayerDetailPanel({ uid, onAction }: { uid: string | null; onAction: (k
                 <button type="button" className="btn btn-sm" disabled={!d.online} onClick={() => setItemGrantOpen(true)}>
                   Give item…
                 </button>
+				<button type="button" className="btn btn-sm" disabled={!d.online} onClick={() => setPalGrantOpen(true)}>
+					Give Pal…
+				</button>
                 <button
                   type="button"
                   className="btn btn-sm"
@@ -485,11 +505,22 @@ function PlayerDetailPanel({ uid, onAction }: { uid: string | null; onAction: (k
                   ))}
                 </div>
               )}
+				{(palGrantsQuery.data ?? []).filter((grant) => grant.playerUid === d.uid).slice(0, 5).length > 0 && (
+					<div className="item-grant-history" aria-label={`Recent Pal grants for ${d.name}`}>
+						{(palGrantsQuery.data ?? []).filter((grant) => grant.playerUid === d.uid).slice(0, 5).map((grant) => (
+							<div key={grant.requestId}>
+								<span><strong>Lv. {grant.spec.levelMin === grant.spec.levelMax ? grant.spec.levelMin : `${grant.spec.levelMin}–${grant.spec.levelMax}`} {grant.displayName}</strong><small>{grant.reason}</small></span>
+								<Pill tone={grant.status === "succeeded" ? "ok" : grant.status === "failed" ? "danger" : "idle"}>{grant.status}</Pill>
+							</div>
+						))}
+					</div>
+				)}
             </>
           )}
 
           <MessageDialog open={messageOpen} onClose={() => setMessageOpen(false)} playerName={d.name} />
           <ItemGrantDialog open={itemGrantOpen} onClose={() => setItemGrantOpen(false)} player={d} />
+			<PalGrantDialog open={palGrantOpen} onClose={() => setPalGrantOpen(false)} player={d} />
         </>
       )}
     </aside>
@@ -646,6 +677,237 @@ function ItemGrantDialog({ open, onClose, player }: { open: boolean; onClose: ()
               <Field label="Quantity" type="number" min={1} max={selected.maxQuantity} value={quantity} onChange={(event) => setQuantity(Number(event.target.value))} hint={<small>Maximum {selected.maxQuantity.toLocaleString()}</small>} />
               <Field label="Reason" value={reason} maxLength={200} onChange={(event) => setReason(event.target.value)} placeholder="Why is this being granted?" />
             </div>
+          )}
+        </div>
+      )}
+    </Dialog>
+  );
+}
+
+function PalGrantDialog({ open, onClose, player }: { open: boolean; onClose: () => void; player: Player }) {
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState<GrantablePalSpecies | null>(null);
+  const [levelMin, setLevelMin] = useState(1);
+  const [levelMax, setLevelMax] = useState(1);
+  const [advanced, setAdvanced] = useState(false);
+  const [gender, setGender] = useState<PalGenerationSpec["gender"]>("random");
+  const [alpha, setAlpha] = useState(false);
+  const [lucky, setLucky] = useState(false);
+  const [ivMode, setIVMode] = useState<PalGenerationSpec["ivMode"]>("natural");
+  const [talentHp, setTalentHp] = useState(50);
+  const [talentMelee, setTalentMelee] = useState(50);
+  const [talentShot, setTalentShot] = useState(50);
+  const [talentDefense, setTalentDefense] = useState(50);
+  const [condensationStars, setCondensationStars] = useState(0);
+  const [passiveSearch, setPassiveSearch] = useState("");
+  const [selectedPassives, setSelectedPassives] = useState<GrantablePassiveSkill[]>([]);
+  const [reason, setReason] = useState("");
+  const [reviewing, setReviewing] = useState(false);
+  const [idempotencyKey, setIdempotencyKey] = useState("");
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const capability = useQuery({ queryKey: ["pal-grants", "capability"], queryFn: () => api.palGrants.capability(), enabled: open, refetchInterval: open ? 15_000 : false });
+  const catalog = useQuery({ queryKey: ["pal-grants", "catalog", search], queryFn: () => api.palGrants.catalog(search, 50), enabled: open, staleTime: 30_000 });
+  const passives = useQuery({ queryKey: ["pal-grants", "passives", passiveSearch], queryFn: () => api.palGrants.passives(passiveSearch, 200), enabled: open && advanced, staleTime: 60_000 });
+  const maxLevel = catalog.data?.maxLevel ?? 80;
+  const spec = useMemo<PalGenerationSpec>(() => ({
+    mode: advanced ? "custom" : "natural",
+    levelMin,
+    levelMax,
+    gender: advanced ? gender : "random",
+    alpha: advanced && alpha,
+    lucky: advanced && lucky,
+    ivMode: advanced ? ivMode : "natural",
+    ...(advanced && ivMode !== "natural" ? { talentHp, talentMelee, talentShot, talentDefense } : {}),
+    passiveSkillIds: advanced ? selectedPassives.map((passive) => passive.id) : [],
+    condensationStars: advanced ? condensationStars : 0,
+  }), [advanced, alpha, condensationStars, gender, ivMode, levelMax, levelMin, lucky, selectedPassives, talentDefense, talentHp, talentMelee, talentShot]);
+  const ivValuesValid = ivMode === "natural" || [talentHp, talentMelee, talentShot, talentDefense].every((value) => Number.isInteger(value) && value >= 0 && value <= 100);
+  const canReview = selected !== null && levelMin >= 1 && levelMax >= levelMin && levelMax <= maxLevel && reason.trim().length >= 3 && !(alpha && lucky) && (!advanced || ivValuesValid);
+  const mutation = useMutation({
+    mutationFn: () => {
+      if (!selected || !idempotencyKey) throw new Error("Grant confirmation expired; review it again.");
+      return api.palGrants.grant(player.uid, selected.characterId, spec, reason.trim(), idempotencyKey);
+    },
+    onSuccess: (grant) => {
+      toast.push(`${grant.displayName} queued for ${grant.playerName}.`, "ok");
+      void queryClient.invalidateQueries({ queryKey: ["pal-grants"] });
+      void (async () => {
+        for (let attempt = 0; attempt < 20; attempt += 1) {
+          await new Promise((resolve) => window.setTimeout(resolve, 2_000));
+          try {
+            const status = await api.palGrants.grantStatus(grant.requestId);
+            if (status.status === "succeeded") {
+              void queryClient.invalidateQueries({ queryKey: ["pal-grants"] });
+              toast.push(`Lv. ${status.result?.level ?? status.spec.levelMin} ${status.displayName} delivered to ${status.playerName}.`, "ok");
+              return;
+            }
+            if (status.status === "failed") {
+              void queryClient.invalidateQueries({ queryKey: ["pal-grants"] });
+              toast.push(status.errorMessage || `Pal grant for ${status.playerName} failed.`, "danger");
+              return;
+            }
+          } catch {
+            // The audit record is authoritative. Never resubmit a creation request.
+          }
+        }
+      })();
+      setSelected(null);
+      setSelectedPassives([]);
+      setReviewing(false);
+      setIdempotencyKey("");
+      onClose();
+    },
+    onError: (error) => toast.push(error instanceof Error ? error.message : "Pal grant failed.", "danger"),
+  });
+
+  useEffect(() => {
+    if (!open) {
+      setReviewing(false);
+      setIdempotencyKey("");
+    }
+  }, [open]);
+
+  return (
+    <Dialog
+      open={open}
+      title={reviewing ? "Confirm Pal grant" : `Give Pal to ${player.name}`}
+      onClose={() => { if (!mutation.isPending) onClose(); }}
+      className="item-grant-dialog"
+      footer={
+        <>
+          <button type="button" className="btn btn-ghost" onClick={reviewing ? () => { setReviewing(false); setIdempotencyKey(""); } : onClose} disabled={mutation.isPending}>{reviewing ? "Back" : "Cancel"}</button>
+          {reviewing ? (
+            <button type="button" className="btn btn-primary" onClick={() => mutation.mutate()} disabled={mutation.isPending || capability.data?.ready !== true}>{mutation.isPending ? "Creating…" : "Confirm grant"}</button>
+          ) : (
+            <button type="button" className="btn btn-primary" onClick={() => { setIdempotencyKey(newIdempotencyKey()); setReviewing(true); }} disabled={!canReview || capability.data?.ready !== true}>Review grant</button>
+          )}
+        </>
+      }
+    >
+      {capability.isLoading && <p className="item-grant-note">Checking the Pal creation bridge…</p>}
+      {!capability.isLoading && capability.data?.ready !== true && (
+        <Banner tone="warn">Preview only: {capability.data?.reason ?? "The Pal creation bridge is unavailable."} Review and confirmation remain disabled.</Banner>
+      )}
+      {reviewing && selected ? (
+        <div className="pal-grant-review">
+          <PalIcon characterId={selected.characterId} displayName={selected.displayName} />
+          <div>
+            <strong>{selected.displayName}</strong>
+            <span>Level: {levelMin === levelMax ? levelMin : `${levelMin}–${levelMax}`}</span>
+            <span>{advanced ? `${gender} · ${alpha ? "Alpha" : lucky ? "Lucky" : "normal"} · ${ivMode} IVs · ${condensationStars}★` : "Natural gender, IVs, passives, and skills"}</span>
+            {advanced && <span>Passives: {selectedPassives.length > 0 ? selectedPassives.map((passive) => passive.name).join(" · ") : "natural roll"}</span>}
+            <span>Destination: first safe Palbox slot</span>
+            <span>Recipient: {player.name}</span>
+            <span>Reason: {reason.trim()}</span>
+          </div>
+          <Banner tone="warn">This creates a persistent Pal. Palhelm submits once, never retries an uncertain result, and keeps an audit record.</Banner>
+        </div>
+      ) : (
+        <div className="item-grant-form">
+          <p className="item-grant-note">Online players only · {(catalog.data?.catalogItems ?? capability.data?.catalogItems ?? 0).toLocaleString()} allowlisted species/forms · Palbox delivery</p>
+            <SearchField value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search Pal name or Character ID…" autoFocus />
+            <div className="item-grant-results pal-grant-results" role="listbox" aria-label="Grantable Pal species">
+              {catalog.isLoading && <span className="item-grant-note">Searching Pal catalogue…</span>}
+              {catalog.isError && <span className="item-grant-note">The Pal catalogue could not be loaded. Try the search again.</span>}
+            {catalog.data?.species.map((pal) => (
+              <button type="button" key={pal.characterId} role="option" aria-selected={selected?.characterId === pal.characterId} className={selected?.characterId === pal.characterId ? "pal-grant-item is-selected" : "pal-grant-item"} onClick={() => setSelected(pal)}>
+                <PalIcon characterId={pal.characterId} displayName={pal.displayName} />
+                <span><strong>{pal.displayName}</strong><small>{pal.characterId}</small></span>
+              </button>
+            ))}
+            {catalog.data && catalog.data.species.length === 0 && <span className="item-grant-note">No safe Pal species match that search.</span>}
+          </div>
+          {selected && (
+            <>
+              <div className="pal-grant-fields">
+                <Field label="Minimum level" type="number" min={1} max={maxLevel} value={levelMin} onChange={(event) => setLevelMin(Number(event.target.value))} />
+                <Field label="Maximum level" type="number" min={1} max={maxLevel} value={levelMax} onChange={(event) => setLevelMax(Number(event.target.value))} />
+                <Field label="Reason" value={reason} maxLength={200} onChange={(event) => setReason(event.target.value)} placeholder="Why is this Pal being granted?" />
+              </div>
+              <section className="pal-grant-mode" aria-labelledby="pal-grant-mode-label">
+                <div>
+                  <strong id="pal-grant-mode-label">Generation mode</strong>
+                  <small>Natural uses the game's ordinary randomized specimen generation.</small>
+                </div>
+                <div role="group" aria-label="Pal generation mode">
+                  <ToggleChip pressed={!advanced} onClick={() => setAdvanced(false)}>Natural roll</ToggleChip>
+                  <ToggleChip pressed={advanced} onClick={() => setAdvanced(true)}>Customize specimen</ToggleChip>
+                </div>
+              </section>
+              {advanced && (
+                <div className="pal-grant-advanced">
+                  <SelectField label="Gender" value={gender} onChange={(event) => setGender(event.target.value as PalGenerationSpec["gender"])}><option value="random">Random</option><option value="female">Female</option><option value="male">Male</option></SelectField>
+                  <SelectField label="IV generation" value={ivMode} onChange={(event) => setIVMode(event.target.value as PalGenerationSpec["ivMode"])}><option value="natural">Natural random</option><option value="minimum">At least these values</option><option value="exact">Exact values</option></SelectField>
+                  <SelectField label="Condensation" value={condensationStars} onChange={(event) => setCondensationStars(Number(event.target.value))}>{[0, 1, 2, 3, 4].map((value) => <option key={value} value={value}>{value}★</option>)}</SelectField>
+                  <section className="pal-specimen-kind" aria-labelledby="pal-specimen-kind-label">
+                    <strong id="pal-specimen-kind-label">Specimen</strong>
+                    <div role="group" aria-label="Pal specimen type">
+                      <ToggleChip pressed={!alpha && !lucky} onClick={() => { setAlpha(false); setLucky(false); }}>Normal</ToggleChip>
+                      <ToggleChip pressed={alpha} onClick={() => { setAlpha(!alpha); setLucky(false); }}>Alpha</ToggleChip>
+                      <ToggleChip pressed={lucky} onClick={() => { setLucky(!lucky); setAlpha(false); }}>Lucky</ToggleChip>
+                    </div>
+                  </section>
+                  {ivMode !== "natural" && (
+                    <div className="pal-grant-ivs">
+                      <Field label="HP IV" type="number" min={0} max={100} value={talentHp} onChange={(event) => setTalentHp(Number(event.target.value))} />
+                      <Field label="Melee attack IV" type="number" min={0} max={100} value={talentMelee} onChange={(event) => setTalentMelee(Number(event.target.value))} />
+                      <Field label="Ranged attack IV" type="number" min={0} max={100} value={talentShot} onChange={(event) => setTalentShot(Number(event.target.value))} />
+                      <Field label="Defense IV" type="number" min={0} max={100} value={talentDefense} onChange={(event) => setTalentDefense(Number(event.target.value))} />
+                    </div>
+                  )}
+                  <section className="pal-passive-editor" aria-label="Passive skill editor">
+                    <div className="pal-passive-editor-head">
+                      <div>
+                        <strong>Passive skills</strong>
+                        <small aria-live="polite">{selectedPassives.length}/4 selected · all standard 1.0 traits</small>
+                      </div>
+                      <span className="pal-passive-source">{passives.data?.catalogItems ?? catalog.data?.passiveCatalogItems ?? 0} catalogued</span>
+                    </div>
+                    {selectedPassives.length > 0 && (
+                      <div className="pal-passive-selected" aria-label="Selected passive skills">
+                        {selectedPassives.map((passive) => {
+                          const tier = passiveTier(passive);
+                          return (
+                            <button type="button" key={passive.id} className={`pal-passive-chip tier-${tier.className}`} onClick={() => setSelectedPassives((current) => current.filter((item) => item.id !== passive.id))} title={`Remove ${passive.name}`}>
+                              <span>{passive.name}</span><small>{tier.label} · remove ×</small>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <SearchField value={passiveSearch} onChange={(event) => setPassiveSearch(event.target.value)} placeholder="Search passives, effects, or internal ID…" aria-label="Search passive skills" />
+                    <div className="pal-passive-results" role="listbox" aria-label="Available passive skills">
+                      {passives.isLoading && <span className="item-grant-note">Searching passive catalogue…</span>}
+                      {passives.isError && <span className="item-grant-note">The passive catalogue could not be loaded. Try the search again.</span>}
+                      {passives.data?.passives.map((passive) => {
+                        const tier = passiveTier(passive);
+                        const selectedPassive = selectedPassives.some((item) => item.id === passive.id);
+                        const disabled = !selectedPassive && selectedPassives.length >= 4;
+                        return (
+                          <button
+                            type="button"
+                            key={passive.id}
+                            role="option"
+                            aria-selected={selectedPassive}
+                            disabled={disabled}
+                            className={`pal-passive-option tier-${tier.className}${selectedPassive ? " is-selected" : ""}`}
+                            onClick={() => setSelectedPassives((current) => selectedPassive ? current.filter((item) => item.id !== passive.id) : [...current, passive])}
+                          >
+                            <span className="pal-passive-option-title"><strong>{passive.name}</strong><em>{tier.label}</em></span>
+                            <span>{passive.description || "No effect description available."}</span>
+                            <small>{passive.inheritable ? "Can be inherited" : "Normally fixed or special"} · {passive.id}</small>
+                          </button>
+                        );
+                      })}
+                      {passives.data && passives.data.passives.length === 0 && <span className="item-grant-note">No passive traits match that search.</span>}
+                    </div>
+                    <p className="item-grant-note">Rainbow and World Tree traits are allowed as explicit admin overrides. The bridge must read back the same four IDs before reporting success.</p>
+                  </section>
+                  <p className="item-grant-note">Active-skill, nickname, soul, and work-suitability editors remain fail-closed until their exact 1.0 write fields are validated in the maintenance probe.</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

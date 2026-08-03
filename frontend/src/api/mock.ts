@@ -27,6 +27,11 @@ import type {
   ItemCatalogPage,
   ItemGrant,
   ItemGrantCapability,
+	PalGrant,
+	PalGrantCapability,
+	PalGrantCatalog,
+	PalPassiveCatalog,
+	PalGenerationSpec,
   LiveWorldActor,
   LiveWorldSnapshot,
   MapDataset,
@@ -1380,6 +1385,72 @@ export async function listItemGrants(): Promise<ItemGrant[]> {
   requireAdmin();
   await latency();
   return [...mockGrants.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+const mockGrantablePals = [
+  { characterId: "anubis", displayName: "Anubis" },
+  { characterId: "sheepball", displayName: "Lamball" },
+  { characterId: "grassmammoth", displayName: "Mammorest" },
+  { characterId: "penguin", displayName: "Pengullet" },
+];
+const mockPalGrants = new Map<string, PalGrant>();
+
+export async function palGrantCapability(): Promise<PalGrantCapability> {
+  requireSession();
+  await latency();
+  return { enabled: true, ready: true, reason: "", protocolVersion: 1, gameVersion: "1.0.1", catalogVersion: "palworld_1.0_pinned", catalogItems: 249, lastHeartbeatAt: new Date().toISOString() };
+}
+
+export async function searchGrantablePals(q: string, limit: number): Promise<PalGrantCatalog> {
+  requireSession();
+  await latency();
+  const needle = q.trim().toLowerCase();
+  const species = mockGrantablePals.filter((pal) => !needle || `${pal.displayName} ${pal.characterId}`.toLowerCase().includes(needle)).slice(0, limit);
+  return { species, catalogVersion: "palworld_1.0_pinned", catalogItems: 249, maxLevel: 80, passiveCatalogVersion: "palcalc_v23_b5e13e90fedc", passiveCatalogItems: 115 };
+}
+
+const mockPassives = [
+  { id: "CraftSpeed_up3", name: "Remarkable Craftsmanship", description: "Work Speed +75%", rank: 4, inheritable: true },
+  { id: "PAL_ALLAttack_up3", name: "Demon God", description: "Attack +30%\nDefense +5%", rank: 4, inheritable: true },
+  { id: "WorkSuitabilityAddRank_MonsterFarm_2", name: "Ranch Master", description: "Farming's Work Suitability +2", rank: 4, inheritable: true },
+  { id: "WorldTree_ATK", name: "Twin-Edged Holy Blade", description: "Attack +50%\nDefense -30%", rank: 5, inheritable: false },
+  { id: "PAL_ALLAttack_up2", name: "Musclehead", description: "Attack +30%\nWork Speed -50%", rank: 3, inheritable: true },
+];
+
+export async function searchGrantablePassives(q: string, limit: number): Promise<PalPassiveCatalog> {
+  requireSession();
+  await latency();
+  const needle = q.trim().toLowerCase();
+  const passives = mockPassives.filter((passive) => !needle || `${passive.name} ${passive.id} ${passive.description}`.toLowerCase().includes(needle)).slice(0, limit);
+  return { passives, catalogVersion: "palcalc_v23_b5e13e90fedc", catalogItems: 115, ranks: [5, 4, 3], source: { name: "PalCalc", version: "v23", commit: "b5e13e90fedc2e95d54fa223da77be464c313001", url: "https://github.com/tylercamp/palcalc" } };
+}
+
+export async function grantPal(uid: string, characterId: string, spec: PalGenerationSpec, reason: string, idempotencyKey: string): Promise<PalGrant> {
+  requireAdmin();
+  await latency(150, 300);
+  const existing = mockPalGrants.get(idempotencyKey);
+  if (existing) return existing;
+  const species = mockGrantablePals.find((pal) => pal.characterId === characterId);
+  const player = players.find((candidate) => candidate.uid === uid);
+  if (!species || !player) throw new ApiRequestError(400, "invalid_grant", "The mock Pal grant is invalid.");
+  const now = new Date().toISOString();
+  const grant: PalGrant = { requestId: crypto.randomUUID().replaceAll("-", ""), createdAt: now, updatedAt: now, actor: "admin", playerUid: uid, playerName: player.name, characterId, displayName: species.displayName, spec, reason, status: "queued" };
+  mockPalGrants.set(idempotencyKey, grant);
+  return grant;
+}
+
+export async function palGrantStatus(requestId: string): Promise<PalGrant> {
+  requireAdmin();
+  await latency();
+  const grant = [...mockPalGrants.values()].find((candidate) => candidate.requestId === requestId);
+  if (!grant) throw new ApiRequestError(404, "grant_not_found", "Pal grant not found.");
+  return grant;
+}
+
+export async function listPalGrants(): Promise<PalGrant[]> {
+  requireAdmin();
+  await latency();
+  return [...mockPalGrants.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 // ---------- events ----------

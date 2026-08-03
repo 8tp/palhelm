@@ -218,6 +218,99 @@ export interface ItemGrant {
   errorMessage?: string;
 }
 
+// ---------- Pal grants (admin-only, server-authoritative creation boundary) ----------
+export interface PalGrantCapability {
+  enabled: boolean;
+  ready: boolean;
+  reason: string;
+  protocolVersion: number;
+  gameVersion?: string;
+  catalogVersion: string;
+  catalogItems: number;
+  lastHeartbeatAt?: string;
+}
+
+export interface GrantablePalSpecies {
+  characterId: string;
+  displayName: string;
+}
+
+export interface PalGrantCatalog {
+  species: GrantablePalSpecies[];
+  catalogVersion: string;
+  catalogItems: number;
+  maxLevel: number;
+  passiveCatalogVersion: string;
+  passiveCatalogItems: number;
+}
+
+export interface GrantablePassiveSkill {
+  id: string;
+  name: string;
+  description: string;
+  rank: number;
+  inheritable: boolean;
+}
+
+export interface PalPassiveCatalog {
+  passives: GrantablePassiveSkill[];
+  catalogVersion: string;
+  catalogItems: number;
+  ranks: number[];
+  source: { name: string; version: string; commit: string; url: string };
+}
+
+export interface PalGenerationSpec {
+  mode: "natural" | "custom";
+  levelMin: number;
+  levelMax: number;
+  gender: "random" | "male" | "female";
+  alpha: boolean;
+  lucky: boolean;
+  ivMode: "natural" | "minimum" | "exact";
+  talentHp?: number;
+  talentMelee?: number;
+  talentShot?: number;
+  talentDefense?: number;
+  passiveSkillIds: string[];
+  condensationStars: number;
+}
+
+export interface PalGrantResult {
+  protocolVersion: number;
+  requestId: string;
+  status: "succeeded";
+  instanceId: string;
+  level: number;
+  gender?: string;
+  alpha?: boolean;
+  lucky?: boolean;
+  talentHp?: number;
+  talentMelee?: number;
+  talentShot?: number;
+  talentDefense?: number;
+  passiveSkillIds?: string[];
+  condensationStars?: number;
+  completedAt: string;
+}
+
+export interface PalGrant {
+  requestId: string;
+  createdAt: string;
+  updatedAt: string;
+  actor: string;
+  playerUid: string;
+  playerName: string;
+  characterId: string;
+  displayName: string;
+  spec: PalGenerationSpec;
+  result?: PalGrantResult;
+  reason: string;
+  status: "queued" | "succeeded" | "failed";
+  errorCode?: string;
+  errorMessage?: string;
+}
+
 export type ServerActivityWindow = "24h" | "7d" | "30d";
 
 export interface ActivityConcurrencyBucket {

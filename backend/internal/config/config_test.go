@@ -122,6 +122,30 @@ func TestLoadRejectsInvalidItemGrantBoolean(t *testing.T) {
 	}
 }
 
+func TestLoadPalGrantsDefaultFailClosedAndAcceptOverrides(t *testing.T) {
+	dataDir := t.TempDir()
+	t.Setenv("PALHELM_DATA_DIR", dataDir)
+	t.Setenv("PALHELM_PAL_GRANTS_ENABLED", "")
+	t.Setenv("PALHELM_PAL_GRANT_SPOOL_DIR", "")
+	cfg, err := Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.PalGrantsEnabled || cfg.PalGrantSpoolDir != filepath.Join(dataDir, "pal-grants") {
+		t.Fatalf("Pal grant defaults = %#v", cfg)
+	}
+	t.Setenv("PALHELM_PAL_GRANTS_ENABLED", "true")
+	t.Setenv("PALHELM_PAL_GRANT_SPOOL_DIR", "/bridge/pals")
+	cfg, err = Load()
+	if err != nil || !cfg.PalGrantsEnabled || cfg.PalGrantSpoolDir != "/bridge/pals" {
+		t.Fatalf("Pal grant overrides = %#v err=%v", cfg, err)
+	}
+	t.Setenv("PALHELM_PAL_GRANTS_ENABLED", "sometimes")
+	if _, err := Load(); err == nil {
+		t.Fatal("invalid Pal grant boolean did not fail startup")
+	}
+}
+
 func TestLoadGameDataOverrides(t *testing.T) {
 	t.Setenv("PALHELM_GAME_DATA_ENABLED", "true")
 	t.Setenv("PALHELM_GAME_DATA_INTERVAL", "45s")
