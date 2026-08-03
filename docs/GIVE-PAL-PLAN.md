@@ -49,8 +49,9 @@ destination rather than claiming Palbox-only delivery.
 
 ## Runtime reverse-engineering checkpoint
 
-The current `v1.0.1.100619` Linux UHT dump and installed symbol bundle expose
-these relevant names:
+The locally retained `v1.0.1.100619` Linux UHT dump and installed symbol bundle
+expose these relevant names. They are historical discovery inputs, not current-
+build validation artifacts:
 
 ```text
 APalPlayerState::RequestSpawnMonsterForPlayer(FName, int, int)
@@ -181,6 +182,56 @@ The first production tranche remains natural generation plus bounded
 gender/Alpha/Lucky/IV/rank/passive overrides. Active skills, learned skills,
 souls, work-suitability overrides, skins, and nicknames remain disabled until
 their exact 1.0 fields, versioned ID catalogues, and policy rules are validated.
+
+## Upstream and live-target revalidation (2026-08-02)
+
+The live server was safely updated, after a verified save-aware backup and with
+zero connected players, from `v1.0.2.100933` to Pocketpair's current
+`v1.0.2.101103` dedicated-server build. Its exact Linux target is now:
+
+```text
+Steam depot build ID: 24466863
+PalServer GNU build ID: 787f7f8c15edb8fb
+PalServer SHA-256: c508a28b06cebf0752296b38da5244c08a5688da44dad8f816eb2d726d82699e
+```
+
+The server container remains on `thijsvanloef/palworld-server-docker:2.7.1`,
+which is the latest published container release. The update completed through
+that image's supported updater, the container returned healthy, UE4SS loaded,
+the item bridge returned `ready`, and the Pal bridge correctly remained
+`validation_required`.
+
+The native capability probe is pinned to an older Palworld executable and must
+continue failing closed. Updating its expected build ID or SHA alone is
+prohibited: the July 18 UHT dump and `MemberVariableLayout.ini` predate this
+target, so doing so would turn a version guard into a false compatibility claim.
+A fresh dump/layout plus reflected metadata comparison is required before a new
+non-mutating probe can be built.
+
+Current upstream evidence also narrows the Linux path:
+
+- Pocketpair's first-party dedicated-server mod loader currently supports only
+  the Windows server build.
+- The `Yangff/RE-UE4SS` `linux-port-rebase2` branch still ends at commit
+  `9b4552068804a5f5ec2309ca378aeb65af40ee1a` from November 2024.
+- Admin Commands (Server Side) `3.0.4` explicitly reports Pal spawning as broken
+  on native Linux after 1.0 and recommends disabling its spawn/catch commands;
+  it also reports autosave-crash risk around the 1.0 spawn path.
+
+PR completion therefore requires development on a disposable clone of the
+world, not another mutation probe on the live server. The shortest responsible
+path is:
+
+1. Generate current-build UHT headers and `MemberVariableLayout.ini` on the
+   disposable server and archive their Palworld/UE4SS fingerprints.
+2. Rebuild the non-mutating native probe for that exact target and compare the
+   full reflected function/property metadata, not only object names.
+3. Implement capacity lookup, native struct construction, authoritative
+   creation/delivery, read-back, and exact-once result handling.
+4. Prove an authoritative cleanup/rollback path before the first mutation.
+5. Run the maintenance-window acceptance matrix below on the disposable world.
+6. Pin the validated artifacts and only then promote the live bridge from
+   `validation_required`.
 
 ## Maintenance-window acceptance test
 

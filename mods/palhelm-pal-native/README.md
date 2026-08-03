@@ -3,7 +3,7 @@
 Experimental, server-only Linux UE4SS C++ provider for Palhelm's Give Pal
 workflow. It is not installed or production-ready.
 
-## Exact target
+## Retired exact target
 
 - Palworld executable build ID: `7f7e167407984ec3`
 - Palworld executable SHA-256:
@@ -12,6 +12,14 @@ workflow. It is not installed or production-ready.
 - UE4SS commit: `9b4552068804a5f5ec2309ca378aeb65af40ee1a`
 - Installed `libUE4SS.so` SHA-256:
   `b614f4f0555319be60a45fd5c47e7ca8089a3222babf49a42d4bdbd187855fb1`
+
+This Palworld target is no longer installed. As of 2026-08-02, the live server
+runs `v1.0.2.101103` / Steam build `24466863`, with GNU build ID
+`787f7f8c15edb8fb` and executable SHA-256
+`c508a28b06cebf0752296b38da5244c08a5688da44dad8f816eb2d726d82699e`.
+The probe must remain disabled against it. Do not update the constants below
+until a fresh UHT dump, `MemberVariableLayout.ini`, and reflected metadata audit
+have been completed on a disposable server for the exact new target.
 
 The installed fork loads `Mods/<mod>/dlls/main.so` with `dlopen` and resolves
 `start_mod` plus `uninstall_mod`. This is not upstream's stable Linux C++ ABI.
@@ -23,7 +31,7 @@ the `HAS_UI` base-class member and virtual slots used by that build.
 The first artifact is deliberately non-mutating. On Unreal initialization it:
 
 1. reads the GNU build ID from the running main executable;
-2. refuses to continue on any build other than the pinned Palworld build;
+2. refuses to continue on any build other than the retired pinned Palworld build;
 3. checks that the four reflected functions required by the proposed native
    spawn-and-capture path still exist;
 4. logs readiness, but does not read a request or create a Pal.
